@@ -21,4 +21,6 @@ dev = [
 ]
 
 [tool.setuptools]
-py-modules = ["main"]
+package-dir = {"" = "src"}
+packages = ["allroadstoliterature"]
+# Remove the py-modules line entirely
