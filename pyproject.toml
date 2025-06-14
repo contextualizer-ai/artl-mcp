@@ -1,0 +1,10 @@
+[project]
+name = "all-roads-to-literature"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=2.8.0",
+    "pydantic-ai>=0.2.18",
+]
