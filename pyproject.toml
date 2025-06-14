@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "all-roads-to-literature"
 version = "0.1.0"
@@ -6,5 +10,15 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=2.8.0",
+    "habanero>=2.3.0",
     "pydantic-ai>=0.2.18",
+    "pytest>=8.4.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.0",
+]
+
+[tool.setuptools]
+py-modules = ["main"]
