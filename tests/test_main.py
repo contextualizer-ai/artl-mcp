@@ -1,8 +1,7 @@
 import pytest
 from unittest.mock import patch, Mock
 
-# Fix the import path
-from src.allroadstoliterature.main import get_doi_metadata, main
+from allroadstoliterature.main import get_doi_metadata, main
 
 def test_get_doi_metadata_success():
     with patch('habanero.Crossref') as mock_crossref:
@@ -16,8 +15,8 @@ def test_get_doi_metadata_success():
         assert result == {"status": "ok", "data": {"title": "Test Article"}}
 
 def test_main_function():
-    with patch('src.allroadstoliterature.main.get_doi_metadata') as mock_get_metadata:
-        with patch('src.allroadstoliterature.main.pprint.pprint') as mock_pprint:
+    with patch('allroadstoliterature.main.get_doi_metadata') as mock_get_metadata:
+        with patch('allroadstoliterature.main.pprint.pprint') as mock_pprint:
             # Setup mock
             mock_get_metadata.return_value = {"sample": "metadata"}
 
