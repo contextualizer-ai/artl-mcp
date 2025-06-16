@@ -26,6 +26,7 @@ clean:
 	rm -rf *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
+	rm -rf src/all_roads_to_literature.egg-info
 
 # Run the main module with a sample DOI
 run:
@@ -42,3 +43,18 @@ run:
 # # Build package
 # build:
 # 	python -m build
+
+# Build package with uv
+build:
+	uv pip install build
+	uv run python -m build
+
+# Upload to TestPyPI
+upload-test:
+	uv pip install twine
+	uv run python -m twine upload --repository testpypi dist/*
+
+# Upload to PyPI
+upload:
+	uv pip install twine
+	uv run python -m twine upload dist/*
