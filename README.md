@@ -56,9 +56,9 @@ pytest tests/
 
 ## Architecture
 
-The project follows a standard FastMCP architecture:
+The project follows this structure:
 
 - `main.py`: Entry point that creates and configures the MCP server
 - `tools.py`: Contains the tool implementations that the MCP server exposes
-- `mcp_client.py`: Client code for connecting to MCP tools (optional, just for testing, etc)
+
 
