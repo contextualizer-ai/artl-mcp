@@ -17,21 +17,21 @@ async def main():
         print("-" * 50)
 
         # Call the doi text tool
-        print("Testing DOI fetcher:")
-        doi = "10.7717/peerj.16290"
-        print(f"Fetching text for DOI: {doi}")
+        print("Testing ability to fetch an abstract from a pubmed id:")
+        pmid = "31653696"
+        print(f"Fetching abstract for PMID:{pmid}")
 
         try:
-            result = await client.call_tool("get_text_from_doi", {"doi": doi})
+            result = await client.call_tool("get_abstract_from_pubmed_id", {"pmid": pmid})
             print(f"Result type: {type(result)}")
             if result and len(result) > 0:
                 text_content = result[0].text
                 print(f"DOI text (first 500 chars):\n{text_content[:500]}...")
                 print(f"\nTotal length: {len(text_content)} characters")
             else:
-                print("No result returned from DOI fetcher")
+                print(f"No abstract returned for PMID:{pmid}")
         except Exception as e:
-            print(f"Error calling DOI fetcher: {e}")
+            print(f"Error calling abstract from PMID fetcher: {e}")
 
 
 def run():
