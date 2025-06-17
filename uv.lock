@@ -132,6 +132,7 @@ dependencies = [
     { name = "fastmcp" },
     { name = "gradio" },
     { name = "habanero" },
+    { name = "markitdown", extra = ["pdf"] },
     { name = "pydantic-ai" },
     { name = "pytest" },
 ]
@@ -147,6 +148,7 @@ requires-dist = [
     { name = "fastmcp", specifier = ">=2.8.1" },
     { name = "gradio", specifier = ">=5.34.0" },
     { name = "habanero", specifier = ">=2.3.0" },
+    { name = "markitdown", extras = ["pdf"], specifier = ">=0.1.2" },
     { name = "pydantic-ai", specifier = ">=0.2.18" },
     { name = "pytest", specifier = ">=8.4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.0" },
@@ -2219,6 +2221,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ed/33/d52d06b44c28e0db5c458690a4356e6abbb866f4abc00c0cf4eebb90ca78/markitdown-0.1.2-py3-none-any.whl", hash = "sha256:4881f0768794ffccb52d09dd86498813a6896ba9639b4fc15512817f56ed9d74", size = 57751, upload-time = "2025-05-28T17:06:08.722Z" },
 ]
 
+[package.optional-dependencies]
+pdf = [
+    { name = "pdfminer-six" },
+]
+
 [[package]]
 name = "markupsafe"
 version = "3.0.2"
@@ -2908,6 +2915,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/4f/78/d9b09ba24bb36ef8b83b71be547e118d46214735b6dfb39e4bfde0e9b9dd/parse-1.20.2.tar.gz", hash = "sha256:b41d604d16503c79d81af5165155c0b20f6c8d6c559efa66b4b695c3e5a0a0ce", size = 29391, upload-time = "2024-06-11T04:41:57.34Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/31/ba45bf0b2aa7898d81cbbfac0e88c267befb59ad91a19e36e1bc5578ddb1/parse-1.20.2-py2.py3-none-any.whl", hash = "sha256:967095588cb802add9177d0c0b6133b5ba33b1ea9007ca800e526f42a85af558", size = 20126, upload-time = "2024-06-11T04:41:55.057Z" },
+]
+
+[[package]]
+name = "pdfminer-six"
+version = "20250506"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "charset-normalizer" },
+    { name = "cryptography" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/78/46/5223d613ac4963e1f7c07b2660fe0e9e770102ec6bda8c038400113fb215/pdfminer_six-20250506.tar.gz", hash = "sha256:b03cc8df09cf3c7aba8246deae52e0bca7ebb112a38895b5e1d4f5dd2b8ca2e7", size = 7387678, upload-time = "2025-05-06T16:17:00.787Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/16/7a432c0101fa87457e75cb12c879e1749c5870a786525e2e0f42871d6462/pdfminer_six-20250506-py3-none-any.whl", hash = "sha256:d81ad173f62e5f841b53a8ba63af1a4a355933cfc0ffabd608e568b9193909e3", size = 5620187, upload-time = "2025-05-06T16:16:58.669Z" },
 ]
 
 [[package]]
