@@ -29,5 +29,6 @@ packages = ["allroadstoliterature"]
 
 
 [project.scripts]
-doi_metadata = "allroadstoliterature.main:main"
+doi-metadata = "allroadstoliterature.main:main"
+mcp-test = "allroadstoliterature.mcp_client:run"
 

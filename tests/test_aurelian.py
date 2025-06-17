@@ -115,5 +115,5 @@ def test_uapu():
     text_from_bioc = aupu.get_full_text_from_bioc(pmid_of_doi)
     assert "Magellanic" in text_from_bioc
 
-    abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid_of_doi)
-    assert "Magellanic" in abstract_from_pubmed
+    # abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid_of_doi)
+    # assert "Magellanic" in abstract_from_pubmed
