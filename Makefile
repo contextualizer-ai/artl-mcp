@@ -1,7 +1,7 @@
 .PHONY: test clean install dev format lint all
 
 # Default target
-all: clean install dev test run build
+all: clean install dev test build
 
 # Install the package in development mode
 install:
