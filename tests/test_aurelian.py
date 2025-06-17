@@ -1,5 +1,12 @@
 import pytest
-from aurelian.utils.doi_fetcher import DOIFetcher
+from aurelian.utils.doi_fetcher import DOIFetcher, FullTextInfo
+from aurelian.utils.pdf_fetcher import extract_text_from_pdf
+import aurelian.utils.pubmed_utils as aupu
+import pprint
+
+
+# todo this recapitulates a lot of the tests in https://github.com/monarch-initiative/aurelian/blob/main/src/aurelian/utils/doi_fetcher.py
+#   and you could argue that we shouldn't be hitting the APIs in tests
 
 
 def test_doi_fetcher_initialization():
@@ -43,3 +50,70 @@ def test_doi_fetcher_functionality():
 
     # At minimum, the object should be instantiable
     assert isinstance(dfr, DOIFetcher)
+
+
+def test_doi_fetcher_all():
+    """Test that DOIFetcher can fetch all DOIs."""
+    dfr = DOIFetcher(email="senior_distinguished_scientist@lbl.gov")
+    input_text = "   xxx   xxx   "
+    output_text = dfr.clean_text(input_text)
+    assert output_text == "xxx xxx"
+
+    doi_value = "10.1099/ijsem.0.005153"
+    doi_metadata = dfr.get_metadata(doi_value)
+    assert doi_metadata["DOI"] == doi_value
+
+    from_unpaywall = dfr.get_unpaywall_info(doi_value, strict=True)
+    assert from_unpaywall['genre'] == 'journal-article'
+
+    full_text_doi = "10.1128/msystems.00045-18"
+
+    full_text_result = dfr.get_full_text(full_text_doi)
+    assert "microbiome" in full_text_result
+
+    full_text_into_result = dfr.get_full_text_info(full_text_doi)
+    assert full_text_into_result.success  # not really useful in this case
+
+    pdf_url = "https://ceur-ws.org/Vol-1747/IT201_ICBO2016.pdf"
+    pdf_text = dfr.text_from_pdf_url(pdf_url)
+    assert "biosphere" in pdf_text
+
+
+def test_extract_text_from_pdf():
+    """Test that extract_text_from_pdf can extract text from a PDF."""
+    pdf_url = "https://ceur-ws.org/Vol-1747/IT201_ICBO2016.pdf"
+    pdf_text = extract_text_from_pdf(pdf_url)
+    assert "biosphere" in pdf_text
+
+
+def test_uapu():
+    doi_url = "https://doi.org/10.7717/peerj.16290"
+    doi_portion = "10.7717/peerj.16290"
+    pmid_of_doi = "37933257"
+    as_pmcid = "PMC10625763"
+    extracted_doi = aupu.extract_doi_from_url(doi_url)
+    assert extracted_doi == doi_portion
+
+    pmid_from_doi = aupu.doi_to_pmid(doi_portion)
+    assert pmid_from_doi == pmid_of_doi
+
+    text_from_doi = aupu.get_doi_text(doi_portion)
+    assert "Magellanic" in text_from_doi
+
+    pmid_from_pmcid = aupu.get_pmid_from_pmcid(as_pmcid)
+    assert pmid_from_pmcid == pmid_of_doi
+
+    text_from_pmcid = aupu.get_pmcid_text(as_pmcid)
+    assert "Magellanic" in text_from_pmcid
+
+    text_from_pmid = aupu.get_pmid_text(pmid_of_doi)
+    assert "Magellanic" in text_from_pmid
+
+    doi_from_pmid = aupu.pmid_to_doi(pmid_of_doi)
+    assert doi_from_pmid == doi_portion
+
+    text_from_bioc = aupu.get_full_text_from_bioc(pmid_of_doi)
+    assert "Magellanic" in text_from_bioc
+
+    abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid_of_doi)
+    assert "Magellanic" in abstract_from_pubmed

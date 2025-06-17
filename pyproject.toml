@@ -13,6 +13,7 @@ dependencies = [
     "fastmcp>=2.8.1",
     "gradio>=5.34.0",
     "habanero>=2.3.0",
+    "markitdown[pdf]>=0.1.2",
     "pydantic-ai>=0.2.18",
     "pytest>=8.4.0",
 ]
