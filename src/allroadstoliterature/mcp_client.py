@@ -6,7 +6,7 @@ from fastmcp.client.transports import PythonStdioTransport
 async def main():
     # Use explicit transport for better control
     transport = PythonStdioTransport(
-        script_path="src/allroadstoliterature/mcps.py",
+        script_path="src/allroadstoliterature/mcp_servers.py",
         python_cmd="python"  # or "python3" depending on your system
     )
 
@@ -14,15 +14,6 @@ async def main():
         # List available tools
         tools = await client.list_tools()
         print(f"Available tools: {[tool.name for tool in tools]}")
-        print("-" * 50)
-
-        # Call the add tool
-        print("Testing add function:")
-        result = await client.call_tool("add", {"a": 5, "b": 3})
-        print(f"Result type: {type(result)}")
-        print(f"Result: {result}")
-        if result and len(result) > 0:
-            print(f"Add result: 5 + 3 = {result[0].text}")
         print("-" * 50)
 
         # Call the doi text tool
@@ -43,6 +34,11 @@ async def main():
             print(f"Error calling DOI fetcher: {e}")
 
 
+def run():
+    """Synchronous entry point for script"""
+    asyncio.run(main())
+
+
 if __name__ == "__main__":
     # Run the async main function
-    asyncio.run(main())
+    run()

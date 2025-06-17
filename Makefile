@@ -1,7 +1,7 @@
 .PHONY: test clean install dev format lint all
 
 # Default target
-all: install test
+all: clean install dev test run build
 
 # Install the package in development mode
 install:
@@ -30,7 +30,8 @@ clean:
 
 # Run the main module with a sample DOI
 run:
-	uv run doi_metadata --doi 10.1099/ijsem.0.005153
+	uv run doi-metadata --doi 10.1099/ijsem.0.005153
+	uv run mcp-test
 
 # # Format code with black
 # format:

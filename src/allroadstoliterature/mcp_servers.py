@@ -6,12 +6,6 @@ mcp = FastMCP("Demo 🚀")
 
 
 @mcp.tool
-def add(a: int, b: int) -> int:
-    """Add two numbers"""
-    return a + b
-
-
-@mcp.tool
 def get_text_from_doi(doi: str) -> str:
     """Get text from a DOI"""
     dfr = DOIFetcher(email="senior_distinguished_scientist@lbl.gov")
