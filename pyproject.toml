@@ -25,3 +25,8 @@ dev = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 packages = ["allroadstoliterature"]
+
+
+[project.scripts]
+doi_metadata = "allroadstoliterature.main:main"
+

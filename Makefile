@@ -30,7 +30,7 @@ clean:
 
 # Run the main module with a sample DOI
 run:
-	python -m allroadstoliterature.main 10.1038/s41586-020-2649-2
+	uv run doi_metadata --doi 10.1099/ijsem.0.005153
 
 # # Format code with black
 # format:

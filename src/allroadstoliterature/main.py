@@ -1,6 +1,7 @@
 import pprint
 from typing import Dict, Any, Optional
 
+import click
 import habanero
 
 
@@ -23,16 +24,18 @@ def get_doi_metadata(doi: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def main() -> None:
-    """
-    Main function to demonstrate the retrieval of DOI metadata.
+@click.command()
+@click.option('--doi', '-d', required=True, help='DOI of the article to retrieve metadata for')
+def main(doi: str) -> None:
+    """Retrieve and display metadata for a scientific article using its DOI."""
+    click.echo(f"Retrieving metadata for DOI: {doi}")
 
-    Retrieves and prints metadata for an example DOI.
-    """
-    # Example usage
-    doi = "10.1038/nrg3564"  # Example DOI
     metadata = get_doi_metadata(doi)
-    pprint.pprint(metadata)
+
+    if metadata:
+        pprint.pprint(metadata)
+    else:
+        click.echo("Failed to retrieve metadata.")
 
 
 if __name__ == "__main__":
