@@ -1,16 +1,16 @@
 # server.py
 from fastmcp import FastMCP
 from aurelian.utils.doi_fetcher import DOIFetcher
+import aurelian.utils.pubmed_utils as aupu
 
 mcp = FastMCP("Demo 🚀")
 
 
 @mcp.tool
-def get_text_from_doi(doi: str) -> str:
+def get_abstract_from_pubmed_id(pmid: str) -> str:
     """Get text from a DOI"""
-    dfr = DOIFetcher(email="senior_distinguished_scientist@lbl.gov")
-    doi_text = dfr.get_full_text(doi)
-    return doi_text
+    abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid)
+    return abstract_from_pubmed
 
 
 if __name__ == "__main__":
