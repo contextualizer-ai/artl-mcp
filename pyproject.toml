@@ -24,3 +24,10 @@ dev = [
 package-dir = {"" = "src"}
 packages = ["allroadstoliterature"]
 # Remove the py-modules line entirely
+
+[project.scripts]
+doi_metadata = "allroadstoliterature.main:main"
+
+#[build-system]
+#requires = ["hatchling"]
+#build-backend = "hatchling.build"
