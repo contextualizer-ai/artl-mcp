@@ -91,6 +91,11 @@ def test_uapu():
     doi_portion = "10.7717/peerj.16290"
     pmid_of_doi = "37933257"
     as_pmcid = "PMC10625763"
+    expected_text = "Magellanic"
+
+    pmid_for_abstract = "31653696"
+    expected_in_abstract_from_pmid = "deglycase"
+
     extracted_doi = aupu.extract_doi_from_url(doi_url)
     assert extracted_doi == doi_portion
 
@@ -98,22 +103,22 @@ def test_uapu():
     assert pmid_from_doi == pmid_of_doi
 
     text_from_doi = aupu.get_doi_text(doi_portion)
-    assert "Magellanic" in text_from_doi
+    assert expected_text in text_from_doi
 
     pmid_from_pmcid = aupu.get_pmid_from_pmcid(as_pmcid)
     assert pmid_from_pmcid == pmid_of_doi
 
     text_from_pmcid = aupu.get_pmcid_text(as_pmcid)
-    assert "Magellanic" in text_from_pmcid
+    assert expected_text in text_from_pmcid
 
     text_from_pmid = aupu.get_pmid_text(pmid_of_doi)
-    assert "Magellanic" in text_from_pmid
+    assert expected_text in text_from_pmid
 
     doi_from_pmid = aupu.pmid_to_doi(pmid_of_doi)
     assert doi_from_pmid == doi_portion
 
     text_from_bioc = aupu.get_full_text_from_bioc(pmid_of_doi)
-    assert "Magellanic" in text_from_bioc
+    assert expected_text in text_from_bioc
 
-    # abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid_of_doi)
-    # assert "Magellanic" in abstract_from_pubmed
+    abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid_for_abstract)
+    assert expected_in_abstract_from_pmid in abstract_from_pubmed
