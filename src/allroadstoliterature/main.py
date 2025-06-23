@@ -1,42 +1,36 @@
-import pprint
-from typing import Dict, Any, Optional
-
+import asyncio
 import click
-import habanero
+from fastmcp import FastMCP
+
+from allroadstoliterature.client import run_client
+from allroadstoliterature.tools import get_doi_metadata
 
 
-def get_doi_metadata(doi: str) -> Optional[Dict[str, Any]]:
-    """
-    Retrieve metadata for a scientific article using its DOI.
+def create_mcp():
+    """Create the FastMCP server instance and register tools."""
+    mcp = FastMCP("all-roads-to-literature")
+    mcp.tool(get_doi_metadata)
+    return mcp
 
-    Args:
-        doi: The Digital Object Identifier of the article.
 
-    Returns:
-        A dictionary containing the article metadata if successful, None otherwise.
-    """
-    cr = habanero.Crossref()
-    try:
-        result = cr.works(ids=doi)
-        return result
-    except Exception as e:
-        print(f"Error retrieving metadata for DOI {doi}: {e}")
-        return None
+# Server instance
+mcp = create_mcp()
 
 
 @click.command()
-@click.option('--doi', '-d', required=True, help='DOI of the article to retrieve metadata for')
-def main(doi: str) -> None:
-    """Retrieve and display metadata for a scientific article using its DOI."""
-    click.echo(f"Retrieving metadata for DOI: {doi}")
-
-    metadata = get_doi_metadata(doi)
-
-    if metadata:
-        pprint.pprint(metadata)
+@click.option('--server', is_flag=True, help='Start the MCP server.')
+@click.option('--doi-query', type=str, help='Run a direct query (DOI string).')
+def cli(server, doi_query):
+    """Run All Roads to Literature MCP tool or server."""
+    if server:
+        # Run the server over stdio
+        mcp.run()
+    elif doi_query:
+        # Run the client in asyncio
+        asyncio.run(run_client(doi_query, mcp))
     else:
-        click.echo("Failed to retrieve metadata.")
+        click.echo(cli.get_help(click.Context(cli)))
 
 
 if __name__ == "__main__":
-    main()
+    cli()

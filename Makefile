@@ -1,7 +1,7 @@
 .PHONY: test clean install dev format lint all
 
 # Default target
-all: clean install dev test run build
+all: clean install dev test build
 
 # Install the package in development mode
 install:
@@ -28,10 +28,13 @@ clean:
 	find . -type f -name "*.pyc" -delete
 	rm -rf src/all_roads_to_literature.egg-info
 
-# Run the main module with a sample DOI
-run:
-	uv run doi-metadata --doi 10.1099/ijsem.0.005153
-	uv run mcp-test
+# Run server mode
+server:
+	uv run artl --server
+
+# Run DOI query mode
+doi-test-query:
+	uv run artl --doi-query --doi 10.1099/ijsem.0.005153
 
 # # Format code with black
 # format:
