@@ -16,8 +16,8 @@ test:
 	pytest tests/
 
 # # Run tests with coverage
-# test-coverage:
-# 	pytest --cov=allroadstoliterature tests/
+test-coverage:
+	uv run pytest --cov=allroadstoliterature --cov-report=html --cov-report=term tests/
 
 # Clean up build artifacts
 clean:
