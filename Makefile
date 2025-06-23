@@ -1,7 +1,7 @@
 .PHONY: test clean install dev format lint all
 
 # Default target
-all: clean install dev test build
+all: clean install dev test format lint build
 
 # Install the package in development mode
 install:
@@ -26,7 +26,7 @@ clean:
 	rm -rf *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-	rm -rf src/all_roads_to_literature.egg-info
+	rm -rf src/*.egg-info
 
 # Run server mode
 server:
@@ -36,17 +36,13 @@ server:
 doi-test-query:
 	uv run artl --doi-query 10.1099/ijsem.0.005153 # without extra --doi argument
 
-# # Format code with black
-# format:
-# 	black src/ tests/
-#
-# # Lint code with flake8
-# lint:
-# 	flake8 src/ tests/
-#
-# # Build package
-# build:
-# 	python -m build
+ # Format code with black
+format:
+	uv run black src/ tests/
+
+lint:
+	uv run ruff check --fix src/ tests/
+
 
 # Build package with uv
 build:

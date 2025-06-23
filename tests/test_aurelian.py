@@ -1,8 +1,6 @@
-import pytest
-from aurelian.utils.doi_fetcher import DOIFetcher, FullTextInfo
+from aurelian.utils.doi_fetcher import DOIFetcher
 from aurelian.utils.pdf_fetcher import extract_text_from_pdf
 import aurelian.utils.pubmed_utils as aupu
-import pprint
 
 
 # todo this recapitulates a lot of the tests in https://github.com/monarch-initiative/aurelian/blob/main/src/aurelian/utils/doi_fetcher.py
@@ -26,7 +24,7 @@ def test_doi_fetcher_attributes():
 
     # Get all attributes to examine what's actually available
     all_attributes = dir(dfr)
-    public_attributes = [attr for attr in all_attributes if not attr.startswith('__')]
+    public_attributes = [attr for attr in all_attributes if not attr.startswith("__")]
 
     # Print for debugging (remove after fixing)
     print(f"Available attributes: {public_attributes}")
@@ -45,7 +43,9 @@ def test_doi_fetcher_functionality():
 
     # Inspect the object to find actual methods for fetching DOIs
     # Assuming one of these methods exists for fetching DOIs
-    fetching_methods = [m for m in dir(dfr) if 'doi' in m.lower() or 'fetch' in m.lower()]
+    fetching_methods = [
+        m for m in dir(dfr) if "doi" in m.lower() or "fetch" in m.lower()
+    ]
     print(f"Potential fetching methods: {fetching_methods}")
 
     # At minimum, the object should be instantiable
@@ -64,7 +64,7 @@ def test_doi_fetcher_all():
     assert doi_metadata["DOI"] == doi_value
 
     from_unpaywall = dfr.get_unpaywall_info(doi_value, strict=True)
-    assert from_unpaywall['genre'] == 'journal-article'
+    assert from_unpaywall["genre"] == "journal-article"
 
     full_text_doi = "10.1128/msystems.00045-18"
 

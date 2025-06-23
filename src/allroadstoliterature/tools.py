@@ -34,4 +34,3 @@ def get_abstract_from_pubmed_id(pmid: str) -> str:
     """
     abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid)
     return abstract_from_pubmed
-
