@@ -51,7 +51,7 @@ This will start the server in the current terminal. The server provides access t
 ### Running the Tests
 
 ```bash
-uv pytest tests/
+uv run pytest tests/
 ```
 
 ## Architecture
