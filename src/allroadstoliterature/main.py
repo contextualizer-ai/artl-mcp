@@ -18,8 +18,8 @@ mcp = create_mcp()
 
 
 @click.command()
-@click.option('--server', is_flag=True, help='Start the MCP server.')
-@click.option('--doi-query', type=str, help='Run a direct query (DOI string).')
+@click.option("--server", is_flag=True, help="Start the MCP server.")
+@click.option("--doi-query", type=str, help="Run a direct query (DOI string).")
 def cli(server, doi_query):
     """Run All Roads to Literature MCP tool or server."""
     if server:
