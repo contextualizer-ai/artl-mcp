@@ -34,7 +34,7 @@ server:
 
 # Run DOI query mode
 doi-test-query:
-	uv run artl --doi-query 10.1099/ijsem.0.005153
+	uv run artl --doi-query 10.1099/ijsem.0.005153 # without extra --doi argument
 
 # # Format code with black
 # format:
