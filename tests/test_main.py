@@ -1,6 +1,6 @@
 from unittest.mock import patch, Mock
 
-from allroadstoliterature.main import get_doi_metadata
+from artl_mcp.main import get_doi_metadata
 
 
 # Test core function with mocks
