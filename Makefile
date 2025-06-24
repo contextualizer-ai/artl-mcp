@@ -1,4 +1,4 @@
-.PHONY: test test-coverage clean install dev format lint all server doi-test-query build upload-test upload
+.PHONY: test test-coverage clean install dev format lint all server doi-test-query upload-test upload release
 
 # Default target
 all: clean install dev test test-coverage format lint build doi-test-query
@@ -12,6 +12,7 @@ install:
 	uv sync
 
 # Run tests
+
 test:
 	pytest tests/
 
@@ -44,17 +45,17 @@ lint:
 	uv run ruff check --fix src/ tests/
 
 
-# Build package with uv
+# Build package with hatch
 build:
-	uv pip install build
-	uv run python -m build
+	uv run hatch build
 
 # Upload to TestPyPI
 upload-test:
-	uv pip install twine
-	uv run python -m twine upload --repository testpypi dist/*
+	uv run hatch publish --repo test
 
-# Upload to PyPI
+# Upload to PyPI (set TWINE_PASSWORD environment variable first)
 upload:
-	uv pip install twine
-	uv run python -m twine upload dist/*
+	uv run twine upload dist/*
+
+# Complete release workflow
+release: clean test build upload

@@ -81,6 +81,7 @@ dev = [
     "hatch-vcs>=0.5.0",
     "hatchling>=1.27.0",
     "twine>=4.0.0",
+    "hatch>=1.14.1",
 ]
 
 # Ruff configuration
