@@ -1,7 +1,7 @@
-.PHONY: test test-coverage clean install dev format lint all server doi-test-query upload-test upload release
+.PHONY: test-coverage clean install dev format lint all server doi-test-query upload-test upload release deptry mypy
 
 # Default target
-all: clean install dev test test-coverage format lint build doi-test-query
+all: clean install dev test-coverage format lint mypy deptry build doi-test-query
 
 # Install everything for development
 dev:
@@ -11,12 +11,7 @@ dev:
 install:
 	uv sync
 
-# Run tests
-
-test:
-	pytest tests/
-
-# # Run tests with coverage
+# Run tests with coverage
 test-coverage:
 	uv run pytest --cov=artl_mcp --cov-report=html --cov-report=term tests/
 
@@ -44,6 +39,14 @@ format:
 lint:
 	uv run ruff check --fix src/ tests/
 
+# Check for unused dependencies
+deptry:
+	uvx deptry .
+
+# Type checking
+mypy:
+	uv run mypy src/
+
 
 # Build package with hatch
 build:
@@ -58,4 +61,4 @@ upload:
 	uv run twine upload dist/*
 
 # Complete release workflow
-release: clean test build upload
+release: clean test-coverage build upload
