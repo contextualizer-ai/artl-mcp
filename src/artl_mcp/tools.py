@@ -42,11 +42,14 @@ def get_abstract_from_pubmed_id(pmid: str) -> str:
 # DOIFetcher-based tools
 def get_doi_fetcher_metadata(doi: str, email: str) -> dict[str, Any] | None:
     """
-    Get metadata for a DOI using DOIFetcher.
+    Get metadata for a DOI using DOIFetcher. Requires a user email address.
+
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
 
     Args:
         doi: The Digital Object Identifier of the article.
-        email: Email address for API requests (required by some services).
+        email: Email address for API requests (required - ask user if not provided).
 
     Returns:
         A dictionary containing the article metadata if successful, None otherwise.
@@ -63,11 +66,14 @@ def get_unpaywall_info(
     doi: str, email: str, strict: bool = True
 ) -> dict[str, Any] | None:
     """
-    Get Unpaywall information for a DOI.
+    Get Unpaywall information for a DOI to find open access versions.
+
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
 
     Args:
         doi: The Digital Object Identifier of the article.
-        email: Email address for API requests (required by some services).
+        email: Email address for API requests (required - ask user if not provided).
         strict: Whether to use strict mode for Unpaywall queries.
 
     Returns:
@@ -85,9 +91,12 @@ def get_full_text_from_doi(doi: str, email: str) -> str | None:
     """
     Get full text content from a DOI.
 
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
+
     Args:
         doi: The Digital Object Identifier of the article.
-        email: Email address for API requests (required by some services).
+        email: Email address for API requests (required - ask user if not provided).
 
     Returns:
         The full text content if successful, None otherwise.
@@ -104,9 +113,12 @@ def get_full_text_info(doi: str, email: str) -> dict[str, Any] | None:
     """
     Get full text information (metadata about full text availability) from a DOI.
 
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
+
     Args:
         doi: The Digital Object Identifier of the article.
-        email: Email address for API requests (required by some services).
+        email: Email address for API requests (required - ask user if not provided).
 
     Returns:
         Information about full text availability if successful, None otherwise.
@@ -126,9 +138,12 @@ def get_text_from_pdf_url(pdf_url: str, email: str) -> str | None:
     """
     Extract text from a PDF URL using DOIFetcher.
 
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
+
     Args:
         pdf_url: URL of the PDF to extract text from.
-        email: Email address for API requests (required by some services).
+        email: Email address for API requests (required - ask user if not provided).
 
     Returns:
         The extracted text if successful, None otherwise.
@@ -167,9 +182,12 @@ def clean_text(text: str, email: str) -> str:
     """
     Clean text using DOIFetcher's text cleaning functionality.
 
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
+
     Args:
         text: The text to clean.
-        email: Email address for API requests (required by some services).
+        email: Email address for API requests (required - ask user if not provided).
 
     Returns:
         The cleaned text.

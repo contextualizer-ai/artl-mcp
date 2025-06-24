@@ -11,8 +11,6 @@ EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubme
 
 DOI_PATTERN = r"/(10\.\d{4,9}/[\w\-.]+)"
 
-doi_fetcher = DOIFetcher()
-
 
 def extract_doi_from_url(url: str) -> str | None:
     """Extracts the DOI from a given journal URL.
@@ -66,6 +64,8 @@ def get_doi_text(doi: str) -> str:
     """
     pmid = doi_to_pmid(doi)
     if not pmid:
+        # Create DOIFetcher with default email for internal utility use
+        doi_fetcher = DOIFetcher(email="pubmed_utils@example.com")
         info = doi_fetcher.get_full_text(doi)
         if info:
             return info
@@ -153,6 +153,8 @@ def get_pmid_text(pmid: str) -> str:
     if not text:
         doi = pmid_to_doi(pmid)
         if doi:
+            # Create DOIFetcher with default email for internal utility use
+            doi_fetcher = DOIFetcher(email="pubmed_utils@example.com")
             full_text_result = doi_fetcher.get_full_text(doi)
             if full_text_result:
                 text = full_text_result
