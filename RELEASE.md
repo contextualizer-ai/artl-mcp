@@ -2,6 +2,8 @@
 
 This document provides step-by-step instructions for manually creating a PyPI release of the artl-mcp package.
 
+This is a temporary strategy to be replaced with GitHub action, dynamic version based PyPI releasing, triggered by GH releases.
+
 ## Prerequisites
 
 1. **PyPI Account & API Token**
@@ -15,8 +17,7 @@ This document provides step-by-step instructions for manually creating a PyPI re
 
 ## Environment Variables Setup
 
-Before releasing, you must set up authentication environment variables in your terminal:
-
+Before releasing, you must set up authentication environment variables in your terminal. Use the `artl-mcp-2025-06-24` key, which you can get from @turbomam.
 ```bash
 export TWINE_USERNAME="__token__"
 export TWINE_PASSWORD="pypi-AgEI...your-actual-token-here"
@@ -55,7 +56,7 @@ Then run `source ~/.zshrc` (or restart your terminal).
    git pull origin main
    ```
 
-3. **Run tests to ensure everything works:**
+3. **Run tests to ensure everything works:**`
    ```bash
    make test
    ```
