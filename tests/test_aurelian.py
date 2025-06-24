@@ -1,6 +1,8 @@
 from aurelian.utils.doi_fetcher import DOIFetcher
 from aurelian.utils.pdf_fetcher import extract_text_from_pdf
 import aurelian.utils.pubmed_utils as aupu
+import pytest
+import os
 
 
 # todo this recapitulates a lot of the tests in https://github.com/monarch-initiative/aurelian/blob/main/src/aurelian/utils/doi_fetcher.py
@@ -86,6 +88,7 @@ def test_extract_text_from_pdf():
     assert "biosphere" in pdf_text
 
 
+@pytest.mark.skipif(os.environ.get("CI") == "true", reason="Skip flaky network test in CI")
 def test_uapu():
     doi_url = "https://doi.org/10.7717/peerj.16290"
     doi_portion = "10.7717/peerj.16290"
