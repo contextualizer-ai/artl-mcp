@@ -32,12 +32,8 @@ keywords = ["mcp", "scientific-literature", "pubmed", "doi", "pmid"]
 dependencies = [
     "aurelian>=0.4.2",
     "fastmcp>=2.8.1",
-    "gradio>=5.34.0",
     "habanero>=2.3.0",
-    "httpx>=0.25.0",
-    "markitdown[pdf]>=0.1.2",
-    "pydantic-ai>=0.2.18",
-    "pydantic>=2.5.0",
+    "pdfminer-six>=20250506",
 ]
 
 [project.urls]
