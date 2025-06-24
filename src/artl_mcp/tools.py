@@ -1,8 +1,8 @@
 from typing import Any
 
+import aurelian.utils.pubmed_utils as aupu
 import habanero
 
-import aurelian.utils.pubmed_utils as aupu
 
 def get_doi_metadata(doi: str) -> dict[str, Any] | None:
     """
