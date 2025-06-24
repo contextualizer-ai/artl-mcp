@@ -81,12 +81,15 @@ dev = [
     "hatchling>=1.27.0",
     "twine>=4.0.0",
     "hatch>=1.14.1",
+    "types-requests>=2.32.4.20250611",
+    "types-beautifulsoup4>=4.12.0.20250516",
 ]
 
 # Ruff configuration
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+exclude = ["src/artl_mcp/_version.py"]
 
 [tool.ruff.lint]
 select = [
@@ -136,8 +139,11 @@ markers = [
 
 # Deptry configuration
 [tool.deptry]
+# Map import names to package names
+package_module_name_map = {bs4 = "beautifulsoup4", pdfminer = "pdfminer-six"}
+
 # Ignore specific error types for known false positives
 [tool.deptry.per_rule_ignores]
-DEP002 = ["pdfminer-six"]  # Unused dependency - used by aurelian
+DEP002 = ["lxml", "beautifulsoup4", "pdfminer-six"]  # lxml used by bs4; bs4/pdfminer are mapped imports
 DEP003 = ["click"]          # Transitive dependency - used by fastmcp  
-DEP001 = ["artl_mcp"]       # Missing dependency - self-imports are ok
+DEP001 = ["artl_mcp", "bs4", "pdfminer"]  # Missing deps: self-imports and mapped packages ok

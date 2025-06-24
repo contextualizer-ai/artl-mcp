@@ -3,7 +3,7 @@ import re
 from typing import Any
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from pydantic import BaseModel, Field
 
 
@@ -32,8 +32,8 @@ class DOIFetcher:
 
         """
         self.email = email or os.getenv("EMAIL") or "test@example.com"
-        self.url_prefixes = (
-            url_prefixes or os.getenv("DOI_FULL_TEXT_URLS", "").split(",")
+        self.url_prefixes = url_prefixes or os.getenv("DOI_FULL_TEXT_URLS", "").split(
+            ","
         )
         self.headers = {
             "User-Agent": f"DOIFetcher/1.0 (mailto:{self.email})",
@@ -182,6 +182,7 @@ class DOIFetcher:
                 pdf_url = location.get("url_for_pdf")
                 if pdf_url:
                     return FullTextInfo(
+                        abstract=None,
                         text=None,
                         pdf_url=pdf_url,
                         source="unpaywall",
@@ -189,7 +190,8 @@ class DOIFetcher:
                     )
 
         # Fallback
-        url_prefixes = os.getenv("DOI_FULL_TEXT_URLS", "").split(",")
+        url_prefixes_env = os.getenv("DOI_FULL_TEXT_URLS", "")
+        url_prefixes = url_prefixes_env.split(",") if url_prefixes_env else []
 
         for url_prefix in url_prefixes:
             url_prefix.rstrip("/")
@@ -199,13 +201,21 @@ class DOIFetcher:
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, "html.parser")
                     pdf_embed = soup.find("embed", id="pdf")
-                    if pdf_embed and pdf_embed.get("src"):
-                        pdf_url = pdf_embed["src"]
+                    if isinstance(pdf_embed, Tag) and pdf_embed.get("src"):
+                        pdf_url_raw = pdf_embed["src"]
+                        # Handle case where src can be a list or string
+                        pdf_url = (
+                            pdf_url_raw
+                            if isinstance(pdf_url_raw, str)
+                            else pdf_url_raw[0]
+                        )
                         # Remove any URL parameters after #
                         pdf_url = pdf_url.split("#")[0]
                         if not pdf_url.startswith("http"):
                             pdf_url = "https:" + pdf_url
                         return FullTextInfo(
+                            abstract=None,
+                            text=None,
                             pdf_url=pdf_url,
                             source=url,
                             metadata=metadata,
@@ -214,7 +224,17 @@ class DOIFetcher:
                 continue
 
         # Return basic info even if no full text found
-        return FullTextInfo(metadata=metadata) if metadata else None
+        return (
+            FullTextInfo(
+                abstract=None,
+                text=None,
+                source=None,
+                pdf_url=None,
+                metadata=metadata,
+            )
+            if metadata
+            else None
+        )
 
     def text_from_pdf_url(self, pdf_url: str, raise_for_status=False) -> str | None:
         """Extract text from a PDF URL.
@@ -253,4 +273,3 @@ class DOIFetcher:
         except Exception as e:
             print(f"Error extracting PDF text: {e}")
             return None
-

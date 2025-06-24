@@ -38,7 +38,9 @@ def doi_to_pmid(doi: str) -> str | None:
         str: The corresponding PMID if found, otherwise an empty string.
 
     """
-    API_URL = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={doi}&format=json"
+    API_URL = (
+        f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={doi}&format=json"
+    )
     response = requests.get(API_URL).json()
     records = response.get("records", [])
     pmid = records[0].get("pmid", None) if records else None
@@ -158,6 +160,7 @@ def get_pmid_text(pmid: str) -> str:
         text = get_abstract_from_pubmed(pmid)
     return text
 
+
 def pmid_to_doi(pmid: str) -> str | None:
     if ":" in pmid:
         pmid = pmid.split(":")[1]
@@ -244,4 +247,3 @@ def get_abstract_from_pubmed(pmid: str) -> str:
     )
 
     return f"{title}\n\n{abstract}"
-

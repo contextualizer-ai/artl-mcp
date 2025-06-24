@@ -1,7 +1,8 @@
 from typing import Any
 
-import artl_mcp.utils.pubmed_utils as aupu
 import habanero
+
+import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.doi_fetcher import DOIFetcher
 from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
 

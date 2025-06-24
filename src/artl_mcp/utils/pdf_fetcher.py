@@ -22,4 +22,3 @@ def extract_text_from_pdf(pdf_url: str) -> str:
 
     except Exception as e:
         return f"Error extracting PDF text: {e}"
-
