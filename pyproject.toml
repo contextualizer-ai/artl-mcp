@@ -60,10 +60,10 @@ packages = ["src/artl_mcp"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src",
-    "/tests",
-    "/README.md",
-    "/pyproject.toml",
+    "src",
+    "tests",
+    "README.md",
+    "pyproject.toml",
 ]
 
 # Development dependencies - all dev tools in one group
