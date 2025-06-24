@@ -20,5 +20,5 @@ def extract_text_from_pdf(pdf_url: str) -> str:
             text = extract_text(temp_pdf.name)
             return text.strip() if text else "Error: No text extracted from PDF."
 
-    except Exception as e:
+    except (IOError, PDFSyntaxError) as e:
         return f"Error extracting PDF text: {e}"
