@@ -30,10 +30,13 @@ keywords = ["mcp", "scientific-literature", "pubmed", "doi", "pmid"]
 
 # Main dependencies
 dependencies = [
-    "aurelian>=0.4.2",
     "fastmcp>=2.8.1",
     "habanero>=2.3.0",
     "pdfminer-six>=20250506",
+    "requests>=2.25.0",
+    "beautifulsoup4>=4.9.0",
+    "pydantic>=2.0.0",
+    "lxml>=4.6.0",
 ]
 
 [project.urls]

@@ -1,9 +1,9 @@
 from typing import Any
 
-import aurelian.utils.pubmed_utils as aupu
+import artl_mcp.utils.pubmed_utils as aupu
 import habanero
-from aurelian.utils.doi_fetcher import DOIFetcher
-from aurelian.utils.pdf_fetcher import extract_text_from_pdf
+from artl_mcp.utils.doi_fetcher import DOIFetcher
+from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
 
 
 def get_doi_metadata(doi: str) -> dict[str, Any] | None:

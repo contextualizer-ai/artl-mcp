@@ -1,9 +1,9 @@
 import os
 
-import aurelian.utils.pubmed_utils as aupu
+import artl_mcp.utils.pubmed_utils as aupu
 import pytest
-from aurelian.utils.doi_fetcher import DOIFetcher
-from aurelian.utils.pdf_fetcher import extract_text_from_pdf
+from artl_mcp.utils.doi_fetcher import DOIFetcher
+from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
 
 # todo this recapitulates a lot of the tests in https://github.com/monarch-initiative/aurelian/blob/main/src/aurelian/utils/doi_fetcher.py
 #   and you could argue that we shouldn't be hitting the APIs in tests
