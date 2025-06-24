@@ -88,7 +88,9 @@ def test_extract_text_from_pdf():
     assert "biosphere" in pdf_text
 
 
-@pytest.mark.skipif(os.environ.get("CI") == "true", reason="Skip flaky network test in CI")
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true", reason="Skip flaky network test in CI"
+)
 def test_uapu():
     doi_url = "https://doi.org/10.7717/peerj.16290"
     doi_portion = "10.7717/peerj.16290"

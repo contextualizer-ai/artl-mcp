@@ -1,7 +1,7 @@
-.PHONY: test clean install dev format lint all
+.PHONY: test test-coverage clean install dev format lint all server doi-test-query build upload-test upload
 
 # Default target
-all: clean install dev test format lint build
+all: clean install dev test test-coverage format lint build doi-test-query
 
 # Install the package in development mode
 install:
