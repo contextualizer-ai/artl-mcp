@@ -106,7 +106,7 @@ def get_pmid_from_pmcid(pmcid):
             if item["idtype"] == "pmid":
                 return item["value"]
     except KeyError:
-        return "PMID not found"
+        return None
 
 
 def get_pmcid_text(pmcid: str) -> str:
