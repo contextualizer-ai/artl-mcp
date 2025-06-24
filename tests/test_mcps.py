@@ -1,6 +1,6 @@
 import pytest
 from fastmcp import Client
-from allroadstoliterature.main import create_mcp
+from artl_mcp.main import create_mcp
 
 
 @pytest.mark.asyncio

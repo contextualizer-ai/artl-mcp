@@ -2,8 +2,8 @@ import asyncio
 import click
 from fastmcp import FastMCP
 
-from allroadstoliterature.client import run_client
-from allroadstoliterature.tools import get_doi_metadata
+from artl_mcp.client import run_client
+from artl_mcp.tools import get_doi_metadata
 
 
 def create_mcp():

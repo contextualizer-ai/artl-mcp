@@ -29,9 +29,9 @@ dev = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["allroadstoliterature"]
+packages = ["artl_mcp"]
 
 
 [project.scripts]
-artl = "allroadstoliterature.main:cli"
+artl = "artl_mcp.main:cli"
 
