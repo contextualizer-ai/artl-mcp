@@ -1,5 +1,6 @@
 import pytest
 from fastmcp import Client
+
 from artl_mcp.main import create_mcp
 
 

@@ -1,0 +1,67 @@
+name: Build and Publish to PyPI
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment: release  # Optional: use GitHub environment for additional protection
+    permissions:
+      contents: read
+      id-token: write  # For trusted publishing (recommended)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for proper versioning
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install build twine hatch-vcs
+
+      - name: Build package
+        run: |
+          uv run python -m build
+
+      - name: Check package
+        run: |
+          uv run python -m twine check dist/*
+
+      - name: Publish to PyPI (Trusted Publishing)
+        if: github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # No need for password/token with trusted publishing
+          verify-metadata: true
+          verbose: true
+
+      # Fallback: Publish using API token (if trusted publishing not set up)
+      - name: Publish to PyPI (API Token)
+        if: github.event_name == 'workflow_dispatch'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verify-metadata: true
+          verbose: true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-artifacts
+          path: dist/

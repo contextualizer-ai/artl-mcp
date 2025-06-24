@@ -1,9 +1,10 @@
+from typing import Any
+
 import habanero
-from typing import Dict, Any, Optional
+
 import aurelian.utils.pubmed_utils as aupu
 
-
-def get_doi_metadata(doi: str) -> Optional[Dict[str, Any]]:
+def get_doi_metadata(doi: str) -> dict[str, Any] | None:
     """
     Retrieve metadata for a scientific article using its DOI.
 

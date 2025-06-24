@@ -3,13 +3,13 @@
 # Default target
 all: clean install dev test test-coverage format lint build doi-test-query
 
-# Install the package in development mode
-install:
-	uv pip install -e .
-
-# Install with development dependencies
+# Install everything for development
 dev:
-	uv pip install -e ".[dev]"
+	uv sync --group dev
+
+# Install production only
+install:
+	uv sync
 
 # Run tests
 test:
@@ -30,11 +30,11 @@ clean:
 
 # Run server mode
 server:
-	uv run artl --server
+	uv run artl-mcp --server
 
 # Run DOI query mode
 doi-test-query:
-	uv run artl --doi-query 10.1099/ijsem.0.005153 # without extra --doi argument
+	uv run artl-mcp --doi-query 10.1099/ijsem.0.005153 # without extra --doi argument
 
  # Format code with black
 format:
