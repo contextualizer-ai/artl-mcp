@@ -56,7 +56,7 @@ Then run `source ~/.zshrc` (or restart your terminal).
    git pull origin main
    ```
 
-3. **Run tests to ensure everything works:**`
+3. **Run tests to ensure everything works:**
    ```bash
    make test
    ```
