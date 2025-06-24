@@ -2,6 +2,7 @@ import tempfile
 
 import requests
 from pdfminer.high_level import extract_text
+from pdfminer.pdfparser import PDFSyntaxError
 
 
 def extract_text_from_pdf(pdf_url: str) -> str:
