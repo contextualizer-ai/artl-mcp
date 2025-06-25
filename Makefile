@@ -122,50 +122,6 @@ cli-demo-pdf-url-text:
 cli-demo-clean-text:
 	@echo "Example: artl-cli clean-text --text 'Some messy text...' --email 'your@email.com'"
 
-## Run all CLI demos that don't require email
-#cli-demo-all:
-#	@echo "=== Running all CLI demos (no email required) ==="
-#	@echo "1. DOI Metadata:"
-#	@$(MAKE) cli-demo-doi-metadata
-#	@echo "\n2. PubMed Abstract:"
-#	@$(MAKE) cli-demo-pubmed-abstract
-#	@echo "\n3. DOI to PMID:"
-#	@$(MAKE) cli-demo-doi-to-pmid
-#	@echo "\n4. PMID to DOI:"
-#	@$(MAKE) cli-demo-pmid-to-doi
-#	@echo "\n5. Extract DOI from URL:"
-#	@$(MAKE) cli-demo-extract-doi
-#	@echo "\n=== Email-required tools (examples only) ==="
-#	@$(MAKE) cli-demo-doi-fetcher-metadata
-#	@$(MAKE) cli-demo-unpaywall
-#	@$(MAKE) cli-demo-full-text-doi
-#	@$(MAKE) cli-demo-full-text-info
-#	@$(MAKE) cli-demo-pdf-url-text
-#	@$(MAKE) cli-demo-clean-text
-
 # List all available CLI commands
 cli-list:
-	@echo "Available CLI commands (use: artl-cli <command> [options]):"
-	@echo "Basic tools (no email required):"
-	@echo "  get-doi-metadata"
-	@echo "  get-abstract-from-pubmed-id"
-	@echo "  doi-to-pmid"
-	@echo "  pmid-to-doi"
-	@echo "  get-pmid-from-pmcid"
-	@echo "  get-pmcid-text"
-	@echo "  get-doi-text"
-	@echo "  get-pmid-text"
-	@echo "  get-full-text-from-bioc"
-	@echo "  extract-pdf-text"
-	@echo "  extract-doi-from-url"
-	@echo ""
-	@echo "Advanced tools (email required):"
-	@echo "  get-doi-fetcher-metadata"
-	@echo "  get-unpaywall-info"
-	@echo "  get-full-text-from-doi"
-	@echo "  get-full-text-info"
-	@echo "  get-text-from-pdf-url"
-	@echo "  clean-text"
-	@echo ""
-	@echo "Use 'artl-cli --help' to see all commands"
-	@echo "Use 'artl-cli <command> --help' for command-specific help"
+	artl-cli --help
