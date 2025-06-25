@@ -47,25 +47,7 @@ Documentation = "https://github.com/contextualizer-ai/artl-mcp#readme"
 
 [project.scripts]
 artl-mcp = "artl_mcp.main:cli"
-
-# Individual CLI tools for each function
-artl-get-doi-metadata = "artl_mcp.cli:cli_get_doi_metadata"
-artl-get-abstract-from-pubmed-id = "artl_mcp.cli:cli_get_abstract_from_pubmed_id"
-artl-get-doi-fetcher-metadata = "artl_mcp.cli:cli_get_doi_fetcher_metadata"
-artl-get-unpaywall-info = "artl_mcp.cli:cli_get_unpaywall_info"
-artl-get-full-text-from-doi = "artl_mcp.cli:cli_get_full_text_from_doi"
-artl-get-full-text-info = "artl_mcp.cli:cli_get_full_text_info"
-artl-get-text-from-pdf-url = "artl_mcp.cli:cli_get_text_from_pdf_url"
-artl-extract-pdf-text = "artl_mcp.cli:cli_extract_pdf_text"
-artl-clean-text = "artl_mcp.cli:cli_clean_text"
-artl-extract-doi-from-url = "artl_mcp.cli:cli_extract_doi_from_url"
-artl-doi-to-pmid = "artl_mcp.cli:cli_doi_to_pmid"
-artl-pmid-to-doi = "artl_mcp.cli:cli_pmid_to_doi"
-artl-get-doi-text = "artl_mcp.cli:cli_get_doi_text"
-artl-get-pmid-from-pmcid = "artl_mcp.cli:cli_get_pmid_from_pmcid"
-artl-get-pmcid-text = "artl_mcp.cli:cli_get_pmcid_text"
-artl-get-pmid-text = "artl_mcp.cli:cli_get_pmid_text"
-artl-get-full-text-from-bioc = "artl_mcp.cli:cli_get_full_text_from_bioc"
+artl-cli = "artl_mcp.cli:cli"
 
 [tool.hatch.version]
 source = "vcs"

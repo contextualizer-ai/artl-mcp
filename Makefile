@@ -63,64 +63,64 @@ upload:
 # Complete release workflow
 release: clean test-coverage build upload
 
-# CLI Examples - Demonstrate all available CLI tools
+# CLI Examples - Demonstrate all available CLI tools using grouped commands
 # Basic metadata tools
 cli-demo-doi-metadata:
-	artl-get-doi-metadata --doi "10.1099/ijsem.0.005153"
+	artl-cli get-doi-metadata --doi "10.1099/ijsem.0.005153"
 
 cli-demo-pubmed-abstract:
-	artl-get-abstract-from-pubmed-id --pmid "35545607"
+	artl-cli get-abstract-from-pubmed-id --pmid "35545607"
 
 # DOI/PMID conversion tools
 cli-demo-doi-to-pmid:
-	artl-doi-to-pmid --doi "10.1099/ijsem.0.005153"
+	artl-cli doi-to-pmid --doi "10.1099/ijsem.0.005153"
 
 cli-demo-pmid-to-doi:
-	artl-pmid-to-doi --pmid "35545607"
+	artl-cli pmid-to-doi --pmid "35545607"
 
 # PMC ID tools
 cli-demo-pmcid-to-pmid:
-	artl-get-pmid-from-pmcid --pmcid "PMC9087108"
+	artl-cli get-pmid-from-pmcid --pmcid "PMC9087108"
 
 #cli-demo-pmcid-text:
 #	# Warning: Error fetching Unpaywall data: 422 Client Error: UNPROCESSABLE ENTITY for url: https://api.unpaywall.org/v2/10.21873/invivo.12834?email=pubmed_utils@example.com
-#	artl-get-pmcid-text --pmcid "PMC9087108"
+#	artl-cli get-pmcid-text --pmcid "PMC9087108"
 
 # Text extraction tools (no email required)
 cli-demo-doi-text:
-	artl-get-doi-text --doi "10.1099/ijsem.0.005153"
+	artl-cli get-doi-text --doi "10.1099/ijsem.0.005153"
 
 cli-demo-pmid-text:
-	artl-get-pmid-text --pmid "35545607"
+	artl-cli get-pmid-text --pmid "35545607"
 
 cli-demo-bioc-text:
-	artl-get-full-text-from-bioc --pmid "35545607"
+	artl-cli get-full-text-from-bioc --pmid "35545607"
 
 #cli-demo-pdf-extract:
-#	artl-extract-pdf-text --pdf-url "https://www.example.com/sample.pdf"
+#	artl-cli extract-pdf-text --pdf-url "https://www.example.com/sample.pdf"
 
 # URL utilities
 cli-demo-extract-doi:
-	artl-extract-doi-from-url --doi-url "https://doi.org/10.1099/ijsem.0.005153"
+	artl-cli extract-doi-from-url --doi-url "https://doi.org/10.1099/ijsem.0.005153"
 
 # Tools requiring email (use placeholder - user must provide real email)
 cli-demo-doi-fetcher-metadata:
-	@echo "Example: artl-get-doi-fetcher-metadata --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
+	@echo "Example: artl-cli get-doi-fetcher-metadata --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
 
 cli-demo-unpaywall:
-	@echo "Example: artl-get-unpaywall-info --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
+	@echo "Example: artl-cli get-unpaywall-info --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
 
 cli-demo-full-text-doi:
-	@echo "Example: artl-get-full-text-from-doi --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
+	@echo "Example: artl-cli get-full-text-from-doi --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
 
 cli-demo-full-text-info:
-	@echo "Example: artl-get-full-text-info --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
+	@echo "Example: artl-cli get-full-text-info --doi '10.1099/ijsem.0.005153' --email 'your@email.com'"
 
 cli-demo-pdf-url-text:
-	@echo "Example: artl-get-text-from-pdf-url --pdf-url 'https://example.com/paper.pdf' --email 'your@email.com'"
+	@echo "Example: artl-cli get-text-from-pdf-url --pdf-url 'https://example.com/paper.pdf' --email 'your@email.com'"
 
 cli-demo-clean-text:
-	@echo "Example: artl-clean-text --text 'Some messy text...' --email 'your@email.com'"
+	@echo "Example: artl-cli clean-text --text 'Some messy text...' --email 'your@email.com'"
 
 ## Run all CLI demos that don't require email
 #cli-demo-all:
@@ -145,24 +145,27 @@ cli-demo-clean-text:
 
 # List all available CLI commands
 cli-list:
-	@echo "Available CLI commands:"
+	@echo "Available CLI commands (use: artl-cli <command> [options]):"
 	@echo "Basic tools (no email required):"
-	@echo "  artl-get-doi-metadata"
-	@echo "  artl-get-abstract-from-pubmed-id"
-	@echo "  artl-doi-to-pmid"
-	@echo "  artl-pmid-to-doi"
-	@echo "  artl-get-pmid-from-pmcid"
-	@echo "  artl-get-pmcid-text"
-	@echo "  artl-get-doi-text"
-	@echo "  artl-get-pmid-text"
-	@echo "  artl-get-full-text-from-bioc"
-	@echo "  artl-extract-pdf-text"
-	@echo "  artl-extract-doi-from-url"
+	@echo "  get-doi-metadata"
+	@echo "  get-abstract-from-pubmed-id"
+	@echo "  doi-to-pmid"
+	@echo "  pmid-to-doi"
+	@echo "  get-pmid-from-pmcid"
+	@echo "  get-pmcid-text"
+	@echo "  get-doi-text"
+	@echo "  get-pmid-text"
+	@echo "  get-full-text-from-bioc"
+	@echo "  extract-pdf-text"
+	@echo "  extract-doi-from-url"
 	@echo ""
 	@echo "Advanced tools (email required):"
-	@echo "  artl-get-doi-fetcher-metadata"
-	@echo "  artl-get-unpaywall-info"
-	@echo "  artl-get-full-text-from-doi"
-	@echo "  artl-get-full-text-info"
-	@echo "  artl-get-text-from-pdf-url"
-	@echo "  artl-clean-text"
+	@echo "  get-doi-fetcher-metadata"
+	@echo "  get-unpaywall-info"
+	@echo "  get-full-text-from-doi"
+	@echo "  get-full-text-info"
+	@echo "  get-text-from-pdf-url"
+	@echo "  clean-text"
+	@echo ""
+	@echo "Use 'artl-cli --help' to see all commands"
+	@echo "Use 'artl-cli <command> --help' for command-specific help"
