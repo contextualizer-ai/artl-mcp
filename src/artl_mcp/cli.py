@@ -35,6 +35,7 @@ def output_result(result: Any) -> None:
 
 
 @click.group()
+@click.version_option(version=__version__)
 def cli():
     """All Roads to Literature - CLI tools for scientific literature access."""
     pass
