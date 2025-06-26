@@ -42,8 +42,10 @@ def get_doi_metadata(doi: str) -> dict[str, Any] | None:
         print(f"Error retrieving metadata for DOI {doi}: {e}")
         return None
     except Exception as e:
-        print(f"Error retrieving metadata for DOI {doi}: {e}")
-        return None
+        import traceback
+        print(f"Unexpected error retrieving metadata for DOI {doi}: {e}")
+        traceback.print_exc()
+        raise
 
 
 def search_papers_by_keyword(
