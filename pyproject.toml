@@ -31,7 +31,6 @@ keywords = ["mcp", "scientific-literature", "pubmed", "doi", "pmid"]
 # Main dependencies
 dependencies = [
     "fastmcp>=2.8.1",
-    "habanero>=2.3.0",
     "pdfminer-six>=20250506",
     "requests>=2.25.0",
     "beautifulsoup4>=4.9.0",
