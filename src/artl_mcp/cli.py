@@ -55,7 +55,10 @@ def get_doi_metadata_cmd(doi: str) -> None:
 def get_abstract_from_pubmed_id_cmd(pmid: str) -> None:
     """Get abstract text from a PubMed ID."""
     result = get_abstract_from_pubmed_id(pmid)
-    output_result(result)
+    if result:
+        click.echo(result)
+    else:
+        click.echo("No abstract found", err=True)
 
 
 @cli.command("get-doi-fetcher-metadata")

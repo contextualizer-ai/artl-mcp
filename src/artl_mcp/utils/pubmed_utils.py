@@ -248,4 +248,12 @@ def get_abstract_from_pubmed(pmid: str) -> str:
         else "No abstract available"
     )
 
-    return f"{title}\n\n{abstract}"
+    # Normalize whitespace - replace special Unicode whitespace with regular spaces
+    # But preserve newlines for paragraph structure
+    title = re.sub(r'[^\S\n]', ' ', title)  # Replace non-newline whitespace
+    title = re.sub(r' +', ' ', title).strip()  # Collapse multiple spaces
+    
+    abstract = re.sub(r'[^\S\n]', ' ', abstract)  # Replace non-newline whitespace  
+    abstract = re.sub(r' +', ' ', abstract).strip()  # Collapse multiple spaces
+    
+    return f"{title}\n\n{abstract}\n\nPMID:{pmid}"
