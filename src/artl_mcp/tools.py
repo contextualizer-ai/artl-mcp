@@ -43,6 +43,7 @@ def get_doi_metadata(doi: str) -> dict[str, Any] | None:
         return None
     except Exception as e:
         import traceback
+
         print(f"Unexpected error retrieving metadata for DOI {doi}: {e}")
         traceback.print_exc()
         raise
