@@ -85,7 +85,7 @@ def search_papers_by_keyword(
                 if key == "type":
                     params["filter"] = f"type:{value}"
                 elif key in ["from-pub-date", "until-pub-date"]:
-                    filter_key = "filter" if "filter" not in params else "filter"
+                    # No need to assign filter_key; directly manipulate params["filter"]
                     existing_filter = params.get("filter", "")
                     new_filter = f"{key}:{value}"
                     params["filter"] = (
