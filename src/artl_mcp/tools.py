@@ -1,6 +1,6 @@
 from typing import Any
 
-import habanero
+import requests
 
 import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.doi_fetcher import DOIFetcher
@@ -16,14 +16,185 @@ def get_doi_metadata(doi: str) -> dict[str, Any] | None:
 
     Returns:
         A dictionary containing the article metadata if successful, None otherwise.
+        Returns the same format as habanero.Crossref().works(ids=doi)
     """
-    cr = habanero.Crossref()
     try:
-        result = cr.works(ids=doi)
-        return result
-    except Exception as e:
+        # Clean DOI (remove any URL prefixes)
+        clean_doi = doi.replace("https://doi.org/", "").replace(
+            "http://dx.doi.org/", ""
+        )
+
+        url = f"https://api.crossref.org/works/{clean_doi}"
+        headers = {
+            "Accept": "application/json",
+            "User-Agent": "artl-mcp/1.0 (mailto:your-email@domain.com)",
+        }  # Replace with your email
+
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+
+        data = response.json()
+
+        # Return in the same format as habanero - just the API response
+        return data
+
+    except requests.exceptions.RequestException as e:
         print(f"Error retrieving metadata for DOI {doi}: {e}")
         return None
+    except Exception as e:
+        import traceback
+        print(f"Unexpected error retrieving metadata for DOI {doi}: {e}")
+        traceback.print_exc()
+        raise
+
+
+def search_papers_by_keyword(
+    query: str,
+    max_results: int = 20,
+    sort: str = "relevance",
+    filter_params: dict[str, str] | None = None,
+) -> dict[str, Any] | None:
+    """
+    Search for scientific papers using keywords.
+
+    Args:
+        query: Search terms/keywords
+        max_results: Maximum number of results to return (default 20, max 1000)
+        sort: Sort order - "relevance", "published", "created", "updated",
+              "is-referenced-by-count" (default "relevance")
+        filter_params: Additional filters as key-value pairs, e.g.:
+                      {"type": "journal-article", "from-pub-date": "2020"}
+
+    Returns:
+        A dictionary containing search results if successful, None otherwise.
+        Format matches habanero.Crossref().works(query=query)
+    """
+    try:
+        url = "https://api.crossref.org/works"
+
+        # Build query parameters
+        params = {
+            "query": query,
+            "rows": str(min(max_results, 1000)),  # API max is 1000
+            "sort": sort,
+        }
+
+        # Add filters if provided
+        if filter_params:
+            for key, value in filter_params.items():
+                if key == "type":
+                    params["filter"] = f"type:{value}"
+                elif key in ["from-pub-date", "until-pub-date"]:
+                    # No need to assign filter_key; directly manipulate params["filter"]
+                    existing_filter = params.get("filter", "")
+                    new_filter = f"{key}:{value}"
+                    params["filter"] = (
+                        f"{existing_filter},{new_filter}"
+                        if existing_filter
+                        else new_filter
+                    )
+                else:
+                    # Handle other filters
+                    filter_key = "filter"
+                    existing_filter = params.get(filter_key, "")
+                    new_filter = f"{key}:{value}"
+                    params[filter_key] = (
+                        f"{existing_filter},{new_filter}"
+                        if existing_filter
+                        else new_filter
+                    )
+
+        headers = {
+            "Accept": "application/json",
+            "User-Agent": "artl-mcp/1.0 (mailto:your-email@domain.com)",
+        }
+
+        # Replace with your email
+
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+
+        data = response.json()
+
+        # Return in the same format as habanero
+        return data
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error searching for papers with query '{query}': {e}")
+        return None
+    except Exception as e:
+        print(f"Error searching for papers with query '{query}': {e}")
+        return None
+
+
+# Example usage and helper function
+def search_recent_papers(
+    query: str,
+    years_back: int = 5,
+    max_results: int = 20,
+    paper_type: str = "journal-article",
+) -> dict[str, Any] | None:
+    """
+    Convenience function to search for recent papers.
+
+    Args:
+        query: Search terms
+        years_back: How many years back to search (default 5)
+        max_results: Max results to return
+        paper_type: Type of publication (default "journal-article")
+
+    Returns:
+        Search results or None
+    """
+    from datetime import datetime, timedelta
+
+    # Calculate date range
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=years_back * 365)
+
+    filters = {"type": paper_type, "from-pub-date": start_date.strftime("%Y-%m-%d")}
+
+    return search_papers_by_keyword(
+        query=query, max_results=max_results, sort="published", filter_params=filters
+    )
+
+
+# Example of how to extract common fields from results
+def extract_paper_info(work_item: dict) -> dict[str, Any]:
+    """
+    Helper function to extract common fields from a CrossRef work item.
+
+    Args:
+        work_item: Single work item from CrossRef API response
+
+    Returns:
+        Dictionary with commonly used fields
+    """
+    try:
+        return {
+            "title": work_item.get("title", [""])[0] if work_item.get("title") else "",
+            "authors": [
+                f"{author.get('given', '')} {author.get('family', '')}"
+                for author in work_item.get("author", [])
+            ],
+            "journal": (
+                work_item.get("container-title", [""])[0]
+                if work_item.get("container-title")
+                else ""
+            ),
+            "published_date": work_item.get(
+                "published-print", work_item.get("published-online", {})
+            ),
+            "doi": work_item.get("DOI", ""),
+            "url": work_item.get("URL", ""),
+            "abstract": work_item.get("abstract", ""),
+            "citation_count": work_item.get("is-referenced-by-count", 0),
+            "type": work_item.get("type", ""),
+            "publisher": work_item.get("publisher", ""),
+        }
+    except Exception as e:
+        print(f"Error extracting paper info: {e}")
+        return {}
 
 
 def get_abstract_from_pubmed_id(pmid: str) -> str:
