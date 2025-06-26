@@ -176,5 +176,5 @@ def test_get_doi_metadata_real_api():
 
     # Basic checks for real API response
     if result:  # API might be down or DOI might not exist
-        assert "message" in result or "DOI" in result
+        assert result.get("message", {}).get("DOI") is not None
     # Don't fail if API is unavailable
