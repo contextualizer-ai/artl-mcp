@@ -24,6 +24,8 @@ from artl_mcp.tools import (
     get_text_from_pdf_url,
     get_unpaywall_info,
     pmid_to_doi,
+    search_papers_by_keyword,
+    search_recent_papers,
 )
 
 
@@ -187,4 +189,69 @@ def get_pmid_text_cmd(pmid: str) -> None:
 def get_full_text_from_bioc_cmd(pmid: str) -> None:
     """Get full text from BioC format for a PubMed ID."""
     result = get_full_text_from_bioc(pmid)
+    output_result(result)
+
+
+@cli.command("search-papers-by-keyword")
+@click.option("--query", required=True, help="Search terms/keywords")
+@click.option(
+    "--max-results", default=20, help="Maximum number of results (default 20, max 1000)"
+)
+@click.option(
+    "--sort",
+    default="relevance",
+    help="Sort order: relevance, published, created, updated, is-referenced-by-count",
+)
+@click.option(
+    "--filter-type", help="Filter by publication type (e.g., journal-article)"
+)
+@click.option("--from-pub-date", help="Filter from publication date (YYYY-MM-DD)")
+@click.option("--until-pub-date", help="Filter until publication date (YYYY-MM-DD)")
+def search_papers_by_keyword_cmd(
+    query: str,
+    max_results: int,
+    sort: str,
+    filter_type: str,
+    from_pub_date: str,
+    until_pub_date: str,
+) -> None:
+    """Search for scientific papers using keywords."""
+    filter_params = {}
+    if filter_type:
+        filter_params["type"] = filter_type
+    if from_pub_date:
+        filter_params["from-pub-date"] = from_pub_date
+    if until_pub_date:
+        filter_params["until-pub-date"] = until_pub_date
+
+    result = search_papers_by_keyword(
+        query=query,
+        max_results=max_results,
+        sort=sort,
+        filter_params=filter_params if filter_params else None,
+    )
+    output_result(result)
+
+
+@cli.command("search-recent-papers")
+@click.option("--query", required=True, help="Search terms")
+@click.option(
+    "--years-back", default=5, help="How many years back to search (default 5)"
+)
+@click.option("--max-results", default=20, help="Maximum number of results")
+@click.option(
+    "--paper-type",
+    default="journal-article",
+    help="Type of publication (default journal-article)",
+)
+def search_recent_papers_cmd(
+    query: str, years_back: int, max_results: int, paper_type: str
+) -> None:
+    """Search for recent papers (convenience function)."""
+    result = search_recent_papers(
+        query=query,
+        years_back=years_back,
+        max_results=max_results,
+        paper_type=paper_type,
+    )
     output_result(result)

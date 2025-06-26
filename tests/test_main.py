@@ -3,7 +3,11 @@ from unittest.mock import Mock, patch
 import pytest
 import requests
 
-from artl_mcp.tools import get_doi_metadata
+from artl_mcp.tools import (
+    get_doi_metadata,
+    search_papers_by_keyword,
+    search_recent_papers,
+)
 
 
 def test_get_doi_metadata_success_with_mock():
@@ -123,7 +127,7 @@ def test_get_doi_metadata_timeout():
         assert result is None
 
 
-# Tests for the new search functionality (if you want to add them)
+# Tests for the new search functionality
 def test_search_papers_by_keyword_success():
     """Test successful paper search with mocked requests."""
     mock_response_data = {
@@ -150,21 +154,100 @@ def test_search_papers_by_keyword_success():
     mock_response.json.return_value = mock_response_data
     mock_response.raise_for_status.return_value = None
 
-    # You'll need to import the search function when you add it
-    # from artl_mcp.tools import search_papers_by_keyword
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        result = search_papers_by_keyword("machine learning", max_results=10)
 
-    # This test is a placeholder for when you add the search function
-    # with patch("requests.get", return_value=mock_response) as mock_get:
-    #     result = search_papers_by_keyword("machine learning", max_results=10)
-    #     mock_get.assert_called_once()
-    #     call_args = mock_get.call_args
-    #     assert "https://api.crossref.org/works" in call_args[0][0]
-    #     params = call_args[1]["params"]
-    #     assert params["query"] == "machine learning"
-    #     assert params["rows"] == 10
-    #     assert result == mock_response_data
-    #     assert len(result["message"]["items"]) == 2
-    pass
+        # Verify requests.get was called correctly
+        mock_get.assert_called_once()
+        call_args = mock_get.call_args
+
+        # Check URL
+        assert "https://api.crossref.org/works" in call_args[0][0]
+
+        # Check params
+        params = call_args[1]["params"]
+        assert params["query"] == "machine learning"
+        assert params["rows"] == "10"  # Should be string after our fix
+        assert params["sort"] == "relevance"
+
+        # Check headers
+        headers = call_args[1]["headers"]
+        assert headers["Accept"] == "application/json"
+        assert "artl-mcp" in headers["User-Agent"]
+
+        # Verify result
+        assert result == mock_response_data
+        assert len(result["message"]["items"]) == 2
+
+
+def test_search_papers_by_keyword_with_filters():
+    """Test paper search with filters."""
+    mock_response_data = {
+        "status": "ok",
+        "message-type": "work-list",
+        "message": {"total-results": 1, "items": []},
+    }
+
+    mock_response = Mock()
+    mock_response.json.return_value = mock_response_data
+    mock_response.raise_for_status.return_value = None
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        filter_params = {"type": "journal-article", "from-pub-date": "2020-01-01"}
+        result = search_papers_by_keyword(
+            "AI", max_results=5, sort="published", filter_params=filter_params
+        )
+
+        call_args = mock_get.call_args
+        params = call_args[1]["params"]
+
+        assert params["query"] == "AI"
+        assert params["rows"] == "5"
+        assert params["sort"] == "published"
+        assert "filter" in params
+        assert "type:journal-article" in params["filter"]
+        assert "from-pub-date:2020-01-01" in params["filter"]
+        assert result == mock_response_data
+
+
+def test_search_papers_by_keyword_exception():
+    """Test paper search with request exception."""
+    with patch("requests.get") as mock_get:
+        mock_get.side_effect = requests.exceptions.RequestException("Network error")
+
+        result = search_papers_by_keyword("test query")
+
+        # Should return None on exception
+        assert result is None
+        mock_get.assert_called_once()
+
+
+def test_search_recent_papers_success():
+    """Test recent papers search."""
+    mock_response_data = {
+        "status": "ok",
+        "message-type": "work-list",
+        "message": {"total-results": 1, "items": []},
+    }
+
+    mock_response = Mock()
+    mock_response.json.return_value = mock_response_data
+    mock_response.raise_for_status.return_value = None
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        result = search_recent_papers("neural networks", years_back=5, max_results=15)
+
+        call_args = mock_get.call_args
+        params = call_args[1]["params"]
+
+        assert params["query"] == "neural networks"
+        assert params["rows"] == "15"
+        assert params["sort"] == "published"
+        # Check that date filter was applied (some date will be there)
+        assert "filter" in params
+        assert "type:journal-article" in params["filter"]
+        assert "from-pub-date:" in params["filter"]
+        assert result == mock_response_data
 
 
 # Integration test (optional - runs against real API)

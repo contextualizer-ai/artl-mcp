@@ -25,6 +25,9 @@ from artl_mcp.tools import (
     get_text_from_pdf_url,
     get_unpaywall_info,
     pmid_to_doi,
+    # Search tools
+    search_papers_by_keyword,
+    search_recent_papers,
 )
 
 
@@ -57,6 +60,10 @@ def create_mcp():
     mcp.tool(get_pmcid_text)
     mcp.tool(get_pmid_text)
     mcp.tool(get_full_text_from_bioc)
+
+    # Search tools
+    mcp.tool(search_papers_by_keyword)
+    mcp.tool(search_recent_papers)
 
     return mcp
 

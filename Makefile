@@ -1,7 +1,7 @@
-.PHONY: test-coverage clean install dev format lint all server doi-test-query upload-test upload release deptry mypy
+.PHONY: test-coverage clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent
 
 # Default target
-all: clean install dev test-coverage format lint mypy deptry build doi-test-query
+all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query
 
 # Install everything for development
 dev:
@@ -31,6 +31,10 @@ server:
 # Run DOI query mode
 doi-test-query:
 	uv run artl-mcp --doi-query 10.1099/ijsem.0.005153 # without extra --doi argument
+
+# Test search functionality with sample query
+search-test-query:
+	uv run artl-cli search-papers-by-keyword --query "machine learning" --max-results 3
 
  # Format code with black
 format:
@@ -102,6 +106,13 @@ cli-demo-bioc-text:
 # URL utilities
 cli-demo-extract-doi:
 	artl-cli extract-doi-from-url --doi-url "https://doi.org/10.1099/ijsem.0.005153"
+
+# Search tools
+cli-demo-search-papers:
+	artl-cli search-papers-by-keyword --query "machine learning" --max-results 5 --filter-type "journal-article"
+
+cli-demo-search-recent:
+	artl-cli search-recent-papers --query "artificial intelligence" --years-back 3 --max-results 3
 
 # Tools requiring email (use placeholder - user must provide real email)
 cli-demo-doi-fetcher-metadata:

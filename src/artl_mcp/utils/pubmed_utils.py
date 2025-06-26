@@ -222,7 +222,7 @@ def get_abstract_from_pubmed(pmid: str) -> str:
     - Article title
     - Blank line
     - Abstract text (as a single line, no paragraph breaks)
-    - Blank line  
+    - Blank line
     - "PMID:" followed by the PubMed ID
 
     Example:
@@ -235,7 +235,7 @@ def get_abstract_from_pubmed(pmid: str) -> str:
         pmid: PubMed ID of the article.
 
     Returns:
-        Formatted text containing title, abstract, and PMID. Returns empty 
+        Formatted text containing title, abstract, and PMID. Returns empty
         string if the article cannot be retrieved.
 
     """
@@ -260,10 +260,10 @@ def get_abstract_from_pubmed(pmid: str) -> str:
 
     # Normalize whitespace - replace special Unicode whitespace with regular spaces
     # But preserve newlines for paragraph structure
-    title = re.sub(r'[^\S\n]', ' ', title)  # Replace non-newline whitespace
-    title = re.sub(r' +', ' ', title).strip()  # Collapse multiple spaces
-    
-    abstract = re.sub(r'[^\S\n]', ' ', abstract)  # Replace non-newline whitespace  
-    abstract = re.sub(r' +', ' ', abstract).strip()  # Collapse multiple spaces
-    
+    title = re.sub(r"[^\S\n]", " ", title)  # Replace non-newline whitespace
+    title = re.sub(r" +", " ", title).strip()  # Collapse multiple spaces
+
+    abstract = re.sub(r"[^\S\n]", " ", abstract)  # Replace non-newline whitespace
+    abstract = re.sub(r" +", " ", abstract).strip()  # Collapse multiple spaces
+
     return f"{title}\n\n{abstract}\n\nPMID:{pmid}"
