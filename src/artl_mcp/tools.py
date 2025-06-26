@@ -198,13 +198,16 @@ def extract_paper_info(work_item: dict) -> dict[str, Any]:
 
 
 def get_abstract_from_pubmed_id(pmid: str) -> str:
-    """Get abstract text from a PubMed ID.
+    """Get formatted abstract text from a PubMed ID.
+
+    Returns title, abstract text, and PMID in a formatted structure with
+    normalized whitespace. This is a wrapper around get_abstract_from_pubmed.
 
     Args:
         pmid: The PubMed ID of the article.
 
     Returns:
-        The abstract text of the article.
+        Formatted text containing title, abstract, and PMID.
     """
     abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid)
     return abstract_from_pubmed

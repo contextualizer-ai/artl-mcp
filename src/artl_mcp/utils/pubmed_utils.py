@@ -217,16 +217,26 @@ def get_abstract_from_pubmed(pmid: str) -> str:
     """Fetch the title and abstract of an article from PubMed using Entrez
     E-utilities `efetch`.
 
+    The output includes normalized whitespace (Unicode whitespace characters
+    are replaced with regular spaces) and follows this format:
+    - Article title
+    - Blank line
+    - Abstract text (as a single line, no paragraph breaks)
+    - Blank line  
+    - "PMID:" followed by the PubMed ID
+
     Example:
         >>> pmid = "31653696"
         >>> abstract = get_abstract_from_pubmed(pmid)
         >>> assert "The apparent deglycase activity of DJ-1" in abstract
+        >>> assert abstract.endswith(f"PMID:{pmid}")
 
     Args:
         pmid: PubMed ID of the article.
 
     Returns:
-        The title and abstract text if available, otherwise an empty string.
+        Formatted text containing title, abstract, and PMID. Returns empty 
+        string if the article cannot be retrieved.
 
     """
     response = requests.get(EFETCH_URL.format(pmid=pmid))
@@ -248,4 +258,12 @@ def get_abstract_from_pubmed(pmid: str) -> str:
         else "No abstract available"
     )
 
-    return f"{title}\n\n{abstract}"
+    # Normalize whitespace - replace special Unicode whitespace with regular spaces
+    # But preserve newlines for paragraph structure
+    title = re.sub(r'[^\S\n]', ' ', title)  # Replace non-newline whitespace
+    title = re.sub(r' +', ' ', title).strip()  # Collapse multiple spaces
+    
+    abstract = re.sub(r'[^\S\n]', ' ', abstract)  # Replace non-newline whitespace  
+    abstract = re.sub(r' +', ' ', abstract).strip()  # Collapse multiple spaces
+    
+    return f"{title}\n\n{abstract}\n\nPMID:{pmid}"
