@@ -521,7 +521,8 @@ def search_pubmed_for_pmids(query: str, max_results: int = 20) -> dict[str, Any]
         max_results: Maximum number of PMIDs to return (default: 20).
 
     Returns:
-        A dictionary containing PMIDs list, total count, and query info if successful, None otherwise.
+        A dictionary containing PMIDs list, total count, and query info if
+        successful, None otherwise.
     """
     esearch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
@@ -529,26 +530,26 @@ def search_pubmed_for_pmids(query: str, max_results: int = 20) -> dict[str, Any]
         "term": query,
         "retmode": "json",
         "retmax": max_results,
-        "sort": "relevance"
+        "sort": "relevance",
     }
-    
+
     try:
         response = requests.get(esearch_url, params=params)
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         if "esearchresult" in data:
             esearch_result = data["esearchresult"]
             pmids = esearch_result.get("idlist", [])
             total_count = int(esearch_result.get("count", 0))
-            
+
             return {
                 "pmids": pmids,
                 "total_count": total_count,
                 "returned_count": len(pmids),
                 "query": query,
-                "max_results": max_results
+                "max_results": max_results,
             }
         else:
             print(f"No results found for query: {query}")
@@ -557,9 +558,9 @@ def search_pubmed_for_pmids(query: str, max_results: int = 20) -> dict[str, Any]
                 "total_count": 0,
                 "returned_count": 0,
                 "query": query,
-                "max_results": max_results
+                "max_results": max_results,
             }
-            
+
     except Exception as e:
         print(f"Error searching PubMed for query '{query}': {e}")
         return None

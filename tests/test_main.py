@@ -6,8 +6,8 @@ import requests
 from artl_mcp.tools import (
     get_doi_metadata,
     search_papers_by_keyword,
-    search_recent_papers,
     search_pubmed_for_pmids,
+    search_recent_papers,
 )
 
 
@@ -79,7 +79,7 @@ def test_search_pubmed_for_pmids_success_with_mock():
         mock_response.json.return_value = {
             "esearchresult": {
                 "idlist": ["12345678", "87654321", "11111111"],
-                "count": "744"
+                "count": "744",
             }
         }
         mock_get.return_value = mock_response
@@ -91,10 +91,10 @@ def test_search_pubmed_for_pmids_success_with_mock():
             "total_count": 744,
             "returned_count": 3,
             "query": "alzheimer disease",
-            "max_results": 20
+            "max_results": 20,
         }
         assert result == expected
-        
+
         # Verify the API was called
         mock_get.assert_called_once()
 
@@ -105,10 +105,7 @@ def test_search_pubmed_for_pmids_no_results_with_mock():
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
         mock_response.json.return_value = {
-            "esearchresult": {
-                "idlist": [],
-                "count": "0"
-            }
+            "esearchresult": {"idlist": [], "count": "0"}
         }
         mock_get.return_value = mock_response
 
@@ -119,7 +116,7 @@ def test_search_pubmed_for_pmids_no_results_with_mock():
             "total_count": 0,
             "returned_count": 0,
             "query": "nonexistent query",
-            "max_results": 20
+            "max_results": 20,
         }
         assert result == expected
 

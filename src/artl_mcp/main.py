@@ -25,9 +25,9 @@ from artl_mcp.tools import (
     get_text_from_pdf_url,
     get_unpaywall_info,
     pmid_to_doi,
-    search_pubmed_for_pmids,
     # Search tools
     search_papers_by_keyword,
+    search_pubmed_for_pmids,
     search_recent_papers,
 )
 
@@ -78,7 +78,12 @@ mcp = create_mcp()
 @click.option("--server", is_flag=True, help="Start the MCP server.")
 @click.option("--doi-query", type=str, help="Run a direct query (DOI string).")
 @click.option("--pmid-search", type=str, help="Search PubMed for PMIDs using keywords.")
-@click.option("--max-results", type=int, default=20, help="Maximum number of results to return (default: 20).")
+@click.option(
+    "--max-results",
+    type=int,
+    default=20,
+    help="Maximum number of results to return (default: 20).",
+)
 def cli(server, doi_query, pmid_search, max_results):
     """Run All Roads to Literature MCP tool or server."""
     if server:
@@ -91,11 +96,15 @@ def cli(server, doi_query, pmid_search, max_results):
         # Run PubMed search directly
         result = search_pubmed_for_pmids(pmid_search, max_results)
         if result and result["pmids"]:
-            print(f"Found {result['returned_count']} PMIDs out of {result['total_count']} total results for query '{pmid_search}':")
+            print(
+                f"Found {result['returned_count']} PMIDs out of "
+                f"{result['total_count']} total results for query '{pmid_search}':"
+            )
             for pmid in result["pmids"]:
                 print(f"  {pmid}")
             if result["total_count"] > result["returned_count"]:
-                print(f"\nTo get more results, use: --max-results {min(result['total_count'], 100)}")
+                max_possible = min(result["total_count"], 100)
+                print(f"\nTo get more results, use: --max-results {max_possible}")
         elif result:
             print(f"No PMIDs found for query '{pmid_search}'")
         else:
