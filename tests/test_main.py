@@ -6,6 +6,7 @@ import requests
 from artl_mcp.tools import (
     get_doi_metadata,
     search_papers_by_keyword,
+    search_pubmed_for_pmids,
     search_recent_papers,
 )
 
@@ -68,8 +69,66 @@ def test_get_doi_metadata_exception_with_mock():
         # Should return None on exception
         assert result is None
 
-        # Verify requests.get was called
+
+# Test PubMed search function with mocks
+def test_search_pubmed_for_pmids_success_with_mock():
+    with patch("requests.get") as mock_get:
+        # Setup mock response
+        mock_response = Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
+            "esearchresult": {
+                "idlist": ["12345678", "87654321", "11111111"],
+                "count": "744",
+            }
+        }
+        mock_get.return_value = mock_response
+
+        # Call function and assert
+        result = search_pubmed_for_pmids("alzheimer disease")
+        expected = {
+            "pmids": ["12345678", "87654321", "11111111"],
+            "total_count": 744,
+            "returned_count": 3,
+            "query": "alzheimer disease",
+            "max_results": 20,
+        }
+        assert result == expected
+
+        # Verify the API was called
         mock_get.assert_called_once()
+
+
+def test_search_pubmed_for_pmids_no_results_with_mock():
+    with patch("requests.get") as mock_get:
+        # Setup mock response with no results
+        mock_response = Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
+            "esearchresult": {"idlist": [], "count": "0"}
+        }
+        mock_get.return_value = mock_response
+
+        # Call function and assert
+        result = search_pubmed_for_pmids("nonexistent query")
+        expected = {
+            "pmids": [],
+            "total_count": 0,
+            "returned_count": 0,
+            "query": "nonexistent query",
+            "max_results": 20,
+        }
+        assert result == expected
+
+
+def test_search_pubmed_for_pmids_exception_with_mock():
+    with patch("requests.get") as mock_get:
+        # Setup mock to raise exception
+        mock_get.side_effect = Exception("Network error")
+
+        # Call function and assert
+        result = search_pubmed_for_pmids("alzheimer disease")
+        assert result is None
 
 
 def test_get_doi_metadata_http_error():
