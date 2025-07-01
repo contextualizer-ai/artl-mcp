@@ -529,7 +529,7 @@ def search_pubmed_for_pmids(query: str, max_results: int = 20) -> dict[str, Any]
         "db": "pubmed",
         "term": query,
         "retmode": "json",
-        "retmax": max_results,
+        "retmax": str(max_results),
         "sort": "relevance",
     }
 
