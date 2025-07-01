@@ -31,7 +31,6 @@ keywords = ["mcp", "scientific-literature", "pubmed", "doi", "pmid"]
 # Main dependencies
 dependencies = [
     "fastmcp>=2.8.1",
-    "habanero>=2.3.0",
     "pdfminer-six>=20250506",
     "requests>=2.25.0",
     "beautifulsoup4>=4.9.0",
@@ -47,6 +46,7 @@ Documentation = "https://github.com/contextualizer-ai/artl-mcp#readme"
 
 [project.scripts]
 artl-mcp = "artl_mcp.main:cli"
+artl-cli = "artl_mcp.cli:cli"
 
 [tool.hatch.version]
 source = "vcs"
