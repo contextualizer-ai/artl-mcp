@@ -1,5 +1,6 @@
-from fastmcp import Client
 import json
+
+from fastmcp import Client
 
 
 async def run_client(doi: str, mcp):
@@ -9,7 +10,7 @@ async def run_client(doi: str, mcp):
 
         for item in result:
             # If item has text field containing JSON, pretty print that directly
-            if hasattr(item, 'text') and item.text:
+            if hasattr(item, "text") and item.text:
                 try:
                     data = json.loads(item.text)
                     print(json.dumps(data, indent=2))

@@ -1,6 +1,6 @@
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
-from allroadstoliterature.tools import get_doi_metadata, search_pubmed_for_pmids
+from artl_mcp.tools import get_doi_metadata, search_pubmed_for_pmids
 
 
 # Test core function with mocks
