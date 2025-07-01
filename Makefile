@@ -32,9 +32,9 @@ server:
 doi-test-query:
 	uv run artl-mcp --doi-query 10.1099/ijsem.0.005153 # without extra --doi argument
 
-# Test search functionality with sample query
+# Test search functionality with sample query  
 search-test-query:
-	uv run artl-cli search-papers-by-keyword --query "machine learning" --max-results 3
+	uv run artl-mcp --pmid-search "machine learning" --max-results 3
 
  # Format code with black
 format:
