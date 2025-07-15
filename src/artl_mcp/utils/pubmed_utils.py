@@ -127,7 +127,7 @@ def get_pmcid_text(pmcid: str) -> str:
     return get_pmid_text(pmid)
 
 
-def get_pmid_text(pmid: str) -> str:
+def get_pmid_text(pmid: str | int) -> str:
     """Fetch full text from PubMed Central Open Access BioC XML.
     If full text is not available, fallback to fetching the abstract from PubMed.
 
@@ -147,6 +147,7 @@ def get_pmid_text(pmid: str) -> str:
         The full text of the article if available, otherwise the abstract.
 
     """
+    pmid = str(pmid)
     if ":" in pmid:
         pmid = pmid.split(":")[1]
     text = get_full_text_from_bioc(pmid)

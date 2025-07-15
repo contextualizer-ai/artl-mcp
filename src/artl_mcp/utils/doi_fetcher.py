@@ -1,8 +1,8 @@
+import os
 import re
 from typing import Any
 
 import requests
-import os
 from pydantic import BaseModel, Field
 
 
