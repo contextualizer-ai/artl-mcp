@@ -85,13 +85,13 @@ mcp = create_mcp()
 )
 def cli(doi_query, pmid_search, max_results):
     """
-    Run All Roads to Literature MCP server (default) or use CLI tools for direct DOI queries and PMID searches.
-    
+    Run All Roads to Literature MCP server (default) or CLI tools.
+
     CLI Options:
         --doi-query: Run a direct query using a DOI string.
         --pmid-search: Search PubMed for PMIDs using keywords.
         --max-results: Maximum number of results to return (default: 20).
-    
+
     Default Behavior:
         If no options are provided, the MCP server runs over stdio.
     """
