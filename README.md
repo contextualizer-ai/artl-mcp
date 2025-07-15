@@ -40,13 +40,13 @@ An MCP for retrieving scientific literature metadata and content using PMIDs, DO
 
 ### Starting the MCP Server
 
-To start the MCP server:
+To start the MCP server (default behavior):
 
 ```bash
 uv run artl-mcp
 ```
 
-This will start the server in the current terminal. The server provides access to all registered tools through FastMCP's interface.
+This starts the server by default. The server provides access to all registered tools through FastMCP's interface.
 
 ### CLI Usage
 
