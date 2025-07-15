@@ -75,7 +75,6 @@ mcp = create_mcp()
 
 
 @click.command()
-@click.option("--server", is_flag=True, help="Start the MCP server.")
 @click.option("--doi-query", type=str, help="Run a direct query (DOI string).")
 @click.option("--pmid-search", type=str, help="Search PubMed for PMIDs using keywords.")
 @click.option(
@@ -84,12 +83,26 @@ mcp = create_mcp()
     default=20,
     help="Maximum number of results to return (default: 20).",
 )
-def cli(server, doi_query, pmid_search, max_results):
-    """Run All Roads to Literature MCP tool or server."""
-    if server:
-        # Run the server over stdio
-        mcp.run()
-    elif doi_query:
+def cli(doi_query, pmid_search, max_results):
+    """
+    Run All Roads to Literature MCP server (default) or CLI tools.
+
+    CLI Options:
+        --doi-query: Run a direct query using a DOI string.
+        --pmid-search: Search PubMed for PMIDs using keywords.
+        --max-results: Maximum number of results to return (default: 20).
+
+    Default Behavior:
+        If no options are provided, the MCP server runs over stdio.
+    """
+    # Validate mutual exclusion of CLI options
+    if doi_query and pmid_search:
+        raise click.ClickException(
+            "Error: Cannot use both --doi-query and --pmid-search simultaneously. "
+            "Please use only one option at a time."
+        )
+    
+    if doi_query:
         # Run the client in asyncio
         asyncio.run(run_client(doi_query, mcp))
     elif pmid_search:
@@ -110,7 +123,8 @@ def cli(server, doi_query, pmid_search, max_results):
         else:
             print(f"Error searching for query '{pmid_search}'")
     else:
-        click.echo(cli.get_help(click.Context(cli)))
+        # Default behavior: Run the MCP server over stdio
+        mcp.run()
 
 
 if __name__ == "__main__":

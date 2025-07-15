@@ -40,13 +40,25 @@ An MCP for retrieving scientific literature metadata and content using PMIDs, DO
 
 ### Starting the MCP Server
 
-To start the MCP server:
+To start the MCP server (default behavior):
 
 ```bash
-uv run artl --server
+uv run artl-mcp
 ```
 
-This will start the server in the current terminal. The server provides access to all registered tools through FastMCP's interface.
+This starts the server by default. The server provides access to all registered tools through FastMCP's interface.
+
+### CLI Usage
+
+You can also use the tool directly from the command line:
+
+```bash
+# Search for PMIDs by keywords
+uv run artl-mcp --pmid-search "machine learning" --max-results 10
+
+# Query DOI directly
+uv run artl-mcp --doi-query "10.1099/ijsem.0.005153"
+```
 
 ### Running the Tests
 
