@@ -1,4 +1,6 @@
 import asyncio
+import sys
+from importlib import metadata
 
 import click
 from fastmcp import FastMCP
@@ -30,6 +32,11 @@ from artl_mcp.tools import (
     search_pubmed_for_pmids,
     search_recent_papers,
 )
+
+try:
+    __version__ = metadata.version("artl-mcp")
+except metadata.PackageNotFoundError:
+    __version__ = "unknown"
 
 
 def create_mcp():
@@ -101,7 +108,7 @@ def cli(doi_query, pmid_search, max_results):
             "Error: Cannot use both --doi-query and --pmid-search simultaneously. "
             "Please use only one option at a time."
         )
-    
+
     if doi_query:
         # Run the client in asyncio
         asyncio.run(run_client(doi_query, mcp))
@@ -127,5 +134,13 @@ def cli(doi_query, pmid_search, max_results):
         mcp.run()
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point for the application."""
+    if "--version" in sys.argv:
+        print(__version__)
+        sys.exit(0)
     cli()
+
+
+if __name__ == "__main__":
+    main()

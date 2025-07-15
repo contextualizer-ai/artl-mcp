@@ -1,7 +1,7 @@
-.PHONY: test-coverage clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent
+.PHONY: test-coverage clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version
 
 # Default target
-all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query
+all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query test-version
 
 # Install everything for development
 dev:
@@ -136,3 +136,8 @@ cli-demo-clean-text:
 # List all available CLI commands
 cli-list:
 	artl-cli --help
+
+# Test version flag
+test-version:
+	@echo "🔢 Testing version flag..."
+	uv run artl-mcp --version

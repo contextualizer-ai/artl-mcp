@@ -45,7 +45,7 @@ Issues = "https://github.com/contextualizer-ai/artl-mcp/issues"
 Documentation = "https://github.com/contextualizer-ai/artl-mcp#readme"
 
 [project.scripts]
-artl-mcp = "artl_mcp.main:cli"
+artl-mcp = "artl_mcp.__main__:main"
 artl-cli = "artl_mcp.cli:cli"
 
 [tool.hatch.version]
