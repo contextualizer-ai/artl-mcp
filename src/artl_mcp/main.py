@@ -97,9 +97,10 @@ def cli(doi_query, pmid_search, max_results):
     """
     # Validate mutual exclusion of CLI options
     if doi_query and pmid_search:
-        click.echo("Error: Cannot use both --doi-query and --pmid-search simultaneously.")
-        click.echo("Please use only one option at a time.")
-        return
+        raise click.ClickException(
+            "Error: Cannot use both --doi-query and --pmid-search simultaneously. "
+            "Please use only one option at a time."
+        )
     
     if doi_query:
         # Run the client in asyncio
