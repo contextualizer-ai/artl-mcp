@@ -44,6 +44,7 @@ For testing or standalone use, you can also run the MCP server directly:
 ```bash
 # Install and run artl-mcp
 uvx artl-mcp --server
+```
 
 ## Development Setup
 

@@ -1,3 +1,4 @@
+import os
 import tempfile
 
 import requests
@@ -13,13 +14,25 @@ def extract_text_from_pdf(pdf_url: str) -> str:
     if response.status_code != 200:
         return "Error: Unable to retrieve PDF."
 
+    temp_pdf_path = None
+    text_results = None
+
     try:
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as temp_pdf:
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
             temp_pdf.write(response.content)
             temp_pdf.flush()  # Ensure all data is written before reading
 
-            text = extract_text(temp_pdf.name)
-            return text.strip() if text else "Error: No text extracted from PDF."
+            temp_pdf_path = temp_pdf.name
+            text = extract_text(temp_pdf_path)
+            text_results = (
+                text.strip() if text else "Error: No text extracted from PDF."
+            )
 
     except (OSError, PDFSyntaxError) as e:
         return f"Error extracting PDF text: {e}"
+
+    finally:
+        if temp_pdf_path and os.path.exists(temp_pdf_path):
+            os.remove(temp_pdf_path)
+
+    return text_results

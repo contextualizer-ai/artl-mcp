@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Any
 
@@ -228,12 +229,21 @@ class DOIFetcher:
 
         from pdfminer.high_level import extract_text
 
+        temp_pdf_path = None
+        text_results = None
+
         try:
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=True) as temp_pdf:
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
                 temp_pdf.write(response.content)
                 temp_pdf.flush()
-                text = extract_text(temp_pdf.name)
-                return text.strip() if text else None
+                temp_pdf_path = temp_pdf.name
+                text = extract_text(temp_pdf_path)
+                text_results = text.strip() if text else None
         except Exception as e:
-            print(f"Error extracting PDF text: {e}")
+            print(f"Error extracting PDF text: {e} from {temp_pdf_path}")
             return None
+        finally:
+            if temp_pdf_path and os.path.exists(temp_pdf_path):
+                os.remove(temp_pdf_path)
+
+        return text_results
