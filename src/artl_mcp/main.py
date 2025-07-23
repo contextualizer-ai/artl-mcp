@@ -58,7 +58,8 @@ This server offers three main categories of functionality:
 ## 1. Literature Search and Discovery
 - **search_papers_by_keyword**: Search article metadata via keywords
 - **search_recent_papers**: Find recent publications for specific keywords or topics
-- **search_pubmed_for_pmids**: Search PubMed for articles using keywords and return PMIDs with metadata
+- **search_pubmed_for_pmids**: Search PubMed for articles using keywords and return
+PMIDs with metadata
 
 ## 2. Metadata and Abstract Retrieval
 - **get_doi_metadata**: Get comprehensive metadata for papers using DOI
