@@ -44,14 +44,14 @@ def create_mcp():
     mcp = FastMCP(
         "all-roads-to-literature",
         instructions="""
-All Roads to Literature MCP provides  tools for retrieving scientific literature 
+All Roads to Literature MCP provides tools for retrieving scientific literature
 metadata, full text, and abstracts using various identifiers (DOIs, PMIDs, PMCIDs).
 
 This server offers three main categories of functionality:
 
 ## 1. Literature Search and Discovery
 - **search_papers_by_keyword**: Search for papers using keywords with metadata
-- **search_recent_papers**: Find recent publications in specific fields  
+- **search_recent_papers**: Find recent publications in specific fields
 - **search_pubmed_for_pmids**: Search PubMed database for PMIDs using queries
 
 ## 2. Metadata and Abstract Retrieval
@@ -73,7 +73,7 @@ This server offers three main categories of functionality:
 ## 4. Identifier Conversion and Utilities
 - **extract_doi_from_url**: Extract DOI from various URL formats
 - **doi_to_pmid**: Convert DOI to PMID
-- **pmid_to_doi**: Convert PMID to DOI  
+- **pmid_to_doi**: Convert PMID to DOI
 - **get_pmid_from_pmcid**: Get PMID from PMC ID
 - **get_doi_text**: Direct text retrieval using DOI
 
@@ -85,7 +85,7 @@ This server offers three main categories of functionality:
 
 ## Supported Identifiers
 - **DOI**: Digital Object Identifier (e.g., "10.1038/nature12373")
-- **PMID**: PubMed ID (e.g., "23851394") 
+- **PMID**: PubMed ID (e.g., "23851394")
 - **PMCID**: PubMed Central ID (e.g., "PMC3737249")
 - **Keywords**: Natural language search terms
 """,
