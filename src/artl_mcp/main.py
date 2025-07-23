@@ -41,7 +41,55 @@ except metadata.PackageNotFoundError:
 
 def create_mcp():
     """Create the FastMCP server instance and register tools."""
-    mcp = FastMCP("all-roads-to-literature")
+    mcp = FastMCP(
+        "all-roads-to-literature",
+        instructions="""
+All Roads to Literature MCP provides  tools for retrieving scientific literature 
+metadata, full text, and abstracts using various identifiers (DOIs, PMIDs, PMCIDs).
+
+This server offers three main categories of functionality:
+
+## 1. Literature Search and Discovery
+- **search_papers_by_keyword**: Search for papers using keywords with metadata
+- **search_recent_papers**: Find recent publications in specific fields  
+- **search_pubmed_for_pmids**: Search PubMed database for PMIDs using queries
+
+## 2. Metadata and Abstract Retrieval
+- **get_doi_metadata**: Get comprehensive metadata for papers using DOI
+- **get_abstract_from_pubmed_id**: Retrieve abstracts from PubMed using PMID
+- **get_doi_fetcher_metadata**: Enhanced metadata retrieval with email requirement
+- **get_unpaywall_info**: Check open access availability via Unpaywall
+
+## 3. Full Text Access and Processing
+- **get_full_text_from_doi**: Retrieve full text content using DOI (requires email)
+- **get_full_text_info**: Get detailed full text availability information
+- **get_text_from_pdf_url**: Extract text content from PDF URLs
+- **extract_pdf_text**: Standalone PDF text extraction
+- **get_pmcid_text**: Get full text from PubMed Central ID
+- **get_pmid_text**: Get full text using PMID
+- **get_full_text_from_bioc**: Retrieve full text in BioC format
+- **clean_text**: Clean and format extracted text content
+
+## 4. Identifier Conversion and Utilities
+- **extract_doi_from_url**: Extract DOI from various URL formats
+- **doi_to_pmid**: Convert DOI to PMID
+- **pmid_to_doi**: Convert PMID to DOI  
+- **get_pmid_from_pmcid**: Get PMID from PMC ID
+- **get_doi_text**: Direct text retrieval using DOI
+
+## Usage Notes
+- Many tools require an email address for API access (CrossRef, Unpaywall policies)
+- Tools automatically handle identifier cleaning and format conversion
+- Rate limiting and proper headers are implemented for respectful API usage
+- All tools return structured data or None on failure for easy error handling
+
+## Supported Identifiers
+- **DOI**: Digital Object Identifier (e.g., "10.1038/nature12373")
+- **PMID**: PubMed ID (e.g., "23851394") 
+- **PMCID**: PubMed Central ID (e.g., "PMC3737249")
+- **Keywords**: Natural language search terms
+""",
+    )
 
     # Register all tools
     # Original tools
