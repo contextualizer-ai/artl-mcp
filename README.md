@@ -1,76 +1,58 @@
 # All Roads to Literature
 
-An MCP for retrieving scientific literature metadata and content using PMIDs, DOIs, and other identifiers.
+An MCP (Model Context Protocol) server for retrieving scientific literature metadata and content using PMIDs, DOIs, and other identifiers.
+
+## Quick Start (MCP Client Configuration)
+
+To use this MCP server with your Claude Desktop, add this configuration:
+
+```json
+{
+  "mcpServers": {
+    "artl-mcp": {
+      "command": "uvx",
+      "args": ["artl-mcp"]
+    }
+  }
+}
+```
 
 ## Features
 
 - Retrieve metadata for scientific articles using DOIs
-- Fetch abstracts from PubMed using PMIDs
-- MCP-based architecture for easy extensibility
+- Fetch abstracts from PubMed using PMIDs  
+- Search papers by keywords or recent publications
+- Extract full text from various sources (PMC, Unpaywall, etc.)
+- Convert between identifiers (DOI ↔ PMID, PMCID)
+- Clean and process PDF text content
 
-## Installation
+## Available Tools
 
-### Prerequisites
+Once configured, you'll have access to these tools in your MCP client:
 
-- Python 3.11 or higher
-- uv (optional but recommended)
+- `get_abstract_from_pubmed_id` - Get abstract text from PubMed ID
+- `get_doi_metadata` - Retrieve metadata for a DOI
+- `search_papers_by_keyword` - Search for papers by keyword
+- `search_recent_papers` - Find recently published papers
+- `get_full_text_from_doi` - Extract full text content from DOI
+- `doi_to_pmid` / `pmid_to_doi` - Convert between identifier types
 
-### Setup
+## Command Line Usage (Optional)
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/all-roads-to-literature.git
-   cd all-roads-to-literature
-   ```
-
-2. Install with uv (recommended):
-   ```bash
-   uv venv
-   uv pip install -e .
-   ```
-
-   Or with standard pip:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   pip install -e .
-   ```
-
-## Usage
-
-### Starting the MCP Server
-
-To start the MCP server (default behavior):
+For testing or standalone use, you can also run the MCP server directly:
 
 ```bash
-uv run artl-mcp
+# Install and run artl-mcp
+uvx artl-mcp --server
 ```
 
-This starts the server by default. The server provides access to all registered tools through FastMCP's interface.
+## Development Setup
 
-### CLI Usage
-
-You can also use the tool directly from the command line:
+For contributors who want to modify the code:
 
 ```bash
-# Search for PMIDs by keywords
-uv run artl-mcp --pmid-search "machine learning" --max-results 10
-
-# Query DOI directly
-uv run artl-mcp --doi-query "10.1099/ijsem.0.005153"
-```
-
-### Running the Tests
-
-```bash
+git clone https://github.com/contextualizer-ai/artl-mcp.git
+cd artl-mcp
+uv sync --dev
 uv run pytest tests/
 ```
-
-## Architecture
-
-The project follows this structure:
-
-- `main.py`: Entry point that creates and configures the MCP server
-- `tools.py`: Contains the tool implementations that the MCP server exposes
-
-
