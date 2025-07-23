@@ -42,17 +42,23 @@ except metadata.PackageNotFoundError:
 def create_mcp():
     """Create the FastMCP server instance and register tools."""
     mcp = FastMCP(
-        "all-roads-to-literature",
+        "artl-mcp",
         instructions="""
-All Roads to Literature MCP provides tools for retrieving scientific literature
-metadata, full text, and abstracts using various identifiers (DOIs, PMIDs, PMCIDs).
+All Roads to Literature (ARtL) MCP provides tools for retrieving scientific literature
+metadata, full text, and abstracts via DOI, PMID, or PMCID.
+
+## Supported Identifiers
+- **DOI**: Digital Object Identifier (e.g., "10.1038/nature12373")
+- **PMID**: PubMed ID (e.g., "23851394")
+- **PMCID**: PubMed Central ID (e.g., "PMC3737249")
+- **Keywords**: Natural language search terms
 
 This server offers three main categories of functionality:
 
 ## 1. Literature Search and Discovery
-- **search_papers_by_keyword**: Search for papers using keywords with metadata
-- **search_recent_papers**: Find recent publications in specific fields
-- **search_pubmed_for_pmids**: Search PubMed database for PMIDs using queries
+- **search_papers_by_keyword**: Search article metadata via keywords
+- **search_recent_papers**: Find recent publications for specific keywords or topics
+- **search_pubmed_for_pmids**: Search PubMed for articles using keywords and return PMIDs with metadata
 
 ## 2. Metadata and Abstract Retrieval
 - **get_doi_metadata**: Get comprehensive metadata for papers using DOI
@@ -83,11 +89,6 @@ This server offers three main categories of functionality:
 - Rate limiting and proper headers are implemented for respectful API usage
 - All tools return structured data or None on failure for easy error handling
 
-## Supported Identifiers
-- **DOI**: Digital Object Identifier (e.g., "10.1038/nature12373")
-- **PMID**: PubMed ID (e.g., "23851394")
-- **PMCID**: PubMed Central ID (e.g., "PMC3737249")
-- **Keywords**: Natural language search terms
 """,
     )
 
