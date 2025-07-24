@@ -330,7 +330,6 @@ startxref
         """Test handling of OS errors during file operations."""
         from unittest.mock import Mock, patch
 
-
         # Mock successful HTTP response
         mock_response = Mock()
         mock_response.status_code = 200
@@ -339,12 +338,14 @@ startxref
         with patch(
             "artl_mcp.utils.pdf_fetcher.requests.get", return_value=mock_response
         ):
-            with patch(
-                "artl_mcp.utils.pdf_fetcher.tempfile.NamedTemporaryFile"
-            ) as mock_temp:
-                # Simulate OSError during temp file creation
-                mock_temp.side_effect = OSError("Permission denied")
+            # Mock FileManager to simulate OSError during temp file creation
+            from artl_mcp.utils.file_manager import file_manager
 
+            with patch.object(
+                file_manager,
+                "create_temp_file",
+                side_effect=OSError("Permission denied"),
+            ):
                 result = extract_text_from_pdf("https://example.com/test.pdf")
 
                 assert "Error extracting PDF text:" in result

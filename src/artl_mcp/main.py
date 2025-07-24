@@ -8,11 +8,18 @@ from fastmcp import FastMCP
 from artl_mcp.client import run_client
 from artl_mcp.tools import (
     clean_text,
+    convert_identifier_format,
+    # Enhanced identifier conversion tools
+    doi_to_pmcid,
     doi_to_pmid,
     # PubMed utilities tools
     extract_doi_from_url,
     extract_pdf_text,
+    find_related_papers,
     get_abstract_from_pubmed_id,
+    get_all_identifiers,
+    get_citation_network,
+    get_comprehensive_citation_info,
     # DOIFetcher-based tools
     get_doi_fetcher_metadata,
     # Original tools
@@ -21,16 +28,22 @@ from artl_mcp.tools import (
     get_full_text_from_bioc,
     get_full_text_from_doi,
     get_full_text_info,
+    get_paper_citations,
+    # Citation and reference tools
+    get_paper_references,
     get_pmcid_text,
     get_pmid_from_pmcid,
     get_pmid_text,
     get_text_from_pdf_url,
     get_unpaywall_info,
+    pmcid_to_doi,
     pmid_to_doi,
+    pmid_to_pmcid,
     # Search tools
     search_papers_by_keyword,
     search_pubmed_for_pmids,
     search_recent_papers,
+    validate_identifier,
 )
 
 try:
@@ -44,16 +57,26 @@ def create_mcp():
     mcp = FastMCP(
         "artl-mcp",
         instructions="""
-All Roads to Literature (ARtL) MCP provides tools for retrieving scientific literature
-metadata, full text, and abstracts via DOI, PMID, or PMCID.
+All Roads to Literature (ARtL) MCP provides comprehensive tools for retrieving
+scientific literature metadata, full text, abstracts, and citation networks via
+DOI, PMID, or PMCID.
 
-## Supported Identifiers
-- **DOI**: Digital Object Identifier (e.g., "10.1038/nature12373")
-- **PMID**: PubMed ID (e.g., "23851394")
-- **PMCID**: PubMed Central ID (e.g., "PMC3737249")
+## Supported Identifier Formats
+- **DOI**: Multiple formats supported
+  - Raw: 10.1038/nature12373
+  - CURIE: doi:10.1038/nature12373
+  - URLs: https://doi.org/10.1038/nature12373, http://dx.doi.org/...
+- **PMID**: Multiple formats supported
+  - Raw: 23851394
+  - Prefixed: PMID:23851394
+  - Colon-separated: pmid:23851394
+- **PMCID**: Multiple formats supported
+  - Full: PMC3737249
+  - Numeric: 3737249
+  - Prefixed: PMC:3737249
 - **Keywords**: Natural language search terms
 
-This server offers three main categories of functionality:
+This server offers five main categories of functionality:
 
 ## 1. Literature Search and Discovery
 - **search_papers_by_keyword**: Search article metadata via keywords
@@ -79,16 +102,36 @@ PMIDs with metadata
 
 ## 4. Identifier Conversion and Utilities
 - **extract_doi_from_url**: Extract DOI from various URL formats
+- **convert_identifier_format**: Convert identifiers between formats (raw, CURIE, URL)
 - **doi_to_pmid**: Convert DOI to PMID
+- **doi_to_pmcid**: Convert DOI to PMCID
 - **pmid_to_doi**: Convert PMID to DOI
+- **pmid_to_pmcid**: Convert PMID to PMCID
+- **pmcid_to_doi**: Convert PMCID to DOI
 - **get_pmid_from_pmcid**: Get PMID from PMC ID
+- **get_all_identifiers**: Get all available IDs for any identifier
+- **validate_identifier**: Validate identifier format
 - **get_doi_text**: Direct text retrieval using DOI
 
+## 5. Citation Networks and Related Papers
+- **get_paper_references**: Get papers cited by a given paper
+- **get_paper_citations**: Get papers that cite a given paper
+- **get_citation_network**: Get comprehensive citation network from OpenAlex
+- **find_related_papers**: Find papers related through citations
+- **get_comprehensive_citation_info**: Get citation data from multiple sources
+
 ## Usage Notes
-- Many tools require an email address for API access (CrossRef, Unpaywall policies)
-- Tools automatically handle identifier cleaning and format conversion
-- Rate limiting and proper headers are implemented for respectful API usage
-- All tools return structured data or None on failure for easy error handling
+- **Identifier Flexibility**: All tools accept multiple identifier formats and
+  auto-normalize
+- **Format Interconversion**: Use convert_identifier_format to convert between
+  DOI CURIEs (doi:10.1234/example), DOI URLs (https://doi.org/10.1234/example),
+  and raw formats (10.1234/example)
+- **Email Requirements**: Many tools require email addresses for API access
+  (CrossRef, Unpaywall)
+- **Format Consistency**: All tools return identifiers in standardized formats
+- **Error Handling**: Graceful handling of invalid identifiers and API failures
+- **Rate Limiting**: Proper headers and timeouts for respectful API usage
+- **Comprehensive Coverage**: Support for DOI, PMID, PMCID conversion in all directions
 
 """,
     )
@@ -119,6 +162,21 @@ PMIDs with metadata
     mcp.tool(get_pmid_text)
     mcp.tool(get_full_text_from_bioc)
     mcp.tool(search_pubmed_for_pmids)
+
+    # Enhanced identifier conversion tools
+    mcp.tool(convert_identifier_format)
+    mcp.tool(doi_to_pmcid)
+    mcp.tool(pmid_to_pmcid)
+    mcp.tool(pmcid_to_doi)
+    mcp.tool(get_all_identifiers)
+    mcp.tool(validate_identifier)
+
+    # Citation and reference tools
+    mcp.tool(get_paper_references)
+    mcp.tool(get_paper_citations)
+    mcp.tool(get_citation_network)
+    mcp.tool(find_related_papers)
+    mcp.tool(get_comprehensive_citation_info)
 
     # Search tools
     mcp.tool(search_papers_by_keyword)

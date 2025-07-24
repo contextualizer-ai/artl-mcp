@@ -3,6 +3,7 @@
 import json
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from artl_mcp.cli import (
@@ -28,6 +29,19 @@ from artl_mcp.cli import (
     search_papers_by_keyword_cmd,
     search_recent_papers_cmd,
 )
+from artl_mcp.utils.email_manager import EmailManager
+
+
+def get_test_email():
+    """Get a valid test email address from environment/local config."""
+    em = EmailManager()
+    email = em.get_email()
+    if not email:
+        pytest.skip(
+            "No valid email address found for CLI testing. "
+            "Set ARTL_EMAIL_ADDR or add to local/.env"
+        )
+    return email
 
 
 class TestOutputResult:
@@ -134,14 +148,15 @@ class TestDOICommands:
         mock_get_doi_fetcher_metadata.return_value = {"DOI": "10.1038/nature12373"}
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             get_doi_fetcher_metadata_cmd,
-            ["--doi", "10.1038/nature12373", "--email", "test@example.com"],
+            ["--doi", "10.1038/nature12373", "--email", test_email],
         )
 
         assert result.exit_code == 0
         mock_get_doi_fetcher_metadata.assert_called_once_with(
-            "10.1038/nature12373", "test@example.com"
+            "10.1038/nature12373", test_email
         )
 
     @patch("artl_mcp.cli.get_doi_text")
@@ -270,14 +285,15 @@ class TestUnpaywallCommands:
         }
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             get_unpaywall_info_cmd,
-            ["--doi", "10.1038/nature12373", "--email", "test@example.com", "--strict"],
+            ["--doi", "10.1038/nature12373", "--email", test_email, "--strict"],
         )
 
         assert result.exit_code == 0
         mock_get_unpaywall_info.assert_called_once_with(
-            "10.1038/nature12373", "test@example.com", True
+            "10.1038/nature12373", test_email, True
         )
         output = json.loads(result.output.strip())
         assert output["is_oa"] is True
@@ -288,14 +304,15 @@ class TestUnpaywallCommands:
         mock_get_unpaywall_info.return_value = {"is_oa": False}
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             get_unpaywall_info_cmd,
-            ["--doi", "10.1038/nature12373", "--email", "test@example.com"],
+            ["--doi", "10.1038/nature12373", "--email", test_email],
         )
 
         assert result.exit_code == 0
         mock_get_unpaywall_info.assert_called_once_with(
-            "10.1038/nature12373", "test@example.com", True
+            "10.1038/nature12373", test_email, True
         )
 
 
@@ -308,14 +325,15 @@ class TestFullTextCommands:
         mock_get_full_text_from_doi.return_value = "Complete full text content..."
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             get_full_text_from_doi_cmd,
-            ["--doi", "10.1038/nature12373", "--email", "test@example.com"],
+            ["--doi", "10.1038/nature12373", "--email", test_email],
         )
 
         assert result.exit_code == 0
         mock_get_full_text_from_doi.assert_called_once_with(
-            "10.1038/nature12373", "test@example.com"
+            "10.1038/nature12373", test_email
         )
 
     @patch("artl_mcp.cli.get_full_text_info")
@@ -327,14 +345,15 @@ class TestFullTextCommands:
         }
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             get_full_text_info_cmd,
-            ["--doi", "10.1038/nature12373", "--email", "test@example.com"],
+            ["--doi", "10.1038/nature12373", "--email", test_email],
         )
 
         assert result.exit_code == 0
         mock_get_full_text_info.assert_called_once_with(
-            "10.1038/nature12373", "test@example.com"
+            "10.1038/nature12373", test_email
         )
 
 
@@ -347,19 +366,20 @@ class TestPDFCommands:
         mock_get_text_from_pdf_url.return_value = "Extracted PDF text content..."
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             get_text_from_pdf_url_cmd,
             [
                 "--pdf-url",
                 "https://example.com/paper.pdf",
                 "--email",
-                "test@example.com",
+                test_email,
             ],
         )
 
         assert result.exit_code == 0
         mock_get_text_from_pdf_url.assert_called_once_with(
-            "https://example.com/paper.pdf", "test@example.com"
+            "https://example.com/paper.pdf", test_email
         )
 
     @patch("artl_mcp.cli.extract_pdf_text")
@@ -385,13 +405,14 @@ class TestUtilityCommands:
         mock_clean_text.return_value = "cleaned text"
 
         runner = CliRunner()
+        test_email = get_test_email()
         result = runner.invoke(
             clean_text_cmd,
-            ["--text", "  messy   text  ", "--email", "test@example.com"],
+            ["--text", "  messy   text  ", "--email", test_email],
         )
 
         assert result.exit_code == 0
-        mock_clean_text.assert_called_once_with("  messy   text  ", "test@example.com")
+        mock_clean_text.assert_called_once_with("  messy   text  ", test_email)
         output = json.loads(result.output.strip())
         assert output == "cleaned text"
 

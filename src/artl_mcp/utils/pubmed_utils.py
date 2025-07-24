@@ -1,9 +1,15 @@
+import logging
 import re
 
 import requests
 from bs4 import BeautifulSoup
 
+from artl_mcp.utils.conversion_utils import IdentifierConverter
 from artl_mcp.utils.doi_fetcher import DOIFetcher
+from artl_mcp.utils.email_manager import get_email
+from artl_mcp.utils.identifier_utils import IdentifierError, IdentifierUtils
+
+logger = logging.getLogger(__name__)
 
 BIOC_URL = "https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_xml/{pmid}/ascii"
 PUBMED_EUTILS_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pmid}&retmode=xml"
@@ -15,13 +21,42 @@ DOI_PATTERN = r"/(10\.\d{4,9}/[\w\-.]+)"
 def extract_doi_from_url(url: str) -> str | None:
     """Extracts the DOI from a given journal URL.
 
+    This function specifically extracts DOIs from URLs only, not from plain DOI strings.
+    Use IdentifierUtils.normalize_doi() if you need to process plain DOIs.
+
+    Supports URL formats:
+    - https://doi.org/10.1234/example
+    - http://dx.doi.org/10.1234/example
+    - Any URL containing a DOI path
+
     Args:
-        url (str): The URL of the article.
+        url: The URL of the article (must be a URL, not a plain DOI)
 
     Returns:
-        str: The extracted DOI if found, otherwise an empty string.
+        DOI in standard format (10.1234/example) or None if not found in URL
 
+    Examples:
+        >>> extract_doi_from_url("https://doi.org/10.1038/nature12373")
+        '10.1038/nature12373'
+        >>> extract_doi_from_url("10.1038/nature12373")  # Plain DOI
+        None
+        >>> extract_doi_from_url("https://example.com/paper/123")
+        None
     """
+    if not url:
+        return None
+
+    # Only process if it looks like a URL (contains protocol or domain indicators)
+    if not ("://" in url or url.startswith("www.") or "." in url):
+        return None
+
+    # Try URL-specific patterns first
+    for pattern in IdentifierUtils.DOI_URL_PATTERNS:
+        match = pattern.search(url)
+        if match:
+            return match.group(1)
+
+    # Fallback to general DOI pattern in URL context
     doi_match = re.search(DOI_PATTERN, url)
     return doi_match.group(1) if doi_match else None
 
@@ -29,20 +64,26 @@ def extract_doi_from_url(url: str) -> str | None:
 def doi_to_pmid(doi: str) -> str | None:
     """Converts a DOI to a PMID using the NCBI ID Converter API.
 
+    Supports multiple DOI input formats:
+    - Raw DOI: 10.1234/example
+    - CURIE: doi:10.1234/example
+    - URL: https://doi.org/10.1234/example
+
     Args:
-        doi (str): The DOI to be converted.
+        doi: The DOI to be converted in any supported format
 
     Returns:
-        str: The corresponding PMID if found, otherwise an empty string.
+        PMID as string (raw format, no prefix) or None if conversion fails
 
+    Examples:
+        >>> doi_to_pmid("10.1038/nature12373")
+        '23851394'
+        >>> doi_to_pmid("doi:10.1038/nature12373")
+        '23851394'
+        >>> doi_to_pmid("https://doi.org/10.1038/nature12373")
+        '23851394'
     """
-    API_URL = (
-        f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={doi}&format=json"
-    )
-    response = requests.get(API_URL).json()
-    records = response.get("records", [])
-    pmid = records[0].get("pmid", None) if records else None
-    return pmid
+    return IdentifierConverter.doi_to_pmid(doi)
 
 
 def get_doi_text(doi: str) -> str:
@@ -64,125 +105,152 @@ def get_doi_text(doi: str) -> str:
     """
     pmid = doi_to_pmid(doi)
     if not pmid:
-        # Create DOIFetcher with default email for internal utility use
-        doi_fetcher = DOIFetcher(email="pubmed_utils@example.com")
-        info = doi_fetcher.get_full_text(doi)
-        if info:
-            return info
-        else:
-            return f"PMID not found for {doi} and not available via unpaywall"
+        # Try to get full text via DOIFetcher if email is available
+        email = get_email()
+        if email:
+            try:
+                doi_fetcher = DOIFetcher(email=email)
+                info = doi_fetcher.get_full_text(doi)
+                if info:
+                    return info
+            except Exception:
+                # If DOIFetcher fails, continue to return PMID not found message
+                pass
+        return (
+            f"PMID not found for {doi} and full text not available "
+            "(email required for DOI fallback)"
+        )
     return get_pmid_text(pmid)
 
 
-def get_pmid_from_pmcid(pmcid):
-    """Fetch the PMID from a PMC ID using the Entrez E-utilities `esummary`.
+def get_pmid_from_pmcid(pmcid: str | int) -> str | None:
+    """Fetch the PMID from a PMC ID using the Entrez E-utilities.
 
-    Example:
-        >>> pmcid = "PMC5048378"
-        >>> pmid = get_pmid_from_pmcid(pmcid)
-        >>> print(pmid)
-        27629041
+    Supports multiple PMCID input formats:
+    - Full PMCID: PMC5048378
+    - Numeric only: 5048378
+    - Prefixed: PMC:5048378
+    - Colon-separated: pmcid:PMC5048378
 
     Args:
-        pmcid:
+        pmcid: PMCID in any supported format
 
     Returns:
+        PMID as string (raw format) or None if conversion fails
 
+    Examples:
+        >>> get_pmid_from_pmcid("PMC5048378")
+        '27629041'
+        >>> get_pmid_from_pmcid("5048378")
+        '27629041'
+        >>> get_pmid_from_pmcid("PMC:5048378")
+        '27629041'
     """
-    if ":" in pmcid:
-        pmcid = pmcid.split(":")[1]
-    url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
-    # Remove "PMC" prefix if included
-    params = {"db": "pmc", "id": pmcid.replace("PMC", ""), "retmode": "json"}
-
-    response = requests.get(url, params=params)
-    data = response.json()
-
-    # Extract PMID
-    try:
-        uid = data["result"]["uids"][0]  # Extract the UID
-        article_ids = data["result"][uid]["articleids"]  # Get article IDs
-        for item in article_ids:
-            if item["idtype"] == "pmid":
-                return item["value"]
-    except KeyError:
-        return None
+    return IdentifierConverter.pmcid_to_pmid(pmcid)
 
 
-def get_pmcid_text(pmcid: str) -> str:
+def get_pmcid_text(pmcid: str | int) -> str:
     """Fetch full text from PubMed Central Open Access BioC XML.
 
-    Example:
-        >>> pmcid = "PMC5048378"
-        >>> full_text = get_pmcid_text(pmcid)
-        >>> assert "integrated stress response (ISR)" in full_text
+    Supports multiple PMCID input formats:
+    - Full PMCID: PMC5048378
+    - Numeric only: 5048378
+    - Prefixed: PMC:5048378
+    - Colon-separated: pmcid:PMC5048378
 
     Args:
-        pmcid:
+        pmcid: PMCID in any supported format
 
     Returns:
+        Full text content as string
 
+    Examples:
+        >>> get_pmcid_text("PMC5048378")
+        'The full text content...'
+        >>> get_pmcid_text("5048378")
+        'The full text content...'
     """
     pmid = get_pmid_from_pmcid(pmcid)
-    return get_pmid_text(pmid)
+    if pmid:
+        return get_pmid_text(pmid)
+    else:
+        try:
+            normalized_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")
+            return (
+                f"Could not retrieve text for PMCID {normalized_pmcid}: "
+                "PMID conversion failed"
+            )
+        except IdentifierError:
+            return f"Error: Invalid PMCID format: {pmcid}"
 
 
 def get_pmid_text(pmid: str | int) -> str:
     """Fetch full text from PubMed Central Open Access BioC XML.
     If full text is not available, fallback to fetching the abstract from PubMed.
 
-    Example:
-        >>> pmid = "11"
-        >>> full_text = get_pmid_text(pmid)
-        >>> print(full_text)
-        Identification of adenylate cyclase-coupled beta-adrenergic receptors
-        with radiolabeled beta-adrenergic antagonists.
-        <BLANKLINE>
-        No abstract available
+    Supports multiple PMID input formats:
+    - Raw PMID: 12345678
+    - Prefixed: PMID:12345678
+    - Colon-separated: pmid:12345678
 
     Args:
-        pmid: PubMed ID of the article.
+        pmid: PubMed ID in any supported format
 
     Returns:
-        The full text of the article if available, otherwise the abstract.
+        Full text if available, otherwise abstract text
 
+    Examples:
+        >>> get_pmid_text("11")
+        'Identification of adenylate cyclase-coupled beta-adrenergic receptors...'
+        >>> get_pmid_text("PMID:11")
+        'Identification of adenylate cyclase-coupled beta-adrenergic receptors...'
     """
-    pmid = str(pmid)
-    if ":" in pmid:
-        pmid = pmid.split(":")[1]
-    text = get_full_text_from_bioc(pmid)
+    try:
+        normalized_pmid = IdentifierUtils.normalize_pmid(pmid, "raw")
+    except IdentifierError as e:
+        logger.warning(f"Invalid PMID for text retrieval: {pmid} - {e}")
+        return f"Error: Invalid PMID format: {pmid}"
+    text = get_full_text_from_bioc(normalized_pmid)
     if not text:
-        doi = pmid_to_doi(pmid)
+        doi = pmid_to_doi(normalized_pmid)
         if doi:
-            # Create DOIFetcher with default email for internal utility use
-            doi_fetcher = DOIFetcher(email="pubmed_utils@example.com")
-            full_text_result = doi_fetcher.get_full_text(doi)
-            if full_text_result:
-                text = full_text_result
+            # Try to get full text via DOIFetcher if email is available
+            email = get_email()
+            if email:
+                try:
+                    doi_fetcher = DOIFetcher(email=email)
+                    full_text_result = doi_fetcher.get_full_text(doi)
+                    if full_text_result:
+                        text = full_text_result
+                except Exception:
+                    # If DOIFetcher fails, continue to try other methods
+                    pass
     if not text:
-        text = get_abstract_from_pubmed(pmid)
+        text = get_abstract_from_pubmed(normalized_pmid)
     return text
 
 
-def pmid_to_doi(pmid: str) -> str | None:
-    if ":" in pmid:
-        pmid = pmid.split(":")[1]
-    url = f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pmid}&retmode=json"
-    response = requests.get(url)
-    data = response.json()
+def pmid_to_doi(pmid: str | int) -> str | None:
+    """Converts a PMID to a DOI using PubMed E-utilities.
 
-    try:
-        article_info = data["result"][str(pmid)]
-        for aid in article_info["articleids"]:
-            if aid["idtype"] == "doi":
-                return aid["value"]
-        elocationid = article_info.get("elocationid", "")
-        if elocationid.startswith("10."):  # DOI starts with "10."
-            return elocationid
-        else:
-            return None
-    except KeyError:
-        return None
+    Supports multiple PMID input formats:
+    - Raw PMID: 12345678
+    - Prefixed: PMID:12345678
+    - Colon-separated: pmid:12345678
+
+    Args:
+        pmid: PMID in any supported format
+
+    Returns:
+        DOI in standard format (10.1234/example) or None if conversion fails
+
+    Examples:
+        >>> pmid_to_doi("23851394")
+        '10.1038/nature12373'
+        >>> pmid_to_doi("PMID:23851394")
+        '10.1038/nature12373'
+    """
+    return IdentifierConverter.pmid_to_doi(pmid)
 
 
 def get_full_text_from_bioc(pmid: str) -> str:
