@@ -39,7 +39,7 @@ def test_get_abstract_from_pubmed_id():
     result = get_abstract_from_pubmed_id(PMID_FOR_ABSTRACT)
     assert result is not None
     assert isinstance(result, str)
-    # Any string result is valid - function should handle unavailable abstracts gracefully
+    # Any string result is valid - function should handle unavailable abstracts
     assert len(result) >= 0  # Could be empty string if no abstract available
 
 
@@ -148,29 +148,35 @@ def test_extract_paper_info_complete_data():
         "author": [
             {"given": "Alice", "family": "Johnson"},
             {"given": "Bob", "family": "Smith"},
-            {"given": "Carol", "family": "Davis"}
+            {"given": "Carol", "family": "Davis"},
         ],
         "container-title": ["Nature Machine Intelligence"],
         "published-print": {"date-parts": [[2023, 6, 15]]},
         "published-online": {"date-parts": [[2023, 5, 20]]},
         "DOI": "10.1038/s42256-023-00123-4",
         "URL": "https://www.nature.com/articles/s42256-023-00123-4",
-        "abstract": "This comprehensive review examines the role of machine learning...",
+        "abstract": "This comprehensive review examines machine learning...",
         "is-referenced-by-count": 142,
         "type": "journal-article",
-        "publisher": "Springer Nature"
+        "publisher": "Springer Nature",
     }
-    
+
     result = extract_paper_info(work_item)
-    
+
     # Verify all fields are extracted correctly
-    assert result["title"] == "Machine Learning in Scientific Research: A Comprehensive Review"
+    assert (
+        result["title"]
+        == "Machine Learning in Scientific Research: A Comprehensive Review"
+    )
     assert result["authors"] == ["Alice Johnson", "Bob Smith", "Carol Davis"]
     assert result["journal"] == "Nature Machine Intelligence"
     assert result["published_date"] == {"date-parts": [[2023, 6, 15]]}
     assert result["doi"] == "10.1038/s42256-023-00123-4"
     assert result["url"] == "https://www.nature.com/articles/s42256-023-00123-4"
-    assert result["abstract"] == "This comprehensive review examines the role of machine learning..."
+    assert (
+        result["abstract"]
+        == "This comprehensive review examines machine learning..."
+    )
     assert result["citation_count"] == 142
     assert result["type"] == "journal-article"
     assert result["publisher"] == "Springer Nature"
@@ -178,12 +184,10 @@ def test_extract_paper_info_complete_data():
 
 def test_extract_paper_info_minimal_data():
     """Test extract_paper_info with minimal data (empty/missing fields)."""
-    work_item = {
-        "DOI": "10.1234/minimal-doi"
-    }
-    
+    work_item = {"DOI": "10.1234/minimal-doi"}
+
     result = extract_paper_info(work_item)
-    
+
     # Verify defaults are used for missing fields
     assert result["title"] == ""
     assert result["authors"] == []
@@ -204,14 +208,14 @@ def test_extract_paper_info_partial_authors():
         "author": [
             {"given": "Alice", "family": "Johnson"},
             {"family": "Smith"},  # Missing given name
-            {"given": "Carol"},   # Missing family name
-            {}  # Empty author object
+            {"given": "Carol"},  # Missing family name
+            {},  # Empty author object
         ],
-        "DOI": "10.1234/test-authors"
+        "DOI": "10.1234/test-authors",
     }
-    
+
     result = extract_paper_info(work_item)
-    
+
     # Verify author handling with missing data
     assert result["authors"] == ["Alice Johnson", " Smith", "Carol ", " "]
     assert result["title"] == "Test Article"
@@ -222,12 +226,15 @@ def test_extract_paper_info_array_fields():
     """Test extract_paper_info handles array fields correctly."""
     work_item = {
         "title": ["First Title", "Alternative Title"],  # Multiple titles
-        "container-title": ["Primary Journal", "Alternative Journal"],  # Multiple journals
-        "DOI": "10.1234/array-test"
+        "container-title": [
+            "Primary Journal",
+            "Alternative Journal",
+        ],  # Multiple journals
+        "DOI": "10.1234/array-test",
     }
-    
+
     result = extract_paper_info(work_item)
-    
+
     # Should take first element from arrays
     assert result["title"] == "First Title"
     assert result["journal"] == "Primary Journal"
@@ -238,27 +245,27 @@ def test_extract_paper_info_date_fallback():
     """Test extract_paper_info date fallback from print to online."""
     work_item_print_only = {
         "published-print": {"date-parts": [[2023, 3, 10]]},
-        "DOI": "10.1234/print-only"
+        "DOI": "10.1234/print-only",
     }
-    
+
     result = extract_paper_info(work_item_print_only)
     assert result["published_date"] == {"date-parts": [[2023, 3, 10]]}
-    
+
     work_item_online_only = {
         "published-online": {"date-parts": [[2023, 2, 5]]},
-        "DOI": "10.1234/online-only"
+        "DOI": "10.1234/online-only",
     }
-    
+
     result = extract_paper_info(work_item_online_only)
     assert result["published_date"] == {"date-parts": [[2023, 2, 5]]}
-    
+
     # Prefer print over online when both exist
     work_item_both = {
         "published-print": {"date-parts": [[2023, 4, 15]]},
         "published-online": {"date-parts": [[2023, 3, 1]]},
-        "DOI": "10.1234/both-dates"
+        "DOI": "10.1234/both-dates",
     }
-    
+
     result = extract_paper_info(work_item_both)
     assert result["published_date"] == {"date-parts": [[2023, 4, 15]]}
 
@@ -269,11 +276,11 @@ def test_extract_paper_info_empty_arrays():
         "title": [],
         "author": [],
         "container-title": [],
-        "DOI": "10.1234/empty-arrays"
+        "DOI": "10.1234/empty-arrays",
     }
-    
+
     result = extract_paper_info(work_item)
-    
+
     assert result["title"] == ""
     assert result["authors"] == []
     assert result["journal"] == ""
@@ -285,11 +292,11 @@ def test_extract_paper_info_exception_handling():
     # Pass something that will cause an exception during processing
     invalid_work_item = {
         "title": "not_a_list",  # This should be a list
-        "author": "not_a_list_either"  # This should be a list too
+        "author": "not_a_list_either",  # This should be a list too
     }
-    
+
     result = extract_paper_info(invalid_work_item)
-    
+
     # Should return empty dict on exception
     assert result == {}
 
@@ -300,11 +307,11 @@ def test_extract_paper_info_none_values():
         "title": None,
         "author": None,
         "container-title": None,
-        "DOI": "10.1234/none-values"
+        "DOI": "10.1234/none-values",
     }
-    
+
     result = extract_paper_info(work_item)
-    
+
     # Function returns empty dict on exception with None values
     assert result == {}
 
@@ -313,12 +320,12 @@ def test_extract_paper_info_none_values():
 def test_get_doi_metadata_json_decode_error():
     """Test get_doi_metadata handles malformed JSON responses."""
     from unittest.mock import Mock, patch
-    
+
     # Mock a response that raises JSONDecodeError
     mock_response = Mock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.side_effect = ValueError("Invalid JSON")
-    
+
     with patch("requests.get", return_value=mock_response):
         # This should raise the exception as the code re-raises unexpected errors
         with pytest.raises(ValueError, match="Invalid JSON"):
@@ -334,10 +341,13 @@ def test_extract_doi_from_url_edge_cases():
         ("https://example.com", None),  # URL without DOI
         ("https://doi.org/", None),  # DOI URL without actual DOI
         ("dx.doi.org/10.1234/test", "10.1234/test"),  # Without protocol
-        ("http://dx.doi.org/10.1234/test?param=value", "10.1234/test"),  # With query params
+        (
+            "http://dx.doi.org/10.1234/test?param=value",
+            "10.1234/test",
+        ),  # With query params
         ("https://doi.org/10.1234/test#fragment", "10.1234/test"),  # With fragment
     ]
-    
+
     for url, expected in test_cases:
         result = extract_doi_from_url(url)
         assert result == expected, f"Failed for URL: {url}"
@@ -353,12 +363,12 @@ def test_get_abstract_from_pubmed_id_invalid_input():
         "-123",  # Negative number
         "999999999999999999",  # Unreasonably large number
     ]
-    
+
     for pmid in invalid_pmids:
         result = get_abstract_from_pubmed_id(pmid)
         # Function returns a string (could be empty) rather than None for invalid PMIDs
         assert isinstance(result, str)
-        # The function gracefully handles invalid inputs by returning some form of response
+        # The function gracefully handles invalid inputs by returning response
 
 
 def test_clean_text_edge_cases():
@@ -369,11 +379,11 @@ def test_clean_text_edge_cases():
         "   ",  # Only whitespace
         "normal text",  # Normal case
     ]
-    
+
     for text_input in valid_cases:
         result = clean_text(text_input, TEST_EMAIL)
         assert isinstance(result, str)
-    
+
     # Test None input separately - this actually returns None
     result = clean_text(None, TEST_EMAIL)
     assert result is None
@@ -387,7 +397,7 @@ def test_get_full_text_info_invalid_doi():
         "10.1234",  # Incomplete DOI
         None,  # None input
     ]
-    
+
     for doi in invalid_dois:
         try:
             result = get_full_text_info(doi, TEST_EMAIL)

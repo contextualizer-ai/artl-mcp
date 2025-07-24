@@ -2,7 +2,6 @@ import pytest
 
 import artl_mcp.utils.pubmed_utils as aupu
 
-
 # Test data constants
 TEST_DOI = "10.1099/ijsem.0.005153"
 TEST_PMID = "35545607"
@@ -17,14 +16,14 @@ TEST_DOI_CLEAN = "10.7717/peerj.16290"
 def test_doi_to_pmid():
     """Test DOI to PMID conversion."""
     result = aupu.doi_to_pmid(TEST_DOI)
-    
+
     if result is not None:
         # The function might return int or str, handle both
         if isinstance(result, int):
             result = str(result)
         assert isinstance(result, str)
         assert result.isdigit()  # PMID should be numeric string
-        assert len(result) > 6   # PMIDs are typically 7+ digits
+        assert len(result) > 6  # PMIDs are typically 7+ digits
     else:
         pytest.skip("DOI to PMID conversion not available for test DOI")
 
@@ -34,7 +33,7 @@ def test_doi_to_pmid():
 def test_pmid_to_doi():
     """Test PMID to DOI conversion."""
     result = aupu.pmid_to_doi(TEST_PMID)
-    
+
     if result is not None:
         assert isinstance(result, str)
         assert result.startswith("10.")  # DOIs start with "10."
@@ -65,12 +64,15 @@ def test_pmid_to_doi_invalid():
 def test_get_doi_text():
     """Test DOI text extraction with fallback logic."""
     result = aupu.get_doi_text(TEST_DOI)
-    
+
     if result is not None:
         assert isinstance(result, str)
         assert len(result) > 100  # Should have substantial text content
         # Test should contain meaningful scientific text
-        assert any(word in result.lower() for word in ["abstract", "introduction", "methods", "results", "conclusion"])
+        assert any(
+            word in result.lower()
+            for word in ["abstract", "introduction", "methods", "results", "conclusion"]
+        )
     else:
         pytest.skip("DOI text extraction not available for test DOI")
 
@@ -91,11 +93,11 @@ def test_get_doi_text_invalid():
 def test_get_pmid_from_pmcid():
     """Test PMID extraction from PMC ID."""
     result = aupu.get_pmid_from_pmcid(TEST_PMCID)
-    
+
     if result is not None:
         assert isinstance(result, str)
         assert result.isdigit()  # PMID should be numeric string
-        assert len(result) > 6   # PMIDs are typically 7+ digits
+        assert len(result) > 6  # PMIDs are typically 7+ digits
     else:
         pytest.skip("PMCID to PMID conversion not available for test PMCID")
 
@@ -118,7 +120,7 @@ def test_get_pmid_from_pmcid_invalid():
 def test_get_pmcid_text():
     """Test text extraction from PMC ID."""
     result = aupu.get_pmcid_text(TEST_PMCID)
-    
+
     if result is not None:
         assert isinstance(result, str)
         if "FULL TEXT NOT AVAILABLE" in result:
@@ -140,12 +142,15 @@ def test_get_pmcid_text():
 def test_get_pmid_text():
     """Test text extraction from PMID."""
     result = aupu.get_pmid_text(TEST_PMID)
-    
+
     if result is not None:
         assert isinstance(result, str)
-        assert len(result) > 50   # Should have some meaningful content
+        assert len(result) > 50  # Should have some meaningful content
         # Should contain scientific text
-        assert any(word in result.lower() for word in ["abstract", "background", "method", "result"])
+        assert any(
+            word in result.lower()
+            for word in ["abstract", "background", "method", "result"]
+        )
     else:
         pytest.skip("PMID text extraction not available for test PMID")
 
@@ -156,17 +161,20 @@ def test_get_pmid_text():
 def test_get_full_text_from_bioc():
     """Test full text extraction from BioC format."""
     result = aupu.get_full_text_from_bioc(TEST_PMID)
-    
+
     if result is not None:
         assert isinstance(result, str)
         assert len(result) > 200  # BioC should have substantial full text
         # Should contain structured scientific content
-        assert any(word in result.lower() for word in ["introduction", "methods", "results", "discussion"])
+        assert any(
+            word in result.lower()
+            for word in ["introduction", "methods", "results", "discussion"]
+        )
     else:
         pytest.skip("BioC full text not available for test PMID")
 
 
-@pytest.mark.external_api 
+@pytest.mark.external_api
 def test_get_full_text_from_bioc_invalid():
     """Test BioC extraction with invalid PMID."""
     result = aupu.get_full_text_from_bioc("invalid-pmid")
@@ -181,7 +189,7 @@ def test_get_abstract_from_pubmed():
     # Use a PMID known to have an abstract
     test_pmid = "31653696"  # This PMID has "deglycase" in abstract
     result = aupu.get_abstract_from_pubmed(test_pmid)
-    
+
     if result is not None:
         assert isinstance(result, str)
         assert len(result) > 50  # Should have meaningful abstract content
@@ -211,7 +219,7 @@ def test_extract_doi_from_url_variants():
         ("https://journal.com/doi/10.1038/nature12373", "10.1038/nature12373"),
         ("https://example.com/article/10.1038/nature12373", "10.1038/nature12373"),
     ]
-    
+
     for url, expected_doi in test_cases:
         result = aupu.extract_doi_from_url(url)
         assert result == expected_doi, f"Failed for URL: {url}"
@@ -223,17 +231,17 @@ def test_extract_doi_from_url_edge_cases():
     url_with_params = "https://doi.org/10.1038/nature12373?utm_source=test"
     result = aupu.extract_doi_from_url(url_with_params)
     assert result == "10.1038/nature12373"
-    
+
     # Test with fragment
     url_with_fragment = "https://doi.org/10.1038/nature12373#abstract"
     result = aupu.extract_doi_from_url(url_with_fragment)
     assert result == "10.1038/nature12373"
-    
+
     # Test empty/invalid URLs
     assert aupu.extract_doi_from_url("") is None
     assert aupu.extract_doi_from_url("not-a-url") is None
     assert aupu.extract_doi_from_url("https://example.com") is None
-    
+
     # Test plain DOI (should return None since it expects URL format)
     assert aupu.extract_doi_from_url("10.1038/nature12373") is None
 

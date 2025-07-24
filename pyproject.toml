@@ -104,6 +104,12 @@ select = [
 ]
 ignore = []
 
+# Per-file ignores for specific cases
+[tool.ruff.lint.per-file-ignores]
+"tests/test_pdf_fetcher.py" = [
+    "W291",  # Allow trailing whitespace in PDF fixture content
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
