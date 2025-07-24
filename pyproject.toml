@@ -136,6 +136,7 @@ python_functions = ["test_*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "external_api: marks tests that require external API access (deselect with '-m \"not external_api\"')",
 ]
 
 # Deptry configuration

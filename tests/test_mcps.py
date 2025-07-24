@@ -4,6 +4,8 @@ from fastmcp import Client
 from artl_mcp.main import create_mcp
 
 
+@pytest.mark.external_api
+@pytest.mark.slow
 @pytest.mark.asyncio
 async def test_get_doi_metadata_contains_neuroblastoma():
     # Create MCP server instance
