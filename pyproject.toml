@@ -104,6 +104,12 @@ select = [
 ]
 ignore = []
 
+# Per-file ignores for specific cases
+[tool.ruff.lint.per-file-ignores]
+"tests/test_pdf_fetcher.py" = [
+    "W291",  # Allow trailing whitespace in PDF fixture content
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -136,6 +142,7 @@ python_functions = ["test_*"]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
+    "external_api: marks tests that require external API access (deselect with '-m \"not external_api\"')",
 ]
 
 # Deptry configuration

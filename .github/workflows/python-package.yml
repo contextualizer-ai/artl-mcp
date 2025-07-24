@@ -32,7 +32,7 @@ jobs:
         source .venv/bin/activate
         make dev
 
-    - name: Build and test
+    - name: Build and test with pytest (all tests including external APIs)
       run: |
         source .venv/bin/activate
         make all

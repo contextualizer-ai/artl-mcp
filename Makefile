@@ -1,6 +1,6 @@
-.PHONY: test-coverage clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version
+.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version
 
-# Default target
+# Default target - use test-coverage for comprehensive CI/release checks
 all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query test-version
 
 # Install everything for development
@@ -11,9 +11,25 @@ dev:
 install:
 	uv sync
 
-# Run tests with coverage
+# Run tests with pytest (fast, for development)
+test:
+	@echo "🧪 Running tests with pytest..."
+	uv run pytest tests/ -v
+
+# Run tests with coverage using pytest (comprehensive, for CI/releases)
 test-coverage:
+	@echo "🧪 Running pytest with coverage reporting..."
 	uv run pytest --cov=artl_mcp --cov-report=html --cov-report=term tests/
+
+# Run only unit tests (skip external API calls) using pytest
+test-unit:
+	@echo "🧪 Running unit tests only (no external APIs)..."
+	uv run pytest -m "not external_api" tests/ -v
+
+# Run only external API tests using pytest  
+test-external-api:
+	@echo "🧪 Running external API tests..."
+	uv run pytest -m "external_api" tests/ -v
 
 # Clean up build artifacts
 clean:
