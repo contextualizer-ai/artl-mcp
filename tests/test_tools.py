@@ -174,8 +174,7 @@ def test_extract_paper_info_complete_data():
     assert result["doi"] == "10.1038/s42256-023-00123-4"
     assert result["url"] == "https://www.nature.com/articles/s42256-023-00123-4"
     assert (
-        result["abstract"]
-        == "This comprehensive review examines machine learning..."
+        result["abstract"] == "This comprehensive review examines machine learning..."
     )
     assert result["citation_count"] == 142
     assert result["type"] == "journal-article"
