@@ -330,7 +330,6 @@ startxref
         """Test handling of OS errors during file operations."""
         from unittest.mock import Mock, patch
 
-
         # Mock successful HTTP response
         mock_response = Mock()
         mock_response.status_code = 200
