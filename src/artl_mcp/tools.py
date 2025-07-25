@@ -80,17 +80,20 @@ def get_doi_metadata(
         data = response.json()
 
         # Save to file if requested
-        saved_path = file_manager.handle_file_save(
-            content=data,
-            base_name="metadata",
-            identifier=clean_doi,
-            file_format="json",
-            save_file=save_file,
-            save_to=save_to,
-            use_temp_dir=True,
-        )
-        if saved_path:
-            logger.info(f"Metadata saved to: {saved_path}")
+        try:
+            saved_path = file_manager.handle_file_save(
+                content=data,
+                base_name="metadata",
+                identifier=clean_doi,
+                file_format="json",
+                save_file=save_file,
+                save_to=save_to,
+                use_temp_dir=False,
+            )
+            if saved_path:
+                logger.info(f"Metadata saved to: {saved_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save metadata file: {e}")
 
         # Return in the same format as habanero - just the API response
         return data
@@ -189,17 +192,20 @@ def search_papers_by_keyword(
         data = response.json()
 
         # Save to file if requested
-        saved_path = file_manager.handle_file_save(
-            content=data,
-            base_name="search",
-            identifier=query.replace(" ", "_"),
-            file_format="json",
-            save_file=save_file,
-            save_to=save_to,
-            use_temp_dir=True,
-        )
-        if saved_path:
-            logger.info(f"Search results saved to: {saved_path}")
+        try:
+            saved_path = file_manager.handle_file_save(
+                content=data,
+                base_name="search",
+                identifier=query.replace(" ", "_"),
+                file_format="json",
+                save_file=save_file,
+                save_to=save_to,
+                use_temp_dir=False,
+            )
+            if saved_path:
+                logger.info(f"Search results saved to: {saved_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save search results file: {e}")
 
         # Return in the same format as habanero
         return data
@@ -331,17 +337,20 @@ def get_abstract_from_pubmed_id(
 
     # Save to file if requested
     if abstract_from_pubmed:
-        saved_path = file_manager.handle_file_save(
-            content=abstract_from_pubmed,
-            base_name="abstract",
-            identifier=pmid,
-            file_format="txt",
-            save_file=save_file,
-            save_to=save_to,
-            use_temp_dir=True,
-        )
-        if saved_path:
-            logger.info(f"Abstract saved to: {saved_path}")
+        try:
+            saved_path = file_manager.handle_file_save(
+                content=abstract_from_pubmed,
+                base_name="abstract",
+                identifier=pmid,
+                file_format="txt",
+                save_file=save_file,
+                save_to=save_to,
+                use_temp_dir=False,
+            )
+            if saved_path:
+                logger.info(f"Abstract saved to: {saved_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save abstract file: {e}")
 
     return abstract_from_pubmed
 
@@ -399,7 +408,7 @@ def get_doi_fetcher_metadata(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"DOI Fetcher metadata saved to: {saved_path}")
@@ -465,7 +474,7 @@ def get_unpaywall_info(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Unpaywall info saved to: {saved_path}")
@@ -524,7 +533,7 @@ def get_full_text_from_doi(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Full text saved to: {saved_path}")
@@ -592,7 +601,7 @@ def get_full_text_info(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Full text info saved to: {saved_path}")
@@ -659,7 +668,7 @@ def get_text_from_pdf_url(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"PDF URL text saved to: {saved_path}")
@@ -715,7 +724,7 @@ def extract_pdf_text(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"PDF text saved to: {saved_path}")
@@ -771,7 +780,7 @@ def clean_text(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Cleaned text saved to: {saved_path}")
@@ -875,7 +884,7 @@ def get_doi_text(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Full text saved to: {saved_path}")
@@ -944,7 +953,7 @@ def get_pmcid_text(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"PMC text saved to: {saved_path}")
@@ -996,7 +1005,7 @@ def get_pmid_text(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"PMID text saved to: {saved_path}")
@@ -1048,7 +1057,7 @@ def get_full_text_from_bioc(
                 file_format="txt",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"BioC text saved to: {saved_path}")
@@ -1127,17 +1136,20 @@ def search_pubmed_for_pmids(
 
         # Save to file if requested
         if search_results and (save_file or save_to):
-            saved_path = file_manager.handle_file_save(
-                content=search_results,
-                base_name="pubmed_search",
-                identifier=query.replace(" ", "_"),
-                file_format="json",
-                save_file=save_file,
-                save_to=save_to,
-                use_temp_dir=True,
-            )
-            if saved_path:
-                logger.info(f"PubMed search results saved to: {saved_path}")
+            try:
+                saved_path = file_manager.handle_file_save(
+                    content=search_results,
+                    base_name="pubmed_search",
+                    identifier=query.replace(" ", "_"),
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"PubMed search results saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save PubMed search results file: {e}")
 
         return search_results
 
@@ -1276,7 +1288,7 @@ def get_all_identifiers(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"All identifiers saved to: {saved_path}")
@@ -1365,7 +1377,7 @@ def get_paper_references(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Paper references saved to: {saved_path}")
@@ -1421,7 +1433,7 @@ def get_paper_citations(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Paper citations saved to: {saved_path}")
@@ -1478,7 +1490,7 @@ def get_citation_network(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Citation network saved to: {saved_path}")
@@ -1534,7 +1546,7 @@ def find_related_papers(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Related papers saved to: {saved_path}")
@@ -1593,7 +1605,7 @@ def get_comprehensive_citation_info(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Comprehensive citation info saved to: {saved_path}")
@@ -1692,7 +1704,7 @@ def convert_identifier_format(
                 file_format="json",
                 save_file=save_file,
                 save_to=save_to,
-                use_temp_dir=True,
+                use_temp_dir=False,
             )
             if saved_path:
                 logger.info(f"Identifier conversion saved to: {saved_path}")
