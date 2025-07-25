@@ -8,7 +8,7 @@ import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.citation_utils import CitationUtils
 from artl_mcp.utils.conversion_utils import IdentifierConverter
 from artl_mcp.utils.doi_fetcher import DOIFetcher
-from artl_mcp.utils.email_manager import EmailManager
+from artl_mcp.utils.config_manager import get_email_manager
 from artl_mcp.utils.file_manager import FileFormat, file_manager
 from artl_mcp.utils.identifier_utils import IdentifierError, IdentifierUtils, IDType
 from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
@@ -69,7 +69,7 @@ def get_doi_metadata(
         }
 
         # Add email if available for better API access
-        em = EmailManager()
+        em = get_email_manager()
         email = em.get_email()
         if email:
             headers["mailto"] = email
@@ -380,7 +380,7 @@ def get_doi_fetcher_metadata(
         # Saves to specified path
     """
     try:
-        em = EmailManager()
+        em = get_email_manager()
         validated_email = em.validate_for_api("crossref", email)
         dfr = DOIFetcher(email=validated_email)
         metadata = dfr.get_metadata(doi)
@@ -446,7 +446,7 @@ def get_unpaywall_info(
         # Saves to specified path
     """
     try:
-        em = EmailManager()
+        em = get_email_manager()
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
         unpaywall_info = dfr.get_unpaywall_info(doi, strict=strict)
@@ -509,7 +509,7 @@ def get_full_text_from_doi(
         # Saves to specified path
     """
     try:
-        em = EmailManager()
+        em = get_email_manager()
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
         full_text = dfr.get_full_text(doi)
@@ -566,7 +566,7 @@ def get_full_text_info(
         # Saves to specified path
     """
     try:
-        em = EmailManager()
+        em = get_email_manager()
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
         result = dfr.get_full_text_info(doi)
@@ -640,7 +640,7 @@ def get_text_from_pdf_url(
         # Saves to specified path
     """
     try:
-        em = EmailManager()
+        em = get_email_manager()
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
         extracted_text = dfr.text_from_pdf_url(pdf_url)
@@ -755,7 +755,7 @@ def clean_text(
         # Saves to specified path
     """
     try:
-        em = EmailManager()
+        em = get_email_manager()
         validated_email = em.validate_for_api("crossref", email)
         dfr = DOIFetcher(email=validated_email)
         cleaned_text = dfr.clean_text(text)

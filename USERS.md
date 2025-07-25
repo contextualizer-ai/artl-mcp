@@ -218,8 +218,31 @@ Simply mention your email when making requests that need it:
 "My email is researcher@university.edu. Please download the full text of PMC7523075."
 ```
 
-**Method 3: MCP Agent Storage (If Supported)**
-Some MCP-capable agents can store your email address in their settings or environment. Check your agent's documentation for this capability.
+**Method 3: MCP Client Configuration (Enhanced)**
+ARTL-MCP's new ConfigManager system supports direct configuration injection from MCP clients:
+
+- **Claude Desktop**: Uses system environment variables automatically
+- **Goose Desktop**: Now supports configuration injection through the enhanced system
+- **Other MCP clients**: Can inject configuration directly via the ConfigManager
+
+**Configuration Priority System:**
+1. **MCP Client Config** - Highest priority (injected by client)
+2. **Environment Variables** - Medium priority (ARTL_EMAIL_ADDR)
+3. **Local .env File** - Lowest priority (local/.env)
+
+**Method 4: CLI Parameter (Command Line Only)**
+```bash
+artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "researcher@university.edu"
+```
+
+**Method 5: GitHub Actions/CI (Automated)**
+```yaml
+env:
+  ARTL_EMAIL_ADDR: ${{ secrets.ARTL_EMAIL_ADDR }}
+steps:
+  - name: Test with email
+    run: uvx artl-cli get-doi-metadata --doi "10.1038/nature12373"
+```
 
 #### Why Email Addresses are Required
 
@@ -231,14 +254,18 @@ Academic APIs require email addresses to:
 
 **Important:** Use your institutional email address (university, research institute, or company) rather than personal email for best access to paywalled content.
 
-### Best Practices for Claude Desktop Usage
+### Best Practices for MCP Client Usage
 
 1. **Start Simple**: Begin with basic queries like "Get metadata for DOI X" before complex multi-step requests
 2. **Be Specific**: Include specific identifiers (DOI, PMID, PMCID) when possible for best results
 3. **Check File Locations**: Always ask where files are saved for important downloads
-4. **Set Email Early**: Configure your institutional email to avoid interruptions during research
+4. **Configure Email Properly**: Use the enhanced configuration system for reliable email access:
+   - **Claude Desktop**: Set environment variables normally
+   - **Goose Desktop**: Use MCP client configuration injection
+   - **Other clients**: Test configuration injection or use fallback methods
 5. **Use Debug Mode**: Add `--debug --verbose` flags when troubleshooting or learning how tools work
 6. **Batch Requests**: Combine related queries like "Get the abstract and find related papers for DOI X"
+7. **Test Configuration**: Verify your email configuration works before starting research sessions
 
 ### Troubleshooting Claude Desktop Integration
 
@@ -256,6 +283,81 @@ export ARTL_EMAIL_ADDR="your@institution.edu"
 - Verify MCP configuration in Claude Desktop settings
 - Check that `uvx artl-mcp` works from command line
 - Restart Claude Desktop application
+
+#### MCP Client Configuration Issues
+
+Different MCP clients handle environment variables and configuration differently. Here are known issues and solutions:
+
+**Goose Desktop and Enhanced Configuration Support**
+
+**✅ RESOLVED**: ARTL-MCP now includes enhanced configuration injection system
+
+**New ConfigManager Features:**
+- **Client Configuration Injection**: MCP clients can provide configuration directly
+- **Priority System**: Client config → Environment variables → Local .env file
+- **Automatic Integration**: All tools use the new configuration system
+
+**Updated Configuration Methods:**
+
+```json
+// Claude Desktop - Environment variables (existing method)
+{
+  "mcpServers": {
+    "artl-mcp": {
+      "command": "uvx",
+      "args": ["artl-mcp"],
+      "env": {
+        "ARTL_EMAIL_ADDR": "researcher@university.edu"
+      }
+    }
+  }
+}
+
+// Goose Desktop or other clients - Configuration injection
+{
+  "mcpServers": {
+    "artl-mcp": {
+      "command": "uvx",
+      "args": ["artl-mcp"],
+      "config": {
+        "ARTL_EMAIL_ADDR": "researcher@university.edu",
+        "ARTL_OUTPUT_DIR": "/path/to/output"
+      }
+    }
+  }
+}
+```
+
+**For Developers/Advanced Users:**
+The new system allows MCP clients to inject configuration via the ConfigManager:
+
+```python
+from artl_mcp.utils.config_manager import set_client_config
+
+# Client initialization
+client_config = {"ARTL_EMAIL_ADDR": "user@university.edu"}
+set_client_config(client_config)
+```
+
+**Other MCP Clients**:
+- **New**: Use configuration injection via ConfigManager system
+- **Fallback**: Test environment variable support with your specific client  
+- **Legacy**: Use CLI parameters or request-based email as fallbacks
+- **Documentation**: Check client documentation for configuration injection methods
+
+**Testing Your Configuration:**
+Verify that your MCP client configuration is working:
+
+```bash
+# Test email configuration
+uvx artl-cli get-doi-fetcher-metadata --doi "10.1038/nature12373"
+
+# Expected behavior:
+# ✅ Uses email from MCP client config (highest priority)
+# ✅ Falls back to environment variable if no client config
+# ✅ Falls back to local/.env file if no environment variable
+# ❌ Clear error message if no email configured anywhere
+```
 
 ## CLI Usage
 

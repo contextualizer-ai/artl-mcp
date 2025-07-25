@@ -126,6 +126,26 @@ The `.env` file method is ideal for developers who:
 - Want project-specific configuration without affecting global environment
 - Prefer not to modify shell configuration files
 
+**Option 3: MCP Client Configuration (Testing)**
+
+For testing MCP client configuration injection:
+
+```python
+# Test configuration injection
+from artl_mcp.utils.config_manager import set_client_config
+
+# Simulate MCP client providing configuration
+client_config = {
+    "ARTL_EMAIL_ADDR": "developer@university.edu",
+    "ARTL_OUTPUT_DIR": "/tmp/artl-test"
+}
+set_client_config(client_config)
+
+# Tools now use client configuration automatically
+from artl_mcp.tools import get_doi_metadata
+result = get_doi_metadata("10.1038/nature12373")
+```
+
 ## Architecture
 
 ### Core Components
@@ -171,6 +191,14 @@ The `.env` file method is ideal for developers who:
 - Email validation and sanitization
 - API-specific email requirements
 - Environment variable handling
+- MCP client configuration injection
+
+**Configuration Management (`config_manager.py`)**
+
+- Centralized configuration from MCP clients
+- Configuration priority management
+- Global configuration state
+- EmailManager factory functions
 
 **File Management (`file_manager.py`)**
 
@@ -229,18 +257,54 @@ def get_metadata(doi: str, save_file: bool = False, save_to: str = None) -> Dict
     return metadata
 ```
 
-#### 3. Email Management
+#### 3. Configuration Management System
+
+The project uses a sophisticated configuration injection system to handle MCP client configurations and environment variables.
+
+**ConfigManager Architecture:**
 
 ```python
-from artl_mcp.utils.email_manager import EmailManager
+from artl_mcp.utils.config_manager import ConfigManager, get_email_manager, set_client_config
 
+# Initialize with client configuration (typically done by MCP server)
+config_manager = ConfigManager(client_config={"ARTL_EMAIL_ADDR": "user@university.edu"})
 
-def api_function(identifier: str, email: str) -> Optional[Dict]:
-    em = EmailManager()
+# Set global configuration for all tools
+set_client_config({"ARTL_EMAIL_ADDR": "researcher@institution.edu"})
+
+# Get configured EmailManager (uses global configuration)
+email_manager = get_email_manager()
+```
+
+**Configuration Priority System:**
+
+1. **MCP client configuration** (highest priority)
+2. **Environment variables** (medium priority)
+3. **Local .env file** (lowest priority)
+
+**Enhanced EmailManager Integration:**
+
+```python
+from artl_mcp.utils.config_manager import get_email_manager
+
+def api_function(identifier: str, email: str = None) -> Optional[Dict]:
+    # Get EmailManager with client configuration automatically injected
+    em = get_email_manager()
     validated_email = em.validate_for_api("crossref", email)
 
     # Use validated_email for API calls
     return make_api_call(identifier, validated_email)
+```
+
+**Client Configuration Injection:**
+
+```python
+# Direct EmailManager with client config
+from artl_mcp.utils.email_manager import EmailManager
+
+client_config = {"ARTL_EMAIL_ADDR": "researcher@university.edu"}
+em = EmailManager(client_config=client_config)
+email = em.get_email()  # Uses client config as second priority
 ```
 
 ## Code Quality
@@ -639,25 +703,87 @@ def save_data(data: Dict, filepath: str) -> bool:
         return False
 ```
 
+### MCP Client Configuration Integration
+
+#### Setting Up Configuration Injection
+
+**For MCP Server Implementations:**
+
+```python
+# In your MCP server initialization code
+from artl_mcp.utils.config_manager import set_client_config
+
+def initialize_mcp_server(client_provided_config):
+    """Initialize ARTL-MCP with client configuration."""
+    # Set global configuration from MCP client
+    set_client_config(client_provided_config)
+    
+    # Now all tools automatically use client configuration
+    # No changes needed to individual tool calls
+```
+
+**For Different MCP Clients:**
+
+```python
+# Claude Desktop - uses environment variables automatically
+# No additional configuration needed
+
+# Goose Desktop or other clients - configuration injection
+client_config = {
+    "ARTL_EMAIL_ADDR": "researcher@university.edu",
+    "ARTL_OUTPUT_DIR": "/path/to/output",
+    "ARTL_TEMP_DIR": "/path/to/temp"
+}
+set_client_config(client_config)
+```
+
+#### Testing Configuration Injection
+
+```python
+# Test that configuration injection works
+from artl_mcp.utils.config_manager import ConfigManager, get_email_manager
+
+def test_client_config_injection():
+    # Create test configuration
+    test_config = {"ARTL_EMAIL_ADDR": "test@university.edu"}
+    
+    # Initialize ConfigManager with test config
+    config_manager = ConfigManager(client_config=test_config)
+    
+    # Verify EmailManager uses client config
+    email_manager = config_manager.get_email_manager()
+    email = email_manager.get_email()
+    
+    assert email == "test@university.edu"
+    print("✅ Client configuration injection working")
+```
+
 ### Adding New Features
 
 #### 1. New MCP Tool
 
 ```python
 # In tools.py
+from artl_mcp.utils.config_manager import get_email_manager
+
 @mcp.tool()
-def new_tool_name(parameter: str) -> Optional[Dict[str, Any]]:
+def new_tool_name(parameter: str, email: str = None) -> Optional[Dict[str, Any]]:
     """Tool description for MCP client.
     
     Args:
         parameter: Description of parameter
+        email: Optional email (uses configuration if not provided)
         
     Returns:
         Tool result data
     """
     try:
-        # Implementation
-        result = process_parameter(parameter)
+        # Use configured EmailManager (automatically gets client config)
+        em = get_email_manager()
+        validated_email = em.validate_for_api("some_api", email)
+        
+        # Implementation using validated email
+        result = process_parameter(parameter, validated_email)
         return result
     except Exception as e:
         logger.error(f"Tool error: {e}")
@@ -692,7 +818,7 @@ def new_command(parameter: str, save_file: bool):
         sys.exit(1)
 ```
 
-#### 3. New Utility Module
+#### 3. New Utility Module with Configuration Support
 
 Create `src/artl_mcp/utils/new_module.py`:
 
@@ -701,24 +827,47 @@ Create `src/artl_mcp/utils/new_module.py`:
 
 import logging
 from typing import Optional, Dict, Any
+from .config_manager import get_email_manager, get_config_value
 
 logger = logging.getLogger(__name__)
 
 
 class NewUtility:
-    """Utility class description."""
+    """Utility class with configuration support."""
 
-    def __init__(self, config: Optional[str] = None):
-        self.config = config
+    def __init__(self, client_config: Optional[Dict[str, Any]] = None):
+        """Initialize with optional client configuration."""
+        self.client_config = client_config or {}
 
-    def process_data(self, data: str) -> Optional[Dict[str, Any]]:
-        """Process data and return results."""
+    def process_data(self, data: str, email: str = None) -> Optional[Dict[str, Any]]:
+        """Process data with automatic email configuration."""
         try:
-            # Implementation
-            return {"processed": data}
+            # Get email from configuration system
+            em = get_email_manager()
+            validated_email = em.get_email(email)
+            
+            # Get other configuration values
+            output_dir = get_config_value("ARTL_OUTPUT_DIR", "~/Documents/artl-mcp")
+            
+            # Implementation using configured values
+            result = {
+                "processed": data,
+                "email_used": validated_email,
+                "output_dir": output_dir
+            }
+            return result
         except Exception as e:
             logger.error(f"Processing failed: {e}")
             return None
+
+    def get_config_value(self, key: str, default: Any = None) -> Any:
+        """Get configuration value with fallbacks."""
+        # Check instance config first
+        if key in self.client_config:
+            return self.client_config[key]
+        
+        # Use global configuration manager
+        return get_config_value(key, default)
 ```
 
 ### Testing New Features
