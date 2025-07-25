@@ -109,8 +109,8 @@ class EmailManager:
         """Check if email has valid format."""
         if not email or not isinstance(email, str):
             return False
-        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        return bool(re.match(pattern, email))
+        pattern = r"^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        return bool(re.match(pattern, email)) and not email.startswith('.') and not email.endswith('.')
 
     def _is_bogus_email(self, email: str) -> bool:
         """Check if email matches bogus patterns."""
