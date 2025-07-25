@@ -1671,7 +1671,7 @@ def convert_identifier_format(
                 "error": f"Unsupported identifier type: {id_type}",
             }
 
-        conversion_result = {
+        conversion_result: dict[str, str | None] = {
             "input": identifier,
             "output": converted,
             "input_type": id_type,
