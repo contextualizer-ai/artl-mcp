@@ -64,8 +64,7 @@ jobs:
 
       - name: Check package
         run: |
-          uv tool install twine
-          uv tool run twine check dist/*
+          uv tool run hatch build --check
 
       - name: Verify version matches tag
         run: |
@@ -98,8 +97,8 @@ jobs:
         run: |
           echo "Dry run mode - would publish these files:"
           ls -la dist/
-          echo "Package contents:"
-          uv tool run twine check dist/* --verbose
+          echo "Package build validation:"
+          uv tool run hatch build --check
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
