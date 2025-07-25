@@ -71,7 +71,7 @@ DOI, PMID, or PMCID.
 **Cross-platform paths**: Works on Windows, macOS, and Linux
 **Environment configuration**:
 - `ARTL_OUTPUT_DIR` - Custom output directory
-- `ARTL_TEMP_DIR` - Custom temp directory  
+- `ARTL_TEMP_DIR` - Custom temp directory
 - `ARTL_KEEP_TEMP_FILES` - Retention policy
 
 ## Supported Identifier Formats
@@ -116,7 +116,7 @@ PMIDs with metadata
 
 ## 4. Identifier Conversion and Utilities
 - **extract_doi_from_url**: Extract DOI from various URL formats
-- **convert_identifier_format** 📁: Convert identifiers between formats (raw, CURIE, URL)
+- **convert_identifier_format** 📁: Convert between ID formats (raw, CURIE, URL)
 - **doi_to_pmid**: Convert DOI to PMID
 - **doi_to_pmcid**: Convert DOI to PMCID
 - **pmid_to_doi**: Convert PMID to DOI

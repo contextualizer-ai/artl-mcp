@@ -89,7 +89,7 @@ class IdentifierUtils:
         # Check PMID patterns
         if cls.PMID_PATTERN.match(identifier):
             return "pmid"
-        if cls.PMCID_PREFIXED_PATTERN.match(identifier):
+        if cls.PMID_PREFIXED_PATTERN.match(identifier):
             return "pmid"
 
         return "unknown"

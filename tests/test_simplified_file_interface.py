@@ -171,18 +171,24 @@ class TestSimplifiedFileInterface:
 
     def test_save_to_overrides_save_file(self):
         """Test that save_to parameter overrides save_file parameter."""
+        import uuid
+
         with tempfile.TemporaryDirectory() as temp_dir:
-            save_path = Path(temp_dir) / "override_test.txt"
+            # Use unique identifier to avoid conflicts with previous test runs
+            unique_id = str(uuid.uuid4())[:8]
+            save_path = Path(temp_dir) / f"override_test_{unique_id}.txt"
             test_content = "override test"
 
-            # Count existing files before
-            temp_files_before = list(file_manager.temp_dir.glob("*override*"))
-            output_files_before = list(file_manager.output_dir.glob("*override*"))
+            # Clean up any existing files with our unique identifier (safety measure)
+            for existing_file in file_manager.temp_dir.glob(f"*{unique_id}*"):
+                existing_file.unlink(missing_ok=True)
+            for existing_file in file_manager.output_dir.glob(f"*{unique_id}*"):
+                existing_file.unlink(missing_ok=True)
 
             # save_file=True should be ignored when save_to is provided
             result = file_manager.handle_file_save(
                 content=test_content,
-                base_name="override",
+                base_name=f"override_{unique_id}",
                 identifier="123",
                 file_format="txt",
                 save_file=True,
@@ -194,12 +200,15 @@ class TestSimplifiedFileInterface:
             assert result.exists()
             assert result.read_text() == test_content
 
-            # Should not have created new files in temp or output directories
-            temp_files_after = list(file_manager.temp_dir.glob("*override*"))
-            output_files_after = list(file_manager.output_dir.glob("*override*"))
+            # Should not have created any files with our unique identifier
+            # in temp/output dirs
+            temp_files = list(file_manager.temp_dir.glob(f"*{unique_id}*"))
+            output_files = list(file_manager.output_dir.glob(f"*{unique_id}*"))
 
-            assert len(temp_files_after) == len(temp_files_before)
-            assert len(output_files_after) == len(output_files_before)
+            assert len(temp_files) == 0, f"Unexpected files in temp dir: {temp_files}"
+            assert (
+                len(output_files) == 0
+            ), f"Unexpected files in output dir: {output_files}"
 
 
 @pytest.mark.integration

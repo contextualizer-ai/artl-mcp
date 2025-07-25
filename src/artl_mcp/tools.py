@@ -254,12 +254,12 @@ def search_recent_papers(
 
     # Use search_papers_by_keyword with file saving parameters
     return search_papers_by_keyword(
-        query=query, 
-        max_results=max_results, 
-        sort="published", 
+        query=query,
+        max_results=max_results,
+        sort="published",
         filter_params=filters,
         save_file=save_file,
-        save_to=save_to
+        save_to=save_to,
     )
 
 
@@ -347,7 +347,9 @@ def get_abstract_from_pubmed_id(
 
 
 # DOIFetcher-based tools
-def get_doi_fetcher_metadata(doi: str, email: str, save_file: bool = False, save_to: str | None = None) -> dict[str, Any] | None:
+def get_doi_fetcher_metadata(
+    doi: str, email: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
     """
     Get metadata for a DOI using DOIFetcher. Requires a user email address.
 
@@ -368,9 +370,13 @@ def get_doi_fetcher_metadata(doi: str, email: str, save_file: bool = False, save
 
     Examples:
         >>> metadata = get_doi_fetcher_metadata("10.1038/nature12373", "user@email.com")
-        >>> get_doi_fetcher_metadata("10.1038/nature12373", "user@email.com", save_file=True)
+        >>> get_doi_fetcher_metadata(
+        ...     "10.1038/nature12373", "user@email.com", save_file=True
+        ... )
         # Saves with auto-generated filename in temp directory
-        >>> get_doi_fetcher_metadata("10.1038/nature12373", "user@email.com", save_to="metadata.json")
+        >>> get_doi_fetcher_metadata(
+        ...     "10.1038/nature12373", "user@email.com", save_to="metadata.json"
+        ... )
         # Saves to specified path
     """
     try:
@@ -378,14 +384,14 @@ def get_doi_fetcher_metadata(doi: str, email: str, save_file: bool = False, save
         validated_email = em.validate_for_api("crossref", email)
         dfr = DOIFetcher(email=validated_email)
         metadata = dfr.get_metadata(doi)
-        
+
         # Save to file if requested
         if metadata:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=metadata,
                 base_name="doi_fetcher_metadata",
@@ -397,7 +403,7 @@ def get_doi_fetcher_metadata(doi: str, email: str, save_file: bool = False, save
             )
             if saved_path:
                 logger.info(f"DOI Fetcher metadata saved to: {saved_path}")
-        
+
         return metadata
     except Exception as e:
         print(f"Error retrieving metadata for DOI {doi}: {e}")
@@ -405,7 +411,11 @@ def get_doi_fetcher_metadata(doi: str, email: str, save_file: bool = False, save
 
 
 def get_unpaywall_info(
-    doi: str, email: str, strict: bool = True, save_file: bool = False, save_to: str | None = None
+    doi: str,
+    email: str,
+    strict: bool = True,
+    save_file: bool = False,
+    save_to: str | None = None,
 ) -> dict[str, Any] | None:
     """
     Get Unpaywall information for a DOI to find open access versions.
@@ -430,7 +440,9 @@ def get_unpaywall_info(
         >>> info = get_unpaywall_info("10.1038/nature12373", "user@email.com")
         >>> get_unpaywall_info("10.1038/nature12373", "user@email.com", save_file=True)
         # Saves with auto-generated filename in temp directory
-        >>> get_unpaywall_info("10.1038/nature12373", "user@email.com", save_to="unpaywall.json")
+        >>> get_unpaywall_info(
+        ...     "10.1038/nature12373", "user@email.com", save_to="unpaywall.json"
+        ... )
         # Saves to specified path
     """
     try:
@@ -438,14 +450,14 @@ def get_unpaywall_info(
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
         unpaywall_info = dfr.get_unpaywall_info(doi, strict=strict)
-        
+
         # Save to file if requested
         if unpaywall_info:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=unpaywall_info,
                 base_name="unpaywall_info",
@@ -457,7 +469,7 @@ def get_unpaywall_info(
             )
             if saved_path:
                 logger.info(f"Unpaywall info saved to: {saved_path}")
-        
+
         return unpaywall_info
     except Exception as e:
         print(f"Error retrieving Unpaywall info for DOI {doi}: {e}")
@@ -523,7 +535,9 @@ def get_full_text_from_doi(
         return None
 
 
-def get_full_text_info(doi: str, email: str, save_file: bool = False, save_to: str | None = None) -> dict[str, Any] | None:
+def get_full_text_info(
+    doi: str, email: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
     """
     Get full text information (metadata about full text availability) from a DOI.
 
@@ -546,7 +560,9 @@ def get_full_text_info(doi: str, email: str, save_file: bool = False, save_to: s
         >>> info = get_full_text_info("10.1038/nature12373", "user@email.com")
         >>> get_full_text_info("10.1038/nature12373", "user@email.com", save_file=True)
         # Saves with auto-generated filename in temp directory
-        >>> get_full_text_info("10.1038/nature12373", "user@email.com", save_to="fulltext_info.json")
+        >>> get_full_text_info(
+        ...     "10.1038/nature12373", "user@email.com", save_to="fulltext_info.json"
+        ... )
         # Saves to specified path
     """
     try:
@@ -556,16 +572,19 @@ def get_full_text_info(doi: str, email: str, save_file: bool = False, save_to: s
         result = dfr.get_full_text_info(doi)
         if result is None:
             return None
-        
-        full_text_info = {"success": getattr(result, "success", False), "info": str(result)}
-        
+
+        full_text_info = {
+            "success": getattr(result, "success", False),
+            "info": str(result),
+        }
+
         # Save to file if requested
         if full_text_info:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=full_text_info,
                 base_name="fulltext_info",
@@ -577,14 +596,16 @@ def get_full_text_info(doi: str, email: str, save_file: bool = False, save_to: s
             )
             if saved_path:
                 logger.info(f"Full text info saved to: {saved_path}")
-        
+
         return full_text_info
     except Exception as e:
         print(f"Error retrieving full text info for DOI {doi}: {e}")
         return None
 
 
-def get_text_from_pdf_url(pdf_url: str, email: str, save_file: bool = False, save_to: str | None = None) -> str | None:
+def get_text_from_pdf_url(
+    pdf_url: str, email: str, save_file: bool = False, save_to: str | None = None
+) -> str | None:
     """
     Extract text from a PDF URL using DOIFetcher.
 
@@ -604,10 +625,18 @@ def get_text_from_pdf_url(pdf_url: str, email: str, save_file: bool = False, sav
         to that file.
 
     Examples:
-        >>> text = get_text_from_pdf_url("https://example.com/paper.pdf", "user@email.com")
-        >>> get_text_from_pdf_url("https://example.com/paper.pdf", "user@email.com", save_file=True)
+        >>> text = get_text_from_pdf_url(
+        ...     "https://example.com/paper.pdf", "user@email.com"
+        ... )
+        >>> get_text_from_pdf_url(
+        ...     "https://example.com/paper.pdf", "user@email.com", save_file=True
+        ... )
         # Saves with auto-generated filename in temp directory
-        >>> get_text_from_pdf_url("https://example.com/paper.pdf", "user@email.com", save_to="pdf_text.txt")
+        >>> get_text_from_pdf_url(
+        ...     "https://example.com/paper.pdf",
+        ...     "user@email.com",
+        ...     save_to="pdf_text.txt"
+        ... )
         # Saves to specified path
     """
     try:
@@ -615,7 +644,7 @@ def get_text_from_pdf_url(pdf_url: str, email: str, save_file: bool = False, sav
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
         extracted_text = dfr.text_from_pdf_url(pdf_url)
-        
+
         # Save to file if requested
         if extracted_text:
             url_identifier = (
@@ -634,7 +663,7 @@ def get_text_from_pdf_url(pdf_url: str, email: str, save_file: bool = False, sav
             )
             if saved_path:
                 logger.info(f"PDF URL text saved to: {saved_path}")
-        
+
         return extracted_text
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
@@ -697,7 +726,9 @@ def extract_pdf_text(
         return None
 
 
-def clean_text(text: str, email: str, save_file: bool = False, save_to: str | None = None) -> str:
+def clean_text(
+    text: str, email: str, save_file: bool = False, save_to: str | None = None
+) -> str:
     """
     Clean text using DOIFetcher's text cleaning functionality.
 
@@ -728,7 +759,7 @@ def clean_text(text: str, email: str, save_file: bool = False, save_to: str | No
         validated_email = em.validate_for_api("crossref", email)
         dfr = DOIFetcher(email=validated_email)
         cleaned_text = dfr.clean_text(text)
-        
+
         # Save to file if requested
         if cleaned_text and (save_file or save_to):
             # Generate identifier from text preview
@@ -744,7 +775,7 @@ def clean_text(text: str, email: str, save_file: bool = False, save_to: str | No
             )
             if saved_path:
                 logger.info(f"Cleaned text saved to: {saved_path}")
-        
+
         return cleaned_text
     except Exception as e:
         print(f"Error cleaning text: {e}")
@@ -803,7 +834,9 @@ def pmid_to_doi(pmid: str) -> str | None:
         return None
 
 
-def get_doi_text(doi: str, save_file: bool = False, save_to: str | None = None) -> str | None:
+def get_doi_text(
+    doi: str, save_file: bool = False, save_to: str | None = None
+) -> str | None:
     """
     Get full text from a DOI.
 
@@ -827,14 +860,14 @@ def get_doi_text(doi: str, save_file: bool = False, save_to: str | None = None) 
     """
     try:
         full_text = aupu.get_doi_text(doi)
-        
+
         # Save to file if requested
         if full_text:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=full_text,
                 base_name="fulltext",
@@ -846,7 +879,7 @@ def get_doi_text(doi: str, save_file: bool = False, save_to: str | None = None) 
             )
             if saved_path:
                 logger.info(f"Full text saved to: {saved_path}")
-        
+
         return full_text
     except Exception as e:
         print(f"Error getting text for DOI {doi}: {e}")
@@ -870,7 +903,9 @@ def get_pmid_from_pmcid(pmcid: str) -> str | None:
         return None
 
 
-def get_pmcid_text(pmcid: str, save_file: bool = False, save_to: str | None = None) -> str | None:
+def get_pmcid_text(
+    pmcid: str, save_file: bool = False, save_to: str | None = None
+) -> str | None:
     """
     Get full text from a PMC ID.
 
@@ -894,14 +929,14 @@ def get_pmcid_text(pmcid: str, save_file: bool = False, save_to: str | None = No
     """
     try:
         full_text = aupu.get_pmcid_text(pmcid)
-        
+
         # Save to file if requested
         if full_text:
             try:
                 clean_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_pmcid = str(pmcid).replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=full_text,
                 base_name="pmcid_text",
@@ -913,14 +948,16 @@ def get_pmcid_text(pmcid: str, save_file: bool = False, save_to: str | None = No
             )
             if saved_path:
                 logger.info(f"PMC text saved to: {saved_path}")
-        
+
         return full_text
     except Exception as e:
         print(f"Error getting text for PMCID {pmcid}: {e}")
         return None
 
 
-def get_pmid_text(pmid: str, save_file: bool = False, save_to: str | None = None) -> str | None:
+def get_pmid_text(
+    pmid: str, save_file: bool = False, save_to: str | None = None
+) -> str | None:
     """
     Get full text from a PubMed ID.
 
@@ -944,14 +981,14 @@ def get_pmid_text(pmid: str, save_file: bool = False, save_to: str | None = None
     """
     try:
         full_text = aupu.get_pmid_text(pmid)
-        
+
         # Save to file if requested
         if full_text:
             try:
                 clean_pmid = IdentifierUtils.normalize_pmid(pmid, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_pmid = str(pmid).replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=full_text,
                 base_name="pmid_text",
@@ -963,14 +1000,16 @@ def get_pmid_text(pmid: str, save_file: bool = False, save_to: str | None = None
             )
             if saved_path:
                 logger.info(f"PMID text saved to: {saved_path}")
-        
+
         return full_text
     except Exception as e:
         print(f"Error getting text for PMID {pmid}: {e}")
         return None
 
 
-def get_full_text_from_bioc(pmid: str, save_file: bool = False, save_to: str | None = None) -> str | None:
+def get_full_text_from_bioc(
+    pmid: str, save_file: bool = False, save_to: str | None = None
+) -> str | None:
     """
     Get full text from BioC format for a PubMed ID.
 
@@ -994,14 +1033,14 @@ def get_full_text_from_bioc(pmid: str, save_file: bool = False, save_to: str | N
     """
     try:
         bioc_text = aupu.get_full_text_from_bioc(pmid)
-        
+
         # Save to file if requested
         if bioc_text:
             try:
                 clean_pmid = IdentifierUtils.normalize_pmid(pmid, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_pmid = str(pmid).replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=bioc_text,
                 base_name="bioc_text",
@@ -1013,14 +1052,19 @@ def get_full_text_from_bioc(pmid: str, save_file: bool = False, save_to: str | N
             )
             if saved_path:
                 logger.info(f"BioC text saved to: {saved_path}")
-        
+
         return bioc_text
     except Exception as e:
         print(f"Error getting BioC text for PMID {pmid}: {e}")
         return None
 
 
-def search_pubmed_for_pmids(query: str, max_results: int = 20, save_file: bool = False, save_to: str | None = None) -> dict[str, Any] | None:
+def search_pubmed_for_pmids(
+    query: str,
+    max_results: int = 20,
+    save_file: bool = False,
+    save_to: str | None = None,
+) -> dict[str, Any] | None:
     """
     Search PubMed for articles using keywords and return PMIDs with metadata.
 
@@ -1080,7 +1124,7 @@ def search_pubmed_for_pmids(query: str, max_results: int = 20, save_file: bool =
                 "query": query,
                 "max_results": max_results,
             }
-        
+
         # Save to file if requested
         if search_results and (save_file or save_to):
             saved_path = file_manager.handle_file_save(
@@ -1094,7 +1138,7 @@ def search_pubmed_for_pmids(query: str, max_results: int = 20, save_file: bool =
             )
             if saved_path:
                 logger.info(f"PubMed search results saved to: {saved_path}")
-        
+
         return search_results
 
     except Exception as e:
@@ -1184,7 +1228,9 @@ def pmcid_to_doi(pmcid: str | int) -> str | None:
         return None
 
 
-def get_all_identifiers(identifier: str, save_file: bool = False, save_to: str | None = None) -> dict[str, str | None]:
+def get_all_identifiers(
+    identifier: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, str | None]:
     """Get all available identifiers (DOI, PMID, PMCID) for any given identifier.
 
     Supports all identifier formats and automatically detects type.
@@ -1215,9 +1261,13 @@ def get_all_identifiers(identifier: str, save_file: bool = False, save_to: str |
     """
     try:
         all_identifiers = IdentifierConverter.get_comprehensive_ids(identifier)
-        
+
         # Save to file if requested
-        if all_identifiers and "error" not in all_identifiers and (save_file or save_to):
+        if (
+            all_identifiers
+            and "error" not in all_identifiers
+            and (save_file or save_to)
+        ):
             clean_identifier = str(identifier).replace("/", "_").replace(":", "_")
             saved_path = file_manager.handle_file_save(
                 content=all_identifiers,
@@ -1230,7 +1280,7 @@ def get_all_identifiers(identifier: str, save_file: bool = False, save_to: str |
             )
             if saved_path:
                 logger.info(f"All identifiers saved to: {saved_path}")
-        
+
         return all_identifiers
     except Exception as e:
         logger.warning(f"Error getting comprehensive IDs for: {identifier} - {e}")
@@ -1271,7 +1321,9 @@ def validate_identifier(identifier: str, expected_type: str | None = None) -> bo
 
 
 # Citation and reference tools
-def get_paper_references(doi: str, save_file: bool = False, save_to: str | None = None) -> list[dict] | None:
+def get_paper_references(
+    doi: str, save_file: bool = False, save_to: str | None = None
+) -> list[dict] | None:
     """Get list of references cited by a paper.
 
     Args:
@@ -1298,14 +1350,14 @@ def get_paper_references(doi: str, save_file: bool = False, save_to: str | None 
     """
     try:
         references = CitationUtils.get_references_crossref(doi)
-        
+
         # Save to file if requested
         if references:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=references,
                 base_name="references",
@@ -1317,14 +1369,16 @@ def get_paper_references(doi: str, save_file: bool = False, save_to: str | None 
             )
             if saved_path:
                 logger.info(f"Paper references saved to: {saved_path}")
-        
+
         return references
     except Exception as e:
         logger.warning(f"Error getting references for DOI: {doi} - {e}")
         return None
 
 
-def get_paper_citations(doi: str, save_file: bool = False, save_to: str | None = None) -> list[dict] | None:
+def get_paper_citations(
+    doi: str, save_file: bool = False, save_to: str | None = None
+) -> list[dict] | None:
     """Get list of papers that cite a given paper.
 
     Args:
@@ -1352,14 +1406,14 @@ def get_paper_citations(doi: str, save_file: bool = False, save_to: str | None =
     """
     try:
         citations = CitationUtils.get_citations_crossref(doi)
-        
+
         # Save to file if requested
         if citations:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=citations,
                 base_name="citations",
@@ -1371,21 +1425,24 @@ def get_paper_citations(doi: str, save_file: bool = False, save_to: str | None =
             )
             if saved_path:
                 logger.info(f"Paper citations saved to: {saved_path}")
-        
+
         return citations
     except Exception as e:
         logger.warning(f"Error getting citations for DOI: {doi} - {e}")
         return None
 
 
-def get_citation_network(doi: str, save_file: bool = False, save_to: str | None = None) -> dict | None:
+def get_citation_network(
+    doi: str, save_file: bool = False, save_to: str | None = None
+) -> dict | None:
     """Get comprehensive citation network information from OpenAlex.
 
     Args:
         doi: The DOI of the paper (supports all DOI formats)
         save_file: Whether to save citation network to temp directory with
             auto-generated filename
-        save_to: Specific path to save citation network (overrides save_file if provided)
+        save_to: Specific path to save citation network (overrides save_file if
+            provided)
 
     Returns:
         Dictionary with citation counts, concepts, referenced works, etc. or
@@ -1406,14 +1463,14 @@ def get_citation_network(doi: str, save_file: bool = False, save_to: str | None 
     """
     try:
         citation_network = CitationUtils.get_citation_network_openalex(doi)
-        
+
         # Save to file if requested
         if citation_network:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=citation_network,
                 base_name="citation_network",
@@ -1425,14 +1482,16 @@ def get_citation_network(doi: str, save_file: bool = False, save_to: str | None 
             )
             if saved_path:
                 logger.info(f"Citation network saved to: {saved_path}")
-        
+
         return citation_network
     except Exception as e:
         logger.warning(f"Error getting citation network for DOI: {doi} - {e}")
         return None
 
 
-def find_related_papers(doi: str, max_results: int = 10, save_file: bool = False, save_to: str | None = None) -> list[dict] | None:
+def find_related_papers(
+    doi: str, max_results: int = 10, save_file: bool = False, save_to: str | None = None
+) -> list[dict] | None:
     """Find papers related to a given paper through citations and references.
 
     Args:
@@ -1460,14 +1519,14 @@ def find_related_papers(doi: str, max_results: int = 10, save_file: bool = False
     """
     try:
         related_papers = CitationUtils.find_related_papers(doi, max_results)
-        
+
         # Save to file if requested
         if related_papers:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=related_papers,
                 base_name="related_papers",
@@ -1479,14 +1538,16 @@ def find_related_papers(doi: str, max_results: int = 10, save_file: bool = False
             )
             if saved_path:
                 logger.info(f"Related papers saved to: {saved_path}")
-        
+
         return related_papers
     except Exception as e:
         logger.warning(f"Error finding related papers for DOI: {doi} - {e}")
         return None
 
 
-def get_comprehensive_citation_info(doi: str, save_file: bool = False, save_to: str | None = None) -> dict[str, str | dict | list | None]:
+def get_comprehensive_citation_info(
+    doi: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, str | dict | list | None]:
     """Get comprehensive citation information from multiple sources.
 
     Retrieves data from CrossRef, OpenAlex, and Semantic Scholar APIs.
@@ -1495,7 +1556,8 @@ def get_comprehensive_citation_info(doi: str, save_file: bool = False, save_to: 
         doi: The DOI of the paper (supports all DOI formats)
         save_file: Whether to save comprehensive citation info to temp directory with
             auto-generated filename
-        save_to: Specific path to save comprehensive citation info (overrides save_file if provided)
+        save_to: Specific path to save comprehensive citation info (overrides
+            save_file if provided)
 
     Returns:
         Dictionary with data from all sources
@@ -1506,7 +1568,9 @@ def get_comprehensive_citation_info(doi: str, save_file: bool = False, save_to: 
         >>> info = get_comprehensive_citation_info("10.1038/nature12373")
         >>> get_comprehensive_citation_info("10.1038/nature12373", save_file=True)
         # Saves with auto-generated filename in temp directory
-        >>> get_comprehensive_citation_info("10.1038/nature12373", save_to="comprehensive.json")
+        >>> get_comprehensive_citation_info(
+        ...     "10.1038/nature12373", save_to="comprehensive.json"
+        ... )
         # Saves to specified path
         >>> info.keys()
         dict_keys(['crossref_references', 'crossref_citations',
@@ -1514,14 +1578,14 @@ def get_comprehensive_citation_info(doi: str, save_file: bool = False, save_to: 
     """
     try:
         comprehensive_info = CitationUtils.get_comprehensive_citation_info(doi)
-        
+
         # Save to file if requested
         if comprehensive_info and "error" not in comprehensive_info:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
-            
+
             saved_path = file_manager.handle_file_save(
                 content=comprehensive_info,
                 base_name="comprehensive_citation_info",
@@ -1533,7 +1597,7 @@ def get_comprehensive_citation_info(doi: str, save_file: bool = False, save_to: 
             )
             if saved_path:
                 logger.info(f"Comprehensive citation info saved to: {saved_path}")
-        
+
         return comprehensive_info
     except Exception as e:
         logger.warning(
@@ -1543,7 +1607,10 @@ def get_comprehensive_citation_info(doi: str, save_file: bool = False, save_to: 
 
 
 def convert_identifier_format(
-    identifier: str, output_format: str = "raw", save_file: bool = False, save_to: str | None = None
+    identifier: str,
+    output_format: str = "raw",
+    save_file: bool = False,
+    save_to: str | None = None,
 ) -> dict[str, str | None]:
     """Convert an identifier to different formats.
 
@@ -1560,7 +1627,8 @@ def convert_identifier_format(
         output_format: Desired output format ("raw", "curie", "url", "prefixed")
         save_file: Whether to save conversion result to temp directory with
             auto-generated filename
-        save_to: Specific path to save conversion result (overrides save_file if provided)
+        save_to: Specific path to save conversion result (overrides save_file if
+            provided)
 
     Returns:
         Dictionary with conversion results and metadata
@@ -1571,7 +1639,9 @@ def convert_identifier_format(
         >>> convert_identifier_format("10.1038/nature12373", "curie")
         >>> convert_identifier_format("10.1038/nature12373", "curie", save_file=True)
         # Saves with auto-generated filename in temp directory
-        >>> convert_identifier_format("10.1038/nature12373", "curie", save_to="conversion.json")
+        >>> convert_identifier_format(
+        ...     "10.1038/nature12373", "curie", save_to="conversion.json"
+        ... )
         # Saves to specified path
         {'input': '10.1038/nature12373', 'output': 'doi:10.1038/nature12373',
          'input_type': 'doi', 'output_format': 'curie'}
@@ -1607,9 +1677,13 @@ def convert_identifier_format(
             "input_type": id_type,
             "output_format": output_format,
         }
-        
+
         # Save to file if requested
-        if conversion_result and "error" not in conversion_result and (save_file or save_to):
+        if (
+            conversion_result
+            and "error" not in conversion_result
+            and (save_file or save_to)
+        ):
             clean_identifier = str(identifier).replace("/", "_").replace(":", "_")
             saved_path = file_manager.handle_file_save(
                 content=conversion_result,
@@ -1622,7 +1696,7 @@ def convert_identifier_format(
             )
             if saved_path:
                 logger.info(f"Identifier conversion saved to: {saved_path}")
-        
+
         return conversion_result
 
     except IdentifierError as e:

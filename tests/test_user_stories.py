@@ -27,6 +27,7 @@ from artl_mcp.tools import (
     get_doi_metadata,
     get_full_text_from_doi,
     get_unpaywall_info,
+    search_papers_by_keyword,
 )
 from artl_mcp.utils.email_manager import EmailManager
 from artl_mcp.utils.pubmed_utils import (
@@ -72,9 +73,9 @@ class TestEmailManagement:
             with pytest.raises(ValueError, match="Invalid email format"):
                 em.get_email(invalid_email)
 
-        # Empty string should return None from environment/file (no exception)
+        # Empty string should fall back to environment/file (no exception)
         em.get_email("")
-        # Result depends on whether valid email is configured
+        # Result could be None or an actual email from environment, both are valid
 
     def test_email_manager_api_specific_validation(self):
         """User story: APIs have specific email requirements."""
@@ -223,12 +224,38 @@ class TestSearchWorkflows:
     @pytest.mark.slow
     def test_keyword_search_to_metadata_workflow(self):
         """User story: Researcher searches by keyword, explores results."""
-        # This would test the search functionality when implemented
         # Given: A researcher wants papers about "machine learning"
+        keywords = "machine learning"
+        max_results = 5  # Small number for testing
+
         # When: They search by keyword
+        results = search_papers_by_keyword(keywords, max_results=max_results)
+
         # Then: They get relevant paper metadata
-        # And: They can get full details for interesting papers
-        pytest.skip("Search functionality not yet implemented in current branch")
+        if results:  # API might not always be available
+            assert isinstance(results, dict)
+
+            # Should contain standard CrossRef fields
+            if "message" in results:
+                message = results["message"]
+                assert "items" in message
+                items = message["items"]
+                assert isinstance(items, list)
+
+                # And: They can get full details for interesting papers
+                if items:
+                    first_paper = items[0]
+                    assert isinstance(first_paper, dict)
+
+                    # Should have paper metadata
+                    assert "DOI" in first_paper or "title" in first_paper
+
+                    # If DOI is available, they could get more details
+                    if "DOI" in first_paper:
+                        doi = first_paper["DOI"]
+                        detailed_metadata = get_doi_metadata(doi)
+                        if detailed_metadata:
+                            assert isinstance(detailed_metadata, dict)
 
 
 class TestMCPIntegration:
