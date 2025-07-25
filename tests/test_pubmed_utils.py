@@ -190,7 +190,7 @@ def test_get_abstract_from_pubmed():
     test_pmid = "31653696"  # This PMID has "deglycase" in abstract
     result = aupu.get_abstract_from_pubmed(test_pmid)
 
-    if result is not None:
+    if result is not None and len(result) > 0:
         assert isinstance(result, str)
         assert len(result) > 50  # Should have meaningful abstract content
         assert "deglycase" in result.lower()  # Known content

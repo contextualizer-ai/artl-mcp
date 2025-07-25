@@ -36,6 +36,7 @@ dependencies = [
     "beautifulsoup4>=4.9.0",
     "pydantic>=2.0.0",
     "lxml>=4.6.0",
+    "pyyaml>=6.0.1",
 ]
 
 [project.urls]
@@ -76,6 +77,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
+    "pytest-timeout>=2.1.0",
     # Build and packaging tools
     "hatch-vcs>=0.5.0",
     "hatchling>=1.27.0",
@@ -83,6 +85,7 @@ dev = [
     "hatch>=1.14.1",
     "types-requests>=2.32.4.20250611",
     "types-beautifulsoup4>=4.12.0.20250516",
+    "types-pyyaml>=6.0.12",
     "pip>=25.1.1",
 ]
 
@@ -135,7 +138,7 @@ disallow_incomplete_defs = false
 # Pytest configuration
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers"
+addopts = "-ra -q --strict-markers --timeout=180 --durations=20"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_functions = ["test_*"]
@@ -148,10 +151,10 @@ markers = [
 # Deptry configuration
 [tool.deptry]
 # Map import names to package names
-package_module_name_map = {bs4 = "beautifulsoup4", pdfminer = "pdfminer-six"}
+package_module_name_map = {bs4 = "beautifulsoup4", pdfminer = "pdfminer-six", yaml = "pyyaml"}
 
 # Ignore specific error types for known false positives
 [tool.deptry.per_rule_ignores]
-DEP002 = ["lxml", "beautifulsoup4", "pdfminer-six"]  # lxml used by bs4; bs4/pdfminer are mapped imports
+DEP002 = ["lxml", "beautifulsoup4", "pdfminer-six", "pyyaml"]  # lxml used by bs4; bs4/pdfminer are mapped imports; pyyaml used conditionally
 DEP003 = ["click"]          # Transitive dependency - used by fastmcp  
-DEP001 = ["artl_mcp", "bs4", "pdfminer"]  # Missing deps: self-imports and mapped packages ok
+DEP001 = ["artl_mcp", "bs4", "pdfminer", "yaml"]  # Missing deps: self-imports and mapped packages ok

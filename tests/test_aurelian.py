@@ -4,25 +4,40 @@ import pytest
 
 import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.doi_fetcher import DOIFetcher
+from artl_mcp.utils.email_manager import EmailManager
 
 # todo this recapitulates a lot of the tests in https://github.com/monarch-initiative/aurelian/blob/main/src/aurelian/utils/doi_fetcher.py
 #   and you could argue that we shouldn't be hitting the APIs in tests
 
 
+def get_test_email():
+    """Get a valid test email address from environment/local config."""
+    em = EmailManager()
+    email = em.get_email()
+    if not email:
+        pytest.skip(
+            "No valid email address found for testing. "
+            "Set ARTL_EMAIL_ADDR or add to local/.env"
+        )
+    return email
+
+
 def test_doi_fetcher_initialization():
     """Test that DOIFetcher can be initialized properly."""
-    dfr = DOIFetcher(email="test@example.com")
+    test_email = get_test_email()
+    dfr = DOIFetcher(email=test_email)
     assert dfr is not None
 
     # Check if essential attributes exist
     attributes = vars(dfr)
     assert "email" in attributes
-    assert attributes["email"] == "test@example.com"
+    assert attributes["email"] == test_email
 
 
 def test_doi_fetcher_attributes():
     """Test that DOIFetcher has expected methods and attributes."""
-    dfr = DOIFetcher(email="test@example.com")
+    test_email = get_test_email()
+    dfr = DOIFetcher(email=test_email)
 
     # Get all attributes to examine what's actually available
     all_attributes = dir(dfr)
@@ -33,12 +48,13 @@ def test_doi_fetcher_attributes():
 
     # Test for essential attributes we know exist
     assert hasattr(dfr, "email")
-    assert dfr.email == "test@example.com"
+    assert dfr.email == test_email
 
 
 def test_doi_fetcher_functionality():
     """Test basic functionality of DOIFetcher."""
-    dfr = DOIFetcher(email="test@example.com")
+    test_email = get_test_email()
+    dfr = DOIFetcher(email=test_email)
 
     # Test if the instance can be properly converted to string
     assert str(dfr) is not None

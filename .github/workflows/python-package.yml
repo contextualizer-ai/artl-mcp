@@ -33,6 +33,8 @@ jobs:
         make dev
 
     - name: Build and test with pytest (all tests including external APIs)
+      env:
+        ARTL_EMAIL_ADDR: ${{ secrets.ARTL_EMAIL_ADDR }}
       run: |
         source .venv/bin/activate
         make all

@@ -13,9 +13,22 @@ from artl_mcp.tools import (
     get_full_text_info,
     get_unpaywall_info,
 )
+from artl_mcp.utils.email_manager import EmailManager
+
 
 # Test data from test_aurelian.py
-TEST_EMAIL = "test@example.com"
+def get_test_email():
+    """Get a valid test email address from environment/local config."""
+    em = EmailManager()
+    email = em.get_email()
+    if not email:
+        pytest.skip(
+            "No valid email address found for testing. "
+            "Set ARTL_EMAIL_ADDR or add to local/.env"
+        )
+    return email
+
+
 DOI_VALUE = "10.1099/ijsem.0.005153"
 FULL_TEXT_DOI = "10.1128/msystems.00045-18"
 PDF_URL = "https://ceur-ws.org/Vol-1747/IT201_ICBO2016.pdf"
@@ -47,7 +60,8 @@ def test_get_abstract_from_pubmed_id():
 @pytest.mark.slow
 def test_get_unpaywall_info():
     """Test Unpaywall information retrieval."""
-    result = get_unpaywall_info(DOI_VALUE, TEST_EMAIL, strict=True)
+    test_email = get_test_email()
+    result = get_unpaywall_info(DOI_VALUE, test_email, strict=True)
     # Unpaywall may not have all DOIs, so we test more flexibly
     if result is not None:
         assert isinstance(result, dict)
@@ -60,7 +74,8 @@ def test_get_unpaywall_info():
 @pytest.mark.slow
 def test_get_full_text_from_doi():
     """Test full text retrieval from DOI - now actually tests content."""
-    result = get_full_text_from_doi(FULL_TEXT_DOI, TEST_EMAIL)
+    test_email = get_test_email()
+    result = get_full_text_from_doi(FULL_TEXT_DOI, test_email)
     # Test that we actually get meaningful full text content
     if result is not None:
         assert isinstance(result, str)
@@ -75,7 +90,8 @@ def test_get_full_text_from_doi():
 @pytest.mark.slow
 def test_get_full_text_info():
     """Test full text information retrieval."""
-    result = get_full_text_info(FULL_TEXT_DOI, TEST_EMAIL)
+    test_email = get_test_email()
+    result = get_full_text_info(FULL_TEXT_DOI, test_email)
     # Test more flexibly since full text may not be available
     if result is not None:
         assert isinstance(result, dict)
@@ -85,9 +101,10 @@ def test_get_full_text_info():
 
 def test_clean_text():
     """Test text cleaning functionality."""
+    test_email = get_test_email()
     input_text = "   xxx   xxx   "
     expected_output = "xxx xxx"
-    result = clean_text(input_text, TEST_EMAIL)
+    result = clean_text(input_text, test_email)
     assert result == expected_output
 
 
@@ -110,7 +127,8 @@ def test_get_doi_metadata_invalid_doi():
 
 def test_get_unpaywall_info_invalid_doi():
     """Test Unpaywall with invalid DOI."""
-    result = get_unpaywall_info("invalid-doi", TEST_EMAIL)
+    test_email = get_test_email()
+    result = get_unpaywall_info("invalid-doi", test_email)
     assert result is None
 
 
@@ -118,7 +136,8 @@ def test_get_unpaywall_info_invalid_doi():
 @pytest.mark.slow
 def test_get_unpaywall_info_strict_false():
     """Test Unpaywall with strict=False."""
-    result = get_unpaywall_info(DOI_VALUE, TEST_EMAIL, strict=False)
+    test_email = get_test_email()
+    result = get_unpaywall_info(DOI_VALUE, test_email, strict=False)
     # Unpaywall may not have all DOIs, test more flexibly
     if result is not None:
         assert isinstance(result, dict)
@@ -133,8 +152,9 @@ def test_clean_text_various_inputs():
         ("  ", ""),
     ]
 
+    test_email = get_test_email()
     for input_text, _expected in test_cases:
-        result = clean_text(input_text, TEST_EMAIL)
+        result = clean_text(input_text, test_email)
         # The exact cleaning behavior depends on DOIFetcher implementation
         # Just ensure it returns a string
         assert isinstance(result, str)
@@ -379,12 +399,13 @@ def test_clean_text_edge_cases():
         "normal text",  # Normal case
     ]
 
+    test_email = get_test_email()
     for text_input in valid_cases:
-        result = clean_text(text_input, TEST_EMAIL)
+        result = clean_text(text_input, test_email)
         assert isinstance(result, str)
 
     # Test None input separately - this actually returns None
-    result = clean_text(None, TEST_EMAIL)
+    result = clean_text(None, test_email)
     assert result is None
 
 
@@ -397,9 +418,10 @@ def test_get_full_text_info_invalid_doi():
         None,  # None input
     ]
 
+    test_email = get_test_email()
     for doi in invalid_dois:
         try:
-            result = get_full_text_info(doi, TEST_EMAIL)
+            result = get_full_text_info(doi, test_email)
             # Should return None for invalid DOIs
             assert result is None, f"Should return None for invalid DOI: {doi}"
         except Exception:
