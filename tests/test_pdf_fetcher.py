@@ -323,8 +323,9 @@ startxref
         with patch("artl_mcp.utils.pdf_fetcher.requests.get") as mock_get:
             mock_get.side_effect = req_module.exceptions.Timeout("Request timeout")
 
-            with pytest.raises(req_module.exceptions.Timeout):
-                extract_text_from_pdf("https://httpbin.org/delay/10")
+            result = extract_text_from_pdf("https://httpbin.org/delay/10")
+            assert "Error: Network error while retrieving PDF:" in result
+            assert "Request timeout" in result
 
     def test_os_error_handling(self):
         """Test handling of OS errors during file operations."""

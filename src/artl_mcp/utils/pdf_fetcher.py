@@ -9,9 +9,12 @@ def extract_text_from_pdf(pdf_url: str) -> str:
     """
     Download and extract text from a PDF given its URL, using FileManager temp files.
     """
-    response = requests.get(pdf_url)
-    if response.status_code != 200:
-        return "Error: Unable to retrieve PDF."
+    try:
+        response = requests.get(pdf_url)
+        if response.status_code != 200:
+            return "Error: Unable to retrieve PDF."
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.HTTPError, ConnectionError) as e:
+        return f"Error: Network error while retrieving PDF: {e}"
 
     temp_pdf_path = None
     text_results = None
