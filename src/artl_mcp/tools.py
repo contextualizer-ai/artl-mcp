@@ -6,9 +6,9 @@ import requests
 
 import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.citation_utils import CitationUtils
+from artl_mcp.utils.config_manager import get_email_manager
 from artl_mcp.utils.conversion_utils import IdentifierConverter
 from artl_mcp.utils.doi_fetcher import DOIFetcher
-from artl_mcp.utils.config_manager import get_email_manager
 from artl_mcp.utils.file_manager import FileFormat, file_manager
 from artl_mcp.utils.identifier_utils import IdentifierError, IdentifierUtils, IDType
 from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
