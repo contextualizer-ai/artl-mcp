@@ -9,6 +9,7 @@ This module provides comprehensive file management for ARTL MCP, including:
 """
 
 import json
+import logging
 import os
 import tempfile
 from datetime import datetime
