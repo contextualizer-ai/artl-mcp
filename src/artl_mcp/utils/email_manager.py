@@ -26,7 +26,7 @@ class EmailManager:
 
     def __init__(self, client_config: dict | None = None):
         """Initialize the email manager.
-        
+
         Args:
             client_config: Optional configuration dict from MCP client.
                           Useful for clients that don't pass environment variables.
@@ -200,33 +200,35 @@ class EmailManager:
 
     def extract_email_from_text(self, text: str) -> str | None:
         """Extract email address from natural language text.
-        
+
         Args:
             text: Text that might contain an email address
-            
+
         Returns:
             Valid email address if found, None otherwise
         """
         if not text:
             return None
-            
+
         # Look for email patterns in the text
-        email_pattern = r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'
+        email_pattern = r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"
         matches = re.findall(email_pattern, text)
-        
+
         for match in matches:
             if self._is_valid_email(match) and not self._is_bogus_email(match):
                 return match
-                
+
         return None
-    
-    def get_email_with_nlp(self, text: str | None = None, provided_email: str | None = None) -> str | None:
+
+    def get_email_with_nlp(
+        self, text: str | None = None, provided_email: str | None = None
+    ) -> str | None:
         """Get email with natural language processing fallback.
-        
+
         Args:
             text: Natural language text that might contain email
             provided_email: Email address provided by caller
-            
+
         Returns:
             Valid email address or None if none found
         """
@@ -234,14 +236,14 @@ class EmailManager:
         email = self.get_email(provided_email)
         if email:
             return email
-            
+
         # Try extracting from natural language text
         if text:
             extracted_email = self.extract_email_from_text(text)
             if extracted_email:
                 self._cached_email = extracted_email
                 return extracted_email
-                
+
         return None
 
 
