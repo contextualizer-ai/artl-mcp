@@ -61,6 +61,19 @@ All Roads to Literature (ARtL) MCP provides comprehensive tools for retrieving
 scientific literature metadata, full text, abstracts, and citation networks via
 DOI, PMID, or PMCID.
 
+## 🗂️ COMPREHENSIVE FILE SAVING CAPABILITIES
+
+**IMPORTANT**: Most tools support automatic file saving with two options:
+- **`save_file: true`** - Auto-saves to temp directory with generated filename
+- **`save_to: "path/file.ext"`** - Saves to your specified path (overrides save_file)
+
+**Supported file formats**: JSON (metadata), TXT (full text), PDF, XML, YAML, CSV
+**Cross-platform paths**: Works on Windows, macOS, and Linux
+**Environment configuration**:
+- `ARTL_OUTPUT_DIR` - Custom output directory
+- `ARTL_TEMP_DIR` - Custom temp directory  
+- `ARTL_KEEP_TEMP_FILES` - Retention policy
+
 ## Supported Identifier Formats
 - **DOI**: Multiple formats supported
   - Raw: 10.1038/nature12373
@@ -79,46 +92,48 @@ DOI, PMID, or PMCID.
 This server offers five main categories of functionality:
 
 ## 1. Literature Search and Discovery
-- **search_papers_by_keyword**: Search article metadata via keywords
-- **search_recent_papers**: Find recent publications for specific keywords or topics
-- **search_pubmed_for_pmids**: Search PubMed for articles using keywords and return
+- **search_papers_by_keyword** 📁: Search article metadata via keywords
+- **search_recent_papers** 📁: Find recent publications for specific keywords or topics
+- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords and return
 PMIDs with metadata
 
 ## 2. Metadata and Abstract Retrieval
-- **get_doi_metadata**: Get comprehensive metadata for papers using DOI
-- **get_abstract_from_pubmed_id**: Retrieve abstracts from PubMed using PMID
-- **get_doi_fetcher_metadata**: Enhanced metadata retrieval with email requirement
-- **get_unpaywall_info**: Check open access availability via Unpaywall
+- **get_doi_metadata** 📁: Get comprehensive metadata for papers using DOI
+- **get_abstract_from_pubmed_id** 📁: Retrieve abstracts from PubMed using PMID
+- **get_doi_fetcher_metadata** 📁: Enhanced metadata retrieval with email requirement
+- **get_unpaywall_info** 📁: Check open access availability via Unpaywall
 
 ## 3. Full Text Access and Processing
-- **get_full_text_from_doi**: Retrieve full text content using DOI (requires email)
-- **get_full_text_info**: Get detailed full text availability information
-- **get_text_from_pdf_url**: Extract text content from PDF URLs
-- **extract_pdf_text**: Standalone PDF text extraction
-- **get_pmcid_text**: Get full text from PubMed Central ID
-- **get_pmid_text**: Get full text using PMID
-- **get_full_text_from_bioc**: Retrieve full text in BioC format
-- **clean_text**: Clean and format extracted text content
+- **get_full_text_from_doi** 📁: Retrieve full text content using DOI (requires email)
+- **get_full_text_info** 📁: Get detailed full text availability information
+- **get_text_from_pdf_url** 📁: Extract text content from PDF URLs
+- **extract_pdf_text** 📁: Standalone PDF text extraction
+- **get_pmcid_text** 📁: Get full text from PubMed Central ID
+- **get_pmid_text** 📁: Get full text using PMID
+- **get_full_text_from_bioc** 📁: Retrieve full text in BioC format
+- **get_doi_text** 📁: Direct text retrieval using DOI
+- **clean_text** 📁: Clean and format extracted text content
 
 ## 4. Identifier Conversion and Utilities
 - **extract_doi_from_url**: Extract DOI from various URL formats
-- **convert_identifier_format**: Convert identifiers between formats (raw, CURIE, URL)
+- **convert_identifier_format** 📁: Convert identifiers between formats (raw, CURIE, URL)
 - **doi_to_pmid**: Convert DOI to PMID
 - **doi_to_pmcid**: Convert DOI to PMCID
 - **pmid_to_doi**: Convert PMID to DOI
 - **pmid_to_pmcid**: Convert PMID to PMCID
 - **pmcid_to_doi**: Convert PMCID to DOI
 - **get_pmid_from_pmcid**: Get PMID from PMC ID
-- **get_all_identifiers**: Get all available IDs for any identifier
+- **get_all_identifiers** 📁: Get all available IDs for any identifier
 - **validate_identifier**: Validate identifier format
-- **get_doi_text**: Direct text retrieval using DOI
 
 ## 5. Citation Networks and Related Papers
-- **get_paper_references**: Get papers cited by a given paper
-- **get_paper_citations**: Get papers that cite a given paper
-- **get_citation_network**: Get comprehensive citation network from OpenAlex
-- **find_related_papers**: Find papers related through citations
-- **get_comprehensive_citation_info**: Get citation data from multiple sources
+- **get_paper_references** 📁: Get papers cited by a given paper
+- **get_paper_citations** 📁: Get papers that cite a given paper
+- **get_citation_network** 📁: Get comprehensive citation network from OpenAlex
+- **find_related_papers** 📁: Find papers related through citations
+- **get_comprehensive_citation_info** 📁: Get citation data from multiple sources
+
+**📁 = Supports file saving with `save_file` and `save_to` parameters**
 
 ## Usage Notes
 - **Identifier Flexibility**: All tools accept multiple identifier formats and

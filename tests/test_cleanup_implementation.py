@@ -352,7 +352,10 @@ class TestPDFProcessingCleanup:
         with (
             patch.object(file_manager, "create_temp_file", side_effect=mock_create),
             patch.object(file_manager, "cleanup_temp_file", side_effect=mock_cleanup),
-            patch("artl_mcp.utils.pdf_fetcher.requests.get", side_effect=ConnectionError("Network error")),
+            patch(
+                "artl_mcp.utils.pdf_fetcher.requests.get",
+                side_effect=ConnectionError("Network error"),
+            ),
         ):
 
             result = extract_text_from_pdf(invalid_pdf_url)
