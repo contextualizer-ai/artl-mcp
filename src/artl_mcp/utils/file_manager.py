@@ -286,9 +286,9 @@ class FileManager:
             try:
                 temp_path.unlink()
                 return True
-            except OSError:
-                # File might be in use, ignore cleanup error
-                pass
+            except OSError as e:
+                # Log cleanup error for debugging purposes
+                logging.error(f"Failed to delete temporary file {temp_path}: {e}")
 
         return False
 
