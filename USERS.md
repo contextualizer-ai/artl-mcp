@@ -385,6 +385,21 @@ export ARTL_TEMP_DIR="/tmp/my-artl-temp"
 export ARTL_KEEP_TEMP_FILES=true
 ```
 
+**Environment Variable Details:**
+
+- **`ARTL_OUTPUT_DIR`** - Sets custom output directory for permanent files
+  - Default: `~/Documents/artl-mcp`
+  - Usage: Where saved files are permanently stored
+  
+- **`ARTL_TEMP_DIR`** - Sets custom temporary directory location  
+  - Default: System temp directory + `/artl-mcp`
+  - Usage: Where temporary files (PDFs, PMC texts) are stored during processing
+  
+- **`ARTL_KEEP_TEMP_FILES`** - Controls temporary file cleanup
+  - Default: `false` (temp files are cleaned up automatically)
+  - Values: `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` (case-insensitive)
+  - Usage: Set to `true` for debugging or to preserve downloaded files
+
 ## Identifier Formats
 
 ARTL-MCP automatically recognizes and converts between multiple identifier formats:
