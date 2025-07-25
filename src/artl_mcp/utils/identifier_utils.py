@@ -360,7 +360,7 @@ class IdentifierUtils:
             # Try to normalize - if it fails, it's invalid
             cls.normalize_identifier(identifier)
             return True
-        except (IdentifierError, Exception):
+        except IdentifierError:
             return False
 
 

@@ -47,7 +47,7 @@ def test_email_configuration_present():
         )
 
 
-@pytest.mark.skipif(os.getenv("CI"), reason="Skip local/.env tests in CI")
+@pytest.mark.skipif(os.getenv("CI") is not None, reason="Skip local/.env tests in CI")
 def test_local_env_file_exists():
     """Test that local/.env file exists for email configuration."""
     env_file = Path("local/.env")

@@ -126,14 +126,14 @@ class TestEmailManager:
                 result = em.get_email()
                 assert result is None  # Should ignore bogus email
 
-    @pytest.mark.skipif(os.getenv("CI"), reason="Skip local/.env tests in CI")
+    @pytest.mark.skipif(os.getenv("CI") is not None, reason="Skip local/.env tests in CI")
     def test_get_email_from_env_file(self):
         """Test getting email from local/.env file."""
         em = EmailManager()
 
         # Create a temporary .env file
         with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
-            f.write("ARTL_EMAIL_ADDR=envfile@university.edu\\n")
+            f.write("ARTL_EMAIL_ADDR=envfile@university.edu\n")
             env_file_path = f.name
 
         try:
@@ -151,14 +151,14 @@ class TestEmailManager:
         finally:
             os.unlink(env_file_path)
 
-    @pytest.mark.skipif(os.getenv("CI"), reason="Skip local/.env tests in CI")
+    @pytest.mark.skipif(os.getenv("CI") is not None, reason="Skip local/.env tests in CI")
     def test_get_email_supports_legacy_email_address_format(self):
         """Test support for legacy email_address format in .env file."""
         em = EmailManager()
 
         # Create a temporary .env file with legacy format
         with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
-            f.write("email_address=legacy@university.edu\\n")
+            f.write("email_address=legacy@university.edu\n")
             env_file_path = f.name
 
         try:
@@ -347,8 +347,8 @@ class TestEnvFileReading:
         em = EmailManager()
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
-            f.write("OTHER_VAR=value\\n")
-            f.write("ANOTHER_VAR=value2\\n")
+            f.write("OTHER_VAR=value\n")
+            f.write("ANOTHER_VAR=value2\n")
             env_file_path = f.name
 
         try:

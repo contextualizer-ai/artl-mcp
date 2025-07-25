@@ -284,7 +284,9 @@ class TestFileOperations:
     def test_temporary_file_workflow(self):
         """User story: Researcher saves content to files safely."""
         # Given: A researcher wants to save content to a file
-        content = "Sample research paper content\\nWith multiple lines\\nFor analysis"
+        content = """Sample research paper content
+With multiple lines
+For analysis"""
 
         # When: They use temporary file operations (simulating save functionality)
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
