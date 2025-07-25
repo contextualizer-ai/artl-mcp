@@ -29,6 +29,8 @@ jobs:
         run: uv sync --group dev
 
       - name: Run tests
+        env:
+          ARTL_EMAIL_ADDR: ${{ secrets.ARTL_EMAIL_ADDR }}
         run: uv run pytest tests/
 
   build-and-publish:
