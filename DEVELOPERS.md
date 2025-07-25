@@ -952,5 +952,5 @@ uv run artl-mcp --doi-query "10.1038/nature12373"
 
 # Check package info
 uv run hatch version
-uv run hatch build --check
+uv run hatch build
 ```

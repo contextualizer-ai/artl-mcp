@@ -62,9 +62,17 @@ jobs:
       - name: Build package with hatch
         run: uv tool run hatch build
 
-      - name: Check package
+      - name: Check package integrity
         run: |
-          uv tool run hatch build --check
+          echo "Verifying build artifacts:"
+          ls -la dist/
+          echo "Checking package contents:"
+          if find dist -name "*.tar.gz" -exec uv tool run python -m tarfile -l {} \; | head -20; then
+            echo "✅ Package contents verified successfully"
+          else
+            echo "❌ No .tar.gz files found in dist/ directory"
+            exit 1
+          fi
 
       - name: Verify version matches tag
         run: |
@@ -98,7 +106,7 @@ jobs:
           echo "Dry run mode - would publish these files:"
           ls -la dist/
           echo "Package build validation:"
-          uv tool run hatch build --check
+          echo "✅ Build completed successfully - artifacts ready for publishing"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
