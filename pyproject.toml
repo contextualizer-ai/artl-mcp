@@ -81,7 +81,6 @@ dev = [
     # Build and packaging tools
     "hatch-vcs>=0.5.0",
     "hatchling>=1.27.0",
-    "twine>=4.0.0",
     "hatch>=1.14.1",
     "types-requests>=2.32.4.20250611",
     "types-beautifulsoup4>=4.12.0.20250516",

@@ -76,9 +76,9 @@ build:
 upload-test:
 	uv run hatch publish --repo test
 
-# Upload to PyPI (set TWINE_PASSWORD environment variable first)
+# Upload to PyPI
 upload:
-	uv run twine upload dist/*
+	uv run hatch publish
 
 # Complete release workflow
 release: clean test-coverage build upload
