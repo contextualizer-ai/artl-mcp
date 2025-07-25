@@ -284,15 +284,15 @@ class TestFileWritingInTools:
         """Test get_doi_metadata with auto-generated filename."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(file_manager, "output_dir", Path(temp_dir)):
-                # Get existing temp files before test
-                files_before = list(file_manager.temp_dir.glob("metadata_*.json"))
+                # Get existing files before test in output directory
+                files_before = list(Path(temp_dir).glob("metadata_*.json"))
 
                 result = get_doi_metadata("10.1038/nature12373", save_file=True)
 
                 if result is not None:
                     # Should have created a file with auto-generated name in
-                    # temp directory
-                    files_after = list(file_manager.temp_dir.glob("metadata_*.json"))
+                    # output directory
+                    files_after = list(Path(temp_dir).glob("metadata_*.json"))
                     new_files = [f for f in files_after if f not in files_before]
                     assert len(new_files) >= 1
 

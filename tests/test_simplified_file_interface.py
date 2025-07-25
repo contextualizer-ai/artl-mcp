@@ -243,16 +243,16 @@ class TestToolsIntegration:
         mock_response.status_code = 200
         mock_get.return_value = mock_response
 
-        # Get temp files before to find the new one
-        files_before = list(file_manager.temp_dir.glob("metadata_*.json"))
+        # Get output files before to find the new one
+        files_before = list(file_manager.output_dir.glob("metadata_*.json"))
 
         result = get_doi_metadata("10.1234/test", save_file=True)
 
         assert result is not None
         assert result == test_data
 
-        # Check that file was saved to temp directory
-        files_after = list(file_manager.temp_dir.glob("metadata_*.json"))
+        # Check that file was saved to output directory
+        files_after = list(file_manager.output_dir.glob("metadata_*.json"))
         new_files = [f for f in files_after if f not in files_before]
         assert len(new_files) >= 1
 
