@@ -400,6 +400,8 @@ export ARTL_KEEP_TEMP_FILES=true
   - Values: `true`, `false`, `1`, `0`, `yes`, `no`, `on`, `off` (case-insensitive)
   - Usage: Set to `true` for debugging or to preserve downloaded files
 
+**Note:** Additional development and testing environment variables are documented in [DEVELOPERS.md](DEVELOPERS.md#environment-variables).
+
 ## Identifier Formats
 
 ARTL-MCP automatically recognizes and converts between multiple identifier formats:

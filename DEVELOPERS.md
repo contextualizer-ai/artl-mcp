@@ -780,6 +780,15 @@ ARTL_KEEP_TEMP_FILES=true
 CI=true  # Skips some flaky external API tests
 ```
 
+**Development/Testing Specific Variables:**
+
+- **`CI`** - Indicates code is running in CI environment
+  - Purpose: Skips flaky network tests and local file tests
+  - Values: `"true"` to enable CI mode
+  - Usage: Set in GitHub Actions or other CI systems
+
+**Note:** User-facing environment variables (`ARTL_EMAIL_ADDR`, `ARTL_OUTPUT_DIR`, `ARTL_TEMP_DIR`, `ARTL_KEEP_TEMP_FILES`) are documented in [USERS.md](USERS.md#file-output-configuration).
+
 ### Useful Commands
 
 ```bash
