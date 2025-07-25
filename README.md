@@ -122,6 +122,14 @@ export ARTL_EMAIL_ADDR="researcher@university.edu"
 # or create local/.env file with: ARTL_EMAIL_ADDR=researcher@university.edu
 ```
 
+**MCP Client Configuration:** Different MCP clients support configuration injection. ARTL-MCP's enhanced configuration system provides multiple methods for email setup:
+
+- **Claude Desktop**: Inherits system environment variables automatically
+- **Goose Desktop**: Requires MCP extension configuration (see [USERS.md](USERS.md#mcp-client-configuration-issues))  
+- **Other clients**: May support client-specific configuration injection
+
+See [USERS.md](USERS.md#email-configuration-for-literature-access) for comprehensive configuration instructions.
+
 ### File Output
 Configure where files are saved:
 ```bash
