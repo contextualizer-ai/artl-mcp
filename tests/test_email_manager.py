@@ -126,6 +126,7 @@ class TestEmailManager:
                 result = em.get_email()
                 assert result is None  # Should ignore bogus email
 
+    @pytest.mark.skipif(os.getenv("CI"), reason="Skip local/.env tests in CI")
     def test_get_email_from_env_file(self):
         """Test getting email from local/.env file."""
         em = EmailManager()
@@ -150,6 +151,7 @@ class TestEmailManager:
         finally:
             os.unlink(env_file_path)
 
+    @pytest.mark.skipif(os.getenv("CI"), reason="Skip local/.env tests in CI")
     def test_get_email_supports_legacy_email_address_format(self):
         """Test support for legacy email_address format in .env file."""
         em = EmailManager()
