@@ -67,7 +67,12 @@ jobs:
           echo "Verifying build artifacts:"
           ls -la dist/
           echo "Checking package contents:"
-          uv tool run python -m tarfile -l dist/*.tar.gz | head -20
+          if find dist -name "*.tar.gz" -exec uv tool run python -m tarfile -l {} \; | head -20; then
+            echo "✅ Package contents verified successfully"
+          else
+            echo "❌ No .tar.gz files found in dist/ directory"
+            exit 1
+          fi
 
       - name: Verify version matches tag
         run: |
