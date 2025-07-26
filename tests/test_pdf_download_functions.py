@@ -150,7 +150,7 @@ class TestDownloadPdfFromDoi:
         }
 
         result = download_pdf_from_doi(
-            "10.1234/test", "researcher@university.edu", filename="test_paper.pdf"
+            "10.1234/test", "markampa@upenn.edu", filename="test_paper.pdf"
         )
 
         assert result["success"] is True
@@ -165,7 +165,7 @@ class TestDownloadPdfFromDoi:
         """Test handling when Unpaywall returns no data."""
         mock_unpaywall.return_value = None
 
-        result = download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+        result = download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
         assert result["success"] is False
         assert result["saved_to"] is None
@@ -178,7 +178,7 @@ class TestDownloadPdfFromDoi:
         # Mock Unpaywall response without PDF URL
         mock_unpaywall.return_value = {"best_oa_location": None, "oa_locations": []}
 
-        result = download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+        result = download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
         assert result["success"] is False
         assert result["saved_to"] is None
@@ -207,7 +207,7 @@ class TestDownloadPdfFromDoi:
             "url": "https://example.com/fallback.pdf",
         }
 
-        result = download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+        result = download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
         assert result["success"] is True
         assert result["pdf_url"] == "https://example.com/fallback.pdf"
@@ -229,7 +229,7 @@ class TestDownloadPdfFromDoi:
             "url": "https://example.com/test.pdf",
         }
 
-        download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+        download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
         # Should have called download_pdf_from_url with auto-generated filename
         mock_download_url.assert_called_once()
@@ -258,7 +258,7 @@ class TestDownloadPdfFromDoi:
 
         download_pdf_from_doi(
             "10.1234/test",
-            "researcher@university.edu",
+            "markampa@upenn.edu",
             save_to="/custom/path/paper.pdf",
         )
 
@@ -273,7 +273,7 @@ class TestDownloadPdfFromDoi:
         """Test handling of Unpaywall API errors."""
         mock_unpaywall.side_effect = Exception("API error")
 
-        result = download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+        result = download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
         assert result["success"] is False
         assert result["saved_to"] is None
@@ -284,7 +284,7 @@ class TestDownloadPdfFromDoi:
         with patch("artl_mcp.tools.get_unpaywall_info") as mock_unpaywall:
             mock_unpaywall.return_value = None
 
-            result = download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+            result = download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
             # Verify required keys are present
             required_keys = {"success", "saved_to", "file_size_bytes", "pdf_url", "doi"}
@@ -362,7 +362,7 @@ class TestPdfDownloadIntegration:
         """Test with a real-world DOI example."""
         # Use the DOI from the user's example
         doi = "10.1371/journal.pone.0123456"
-        email = "MAM@lbl.gov"
+        email = "markampa@upenn.edu"
         filename = "0123456.pdf"
 
         # Mock realistic Unpaywall response
@@ -443,7 +443,7 @@ class TestErrorHandlingAndEdgeCases:
         # Mock malformed response (missing expected keys)
         mock_unpaywall.return_value = {"unexpected": "data"}
 
-        result = download_pdf_from_doi("10.1234/test", "researcher@university.edu")
+        result = download_pdf_from_doi("10.1234/test", "markampa@upenn.edu")
 
         assert result["success"] is False
         assert "No open access PDF found" in result["error"]

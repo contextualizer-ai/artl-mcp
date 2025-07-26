@@ -733,7 +733,6 @@ The EmailManager looks for email addresses in this priority order:
 1. **Direct parameter** - Email passed to function call
 2. **`ARTL_EMAIL_ADDR` environment variable** - `export ARTL_EMAIL_ADDR=your@email.com`
 3. **`local/.env` file** - `ARTL_EMAIL_ADDR=your@email.com`
-4. **Legacy format** - `email_address=your@email.com` (deprecated)
 
 ### Email Validation Rules
 

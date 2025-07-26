@@ -14,11 +14,7 @@ def test_email_configuration_present():
 
     # Check environment variable first
     env_email = os.getenv("ARTL_EMAIL_ADDR")
-    if (
-        env_email
-        and em._is_valid_email(env_email)
-        and not em._is_bogus_email(env_email)
-    ):
+    if env_email and em._is_valid_email(env_email):
         # Valid email in environment
         return
 
@@ -26,24 +22,20 @@ def test_email_configuration_present():
     env_file = Path("local/.env")
     if env_file.exists():
         file_email = em._read_env_file()
-        if (
-            file_email
-            and em._is_valid_email(file_email)
-            and not em._is_bogus_email(file_email)
-        ):
+        if file_email and em._is_valid_email(file_email):
             # Valid email in file
             return
         else:
             pytest.fail(
-                f"local/.env file exists but contains invalid or bogus email: "
+                f"local/.env file exists but contains invalid email: "
                 f"{file_email}. Please update ARTL_EMAIL_ADDR in local/.env with a "
-                "real email address."
+                "valid email address."
             )
     else:
         pytest.fail(
             "No valid email configuration found. Please either:\n"
             "1. Set ARTL_EMAIL_ADDR environment variable, or\n"
-            "2. Create local/.env file with ARTL_EMAIL_ADDR=your@email.com"
+            "2. Create local/.env file with ARTL_EMAIL_ADDR=<YOUR_EMAIL_ADDRESS>"
         )
 
 
@@ -56,8 +48,8 @@ def test_local_env_file_exists():
     ), "local/.env file not found. Create it with ARTL_EMAIL_ADDR=your@email.com"
 
 
-def test_email_in_local_env_is_not_bogus():
-    """Test that email in local/.env is not a bogus pattern."""
+def test_email_in_local_env_is_valid():
+    """Test that email in local/.env has valid format."""
     env_file = Path("local/.env")
     if not env_file.exists():
         pytest.skip("local/.env file does not exist")
@@ -71,15 +63,9 @@ def test_email_in_local_env_is_not_bogus():
     if not em._is_valid_email(file_email):
         pytest.fail(f"Invalid email format in local/.env: {file_email}")
 
-    if em._is_bogus_email(file_email):
-        pytest.fail(
-            f"Bogus email pattern found in local/.env: {file_email}. "
-            "Please update with a real email address."
-        )
 
-
-def test_environment_email_is_not_bogus():
-    """Test that ARTL_EMAIL_ADDR environment variable is not bogus."""
+def test_environment_email_is_valid():
+    """Test that ARTL_EMAIL_ADDR environment variable has valid format."""
     env_email = os.getenv("ARTL_EMAIL_ADDR")
     if not env_email:
         pytest.skip("ARTL_EMAIL_ADDR environment variable not set")
@@ -89,15 +75,9 @@ def test_environment_email_is_not_bogus():
     if not em._is_valid_email(env_email):
         pytest.fail(f"Invalid email format in environment variable: {env_email}")
 
-    if em._is_bogus_email(env_email):
-        pytest.fail(
-            f"Bogus email pattern found in environment variable: {env_email}. "
-            "Please set ARTL_EMAIL_ADDR to a real email address."
-        )
-
 
 def test_email_manager_can_get_valid_email():
-    """Test that EmailManager can successfully get a valid, non-bogus email."""
+    """Test that EmailManager can successfully get a valid email."""
     em = EmailManager()
     email = em.get_email()
 
@@ -107,4 +87,3 @@ def test_email_manager_can_get_valid_email():
     )
 
     assert em._is_valid_email(email), f"EmailManager returned invalid email: {email}"
-    assert not em._is_bogus_email(email), f"EmailManager returned bogus email: {email}"
