@@ -126,27 +126,31 @@ def requires_ncbi_access(func=None, *, strict=False, reason=None):
     """
 
     def decorator(test_func):
-        # Build skip conditions
-        skip_conditions = []
-        skip_reasons = []
+        # Build skip condition that evaluates at runtime
+        def should_skip():
+            skip_conditions = []
 
-        # Always skip if alternatives are configured
-        if should_use_alternative_sources():
-            skip_conditions.append(True)
-            skip_reasons.append("configured to use alternative sources")
+            # Always skip if alternatives are configured
+            if should_use_alternative_sources():
+                skip_conditions.append("configured to use alternative sources")
 
-        # Skip if NCBI is offline (when strict mode)
-        if strict and not is_ncbi_available():
-            skip_conditions.append(True)
-            skip_reasons.append("NCBI services are offline")
+            # Skip if NCBI is offline (when strict mode)
+            if strict and not is_ncbi_available():
+                skip_conditions.append("NCBI services are offline")
 
-        # Determine final skip condition
-        should_skip = any(skip_conditions)
+            return len(skip_conditions) > 0, skip_conditions
+
+        # Create the skip condition function for pytest
+        def skip_condition():
+            should_skip_result, reasons = should_skip()
+            return should_skip_result
+
+        # Determine final reason - build at decoration time but use callable
         final_reason = (
-            reason or f"Test requires NCBI access but {' and '.join(skip_reasons)}"
+            reason or "Test requires NCBI access but conditions prevent execution"
         )
 
-        return pytest.mark.skipif(should_skip, reason=final_reason)(test_func)
+        return pytest.mark.skipif(skip_condition, reason=final_reason)(test_func)
 
     if func is None:
         # Called with arguments: @requires_ncbi_access(strict=True, reason="...")
@@ -158,17 +162,17 @@ def requires_ncbi_access(func=None, *, strict=False, reason=None):
 
 # Convenience markers for common patterns
 ncbi_required = pytest.mark.skipif(
-    should_use_alternative_sources(),
+    lambda: should_use_alternative_sources(),
     reason="Test requires NCBI access but alternative sources are configured",
 )
 
 ncbi_online_required = pytest.mark.skipif(
-    not is_ncbi_available(), reason="Test requires NCBI services to be online"
+    lambda: not is_ncbi_available(), reason="Test requires NCBI services to be online"
 )
 
 # Combined marker for tests that need both NCBI access and online services
 ncbi_full_access = pytest.mark.skipif(
-    should_use_alternative_sources() or not is_ncbi_available(),
+    lambda: should_use_alternative_sources() or not is_ncbi_available(),
     reason="Test requires full NCBI access (online and not using alternatives)",
 )
 

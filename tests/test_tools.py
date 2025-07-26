@@ -509,7 +509,11 @@ def test_strict_ncbi_access():
     # 2. NCBI services are offline
     result = search_pubmed_for_pmids("test query", max_results=1)
     # Test should only run when NCBI is fully available
-    assert result is not None or result is None  # Any result is acceptable when running
+    # Verify the result has the expected structure
+    if result is not None:
+        assert isinstance(result, dict)
+        assert "pmids" in result
+        assert "total_count" in result
 
 
 @ncbi_required
@@ -518,5 +522,7 @@ def test_with_convenience_marker():
     """Test using convenience marker for NCBI requirements."""
     # This will be skipped if alternative sources are configured
     result = search_pubmed_for_pmids("machine learning", max_results=1)
-    # Test that marker works correctly
-    assert result is not None or result is None
+    # Test that marker works correctly - verify expected structure when not None
+    if result is not None:
+        assert isinstance(result, dict)
+        assert "pmids" in result

@@ -9,7 +9,6 @@ import requests
 import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.citation_utils import CitationUtils
 from artl_mcp.utils.config_manager import (
-    get_config_value,
     get_email_manager,
     should_use_alternative_sources,
 )
@@ -2207,8 +2206,11 @@ def _search_europepmc_flexible(
         None if search fails
 
     Note:
-        This function respects the PUBMED_OFFLINE environment variable.
-        When True, it uses Europe PMC. When False, it may defer to PubMed.
+        This function determines whether to use Europe PMC or PubMed based on the
+        should_use_alternative_sources() function, which considers multiple factors
+        including USE_ALTERNATIVE_SOURCES and PUBMED_OFFLINE environment variables,
+        as well as automatic NCBI service availability detection. If alternative
+        sources are preferred, Europe PMC is used; otherwise, PubMed may be used.
     """
     try:
         # Check if we should use alternative sources
@@ -2361,12 +2363,10 @@ def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, A
         Results include availability flags for immediate access assessment.
     """
     try:
-        # Check configuration
-        is_pubmed_offline = (
-            get_config_value("PUBMED_OFFLINE", "false").lower() == "true"
-        )
+        # Check if we should use alternative sources
+        should_use_alternatives = should_use_alternative_sources()
 
-        if not is_pubmed_offline:
+        if not should_use_alternatives:
             # Try PubMed first, fall back to Europe PMC if it fails
             try:
                 pubmed_result = search_pubmed_for_pmids(keywords, max_results)
