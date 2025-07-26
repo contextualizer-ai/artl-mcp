@@ -1988,8 +1988,6 @@ def download_pdf_from_url(
     """
     # urlparse is already imported at the top of the file
 
-    import requests
-
     try:
         # Generate filename if not provided
         if not filename and not save_to:
