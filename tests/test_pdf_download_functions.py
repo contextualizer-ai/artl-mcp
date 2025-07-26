@@ -236,8 +236,8 @@ class TestDownloadPdfFromDoi:
         call_args = mock_download_url.call_args
         # Function is called as download_pdf_from_url(pdf_url, save_to, filename)
         assert (
-            call_args[0][2] == "unpaywall_pdf_10.1234_test.pdf"
-        )  # Third positional argument
+            call_args.kwargs["filename"] == "unpaywall_pdf_10.1234_test.pdf"
+        )  # Accessing filename via keyword arguments
 
     @patch("artl_mcp.tools.get_unpaywall_info")
     @patch("artl_mcp.tools.download_pdf_from_url")
