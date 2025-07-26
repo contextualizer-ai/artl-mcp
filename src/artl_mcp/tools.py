@@ -381,7 +381,12 @@ def get_abstract_from_pubmed_id(
     """
     abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid)
     if not abstract_from_pubmed:
-        return None
+        # Return structured response even when no abstract is available
+        return {
+            "content": "",
+            "saved_to": None,
+            "truncated": False,
+        }
 
     saved_path = None
     # Save to file if requested
