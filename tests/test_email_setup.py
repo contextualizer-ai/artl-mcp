@@ -53,7 +53,7 @@ def test_local_env_file_exists():
     env_file = Path("local/.env")
     assert (
         env_file.exists()
-    ), "local/.env file not found. Please create it with ARTL_EMAIL_ADDR=your@email.com"
+    ), "local/.env file not found. Create it with ARTL_EMAIL_ADDR=your@email.com"
 
 
 def test_email_in_local_env_is_not_bogus():

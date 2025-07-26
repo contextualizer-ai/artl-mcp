@@ -16,6 +16,46 @@ from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
 logger = logging.getLogger(__name__)
 
 
+def _apply_content_limits(
+    content: str, saved_path: str | None = None, max_size: int = 100 * 1024
+) -> tuple[str, bool]:
+    """Apply content size limits for LLM responses.
+
+    Args:
+        content: Original content
+        saved_path: Path where full content is saved (for messaging)
+        max_size: Maximum content size in characters
+
+    Returns:
+        Tuple of (limited_content, was_truncated)
+    """
+    content_length = len(content)
+
+    if content_length > max_size:
+        truncate_point = max_size - 200
+        file_msg = (
+            f"Full content saved to: {saved_path}"
+            if saved_path
+            else "file not saved - use save_file=True or save_to=path"
+        )
+        truncation_msg = (
+            f"\n\n[CONTENT TRUNCATED - Showing first {truncate_point:,} "
+            f"of {content_length:,} characters. {file_msg}]"
+        )
+        limited_content = content[:truncate_point] + truncation_msg
+        logger.info(
+            f"Large content ({content_length:,} chars) truncated for LLM response"
+        )
+        return limited_content, True
+    elif content_length > 50 * 1024:  # 50KB warning threshold
+        logger.warning(
+            f"Large content ({content_length:,} characters) may approach token limits"
+        )
+        return content, False
+    else:
+        return content, False
+
+
 def _auto_generate_filename(
     base_name: str, identifier: str, file_format: FileFormat
 ) -> str:
@@ -41,18 +81,17 @@ def get_doi_metadata(
         save_to: Specific path to save metadata (overrides save_file if provided)
 
     Returns:
-        Dictionary containing article metadata from CrossRef API, or None if
-        retrieval fails.
-        Returns the complete CrossRef API response with 'message' containing work data.
+        Dictionary containing article metadata from CrossRef API with save info,
+        or None if retrieval fails. When file saving is requested, includes
+        'saved_to' key with the file path.
 
     Examples:
         >>> metadata = get_doi_metadata("10.1038/nature12373")
-        >>> metadata["message"]["title"][0]
+        >>> metadata["message"]["title"][0]  # Access CrossRef data
         'Article title here'
-        >>> get_doi_metadata("10.1038/nature12373", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_doi_metadata("10.1038/nature12373", save_to="my_paper.json")
-        # Saves to specified path
+        >>> result = get_doi_metadata("10.1038/nature12373", save_file=True)
+        >>> result["saved_to"]  # Path where file was saved
+        '/Users/.../Documents/artl-mcp/metadata_....json'
     """
     try:
         # Normalize DOI to standard format
@@ -80,22 +119,27 @@ def get_doi_metadata(
         data = response.json()
 
         # Save to file if requested
-        try:
-            saved_path = file_manager.handle_file_save(
-                content=data,
-                base_name="metadata",
-                identifier=clean_doi,
-                file_format="json",
-                save_file=save_file,
-                save_to=save_to,
-                use_temp_dir=False,
-            )
-            if saved_path:
-                logger.info(f"Metadata saved to: {saved_path}")
-        except Exception as e:
-            logger.warning(f"Failed to save metadata file: {e}")
+        saved_path = None
+        if save_file or save_to:
+            try:
+                saved_path = file_manager.handle_file_save(
+                    content=data,
+                    base_name="metadata",
+                    identifier=clean_doi,
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Metadata saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save metadata file: {e}")
 
-        # Return in the same format as habanero - just the API response
+        # Return API response with save path info if file was saved
+        if saved_path:
+            data["saved_to"] = str(saved_path)
+
         return data
 
     except requests.exceptions.RequestException as e:
@@ -132,17 +176,16 @@ def search_papers_by_keyword(
         save_to: Specific path to save search results (overrides save_file if provided)
 
     Returns:
-        A dictionary containing search results if successful, None otherwise.
+        Dictionary containing search results with save info if successful,
+        None otherwise.
+        When file saving is requested, includes 'saved_to' key with the file path.
         Format matches habanero.Crossref().works(query=query)
-        If save_to is provided or save_file is True, also saves the search
-        results to that file.
 
     Examples:
         >>> results = search_papers_by_keyword("CRISPR")
-        >>> search_papers_by_keyword("CRISPR", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> search_papers_by_keyword("CRISPR", save_to="my_search.json")
-        # Saves to specified path
+        >>> results["message"]["items"]  # Access search results
+        >>> results = search_papers_by_keyword("CRISPR", save_file=True)
+        >>> results["saved_to"]  # Path where file was saved
     """
     try:
         url = "https://api.crossref.org/works"
@@ -192,22 +235,27 @@ def search_papers_by_keyword(
         data = response.json()
 
         # Save to file if requested
-        try:
-            saved_path = file_manager.handle_file_save(
-                content=data,
-                base_name="search",
-                identifier=query.replace(" ", "_"),
-                file_format="json",
-                save_file=save_file,
-                save_to=save_to,
-                use_temp_dir=False,
-            )
-            if saved_path:
-                logger.info(f"Search results saved to: {saved_path}")
-        except Exception as e:
-            logger.warning(f"Failed to save search results file: {e}")
+        saved_path = None
+        if save_file or save_to:
+            try:
+                saved_path = file_manager.handle_file_save(
+                    content=data,
+                    base_name="search",
+                    identifier=query.replace(" ", "_"),
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Search results saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save search results file: {e}")
 
-        # Return in the same format as habanero
+        # Return search results with save path info if file was saved
+        if saved_path:
+            data["saved_to"] = str(saved_path)
+
         return data
 
     except requests.exceptions.RequestException as e:
@@ -240,16 +288,15 @@ def search_recent_papers(
         save_to: Specific path to save search results (overrides save_file if provided)
 
     Returns:
-        Search results or None.
-        If save_to is provided or save_file is True, also saves the search results
-        to that file.
+        Dictionary containing search results with save info if successful,
+        None otherwise.
+        When file saving is requested, includes 'saved_to' key with the file path.
 
     Examples:
         >>> results = search_recent_papers("CRISPR", years_back=3)
-        >>> search_recent_papers("CRISPR", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> search_recent_papers("CRISPR", save_to="recent_crispr.json")
-        # Saves to specified path
+        >>> results["message"]["items"]  # Access search results
+        >>> results = search_recent_papers("CRISPR", save_file=True)
+        >>> results["saved_to"]  # Path where file was saved
     """
 
     # Calculate date range
@@ -309,7 +356,7 @@ def extract_paper_info(work_item: dict) -> dict[str, Any]:
 
 def get_abstract_from_pubmed_id(
     pmid: str, save_file: bool = False, save_to: str | None = None
-) -> str:
+) -> dict[str, str | bool | None] | None:
     """Get formatted abstract text from a PubMed ID.
 
     Returns title, abstract text, and PMID in a formatted structure with
@@ -322,21 +369,28 @@ def get_abstract_from_pubmed_id(
         save_to: Specific path to save abstract (overrides save_file if provided)
 
     Returns:
-        Formatted text containing title, abstract, and PMID.
-        If save_to is provided or save_file is True, also saves the abstract
-        to that file.
+        Dictionary with 'content' and 'saved_to' keys if successful, None otherwise.
+        - content: The formatted abstract text
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> abstract = get_abstract_from_pubmed_id("31653696")
-        >>> get_abstract_from_pubmed_id("31653696", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_abstract_from_pubmed_id("31653696", save_to="my_abstract.txt")
-        # Saves to specified path
+        >>> result = get_abstract_from_pubmed_id("31653696")
+        >>> result['content']  # The abstract text
+        >>> result = get_abstract_from_pubmed_id("31653696", save_file=True)
+        >>> result['saved_to']  # Path where file was saved
     """
     abstract_from_pubmed = aupu.get_abstract_from_pubmed(pmid)
+    if not abstract_from_pubmed:
+        # Return structured response even when no abstract is available
+        return {
+            "content": "",
+            "saved_to": None,
+            "truncated": False,
+        }
 
+    saved_path = None
     # Save to file if requested
-    if abstract_from_pubmed:
+    if save_file or save_to:
         try:
             saved_path = file_manager.handle_file_save(
                 content=abstract_from_pubmed,
@@ -352,7 +406,16 @@ def get_abstract_from_pubmed_id(
         except Exception as e:
             logger.warning(f"Failed to save abstract file: {e}")
 
-    return abstract_from_pubmed
+    # Apply content size limits for return to LLM (abstracts can be large)
+    limited_content, was_truncated = _apply_content_limits(
+        abstract_from_pubmed, str(saved_path) if saved_path else None
+    )
+
+    return {
+        "content": limited_content,
+        "saved_to": str(saved_path) if saved_path else None,
+        "truncated": was_truncated,
+    }
 
 
 # DOIFetcher-based tools
@@ -373,20 +436,17 @@ def get_doi_fetcher_metadata(
         save_to: Specific path to save metadata (overrides save_file if provided)
 
     Returns:
-        A dictionary containing the article metadata if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the metadata
-        to that file.
+        Dictionary containing article metadata with save info if successful,
+        None otherwise.
+        When file saving is requested, includes 'saved_to' key with the file path.
 
     Examples:
-        >>> metadata = get_doi_fetcher_metadata("10.1038/nature12373", "user@email.com")
-        >>> get_doi_fetcher_metadata(
+        >>> result = get_doi_fetcher_metadata("10.1038/nature12373", "user@email.com")
+        >>> result['saved_to']  # None if not saved
+        >>> result = get_doi_fetcher_metadata(
         ...     "10.1038/nature12373", "user@email.com", save_file=True
         ... )
-        # Saves with auto-generated filename in temp directory
-        >>> get_doi_fetcher_metadata(
-        ...     "10.1038/nature12373", "user@email.com", save_to="metadata.json"
-        ... )
-        # Saves to specified path
+        >>> result['saved_to']  # Path where file was saved
     """
     try:
         em = get_email_manager()
@@ -395,7 +455,8 @@ def get_doi_fetcher_metadata(
         metadata = dfr.get_metadata(doi)
 
         # Save to file if requested
-        if metadata:
+        saved_path = None
+        if metadata and (save_file or save_to):
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -412,6 +473,10 @@ def get_doi_fetcher_metadata(
             )
             if saved_path:
                 logger.info(f"DOI Fetcher metadata saved to: {saved_path}")
+
+        # Return metadata with save path info if file was saved
+        if saved_path and metadata:
+            metadata["saved_to"] = str(saved_path)
 
         return metadata
     except Exception as e:
@@ -441,9 +506,9 @@ def get_unpaywall_info(
         save_to: Specific path to save Unpaywall info (overrides save_file if provided)
 
     Returns:
-        A dictionary containing Unpaywall information if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the Unpaywall info
-        to that file.
+        Dictionary containing Unpaywall information with save info if successful,
+        None otherwise.
+        When file saving is requested, includes 'saved_to' key with the file path.
 
     Examples:
         >>> info = get_unpaywall_info("10.1038/nature12373", "user@email.com")
@@ -461,7 +526,8 @@ def get_unpaywall_info(
         unpaywall_info = dfr.get_unpaywall_info(doi, strict=strict)
 
         # Save to file if requested
-        if unpaywall_info:
+        saved_path = None
+        if unpaywall_info and (save_file or save_to):
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -479,6 +545,10 @@ def get_unpaywall_info(
             if saved_path:
                 logger.info(f"Unpaywall info saved to: {saved_path}")
 
+        # Return unpaywall info with save path info if file was saved
+        if saved_path and unpaywall_info:
+            unpaywall_info["saved_to"] = str(saved_path)
+
         return unpaywall_info
     except Exception as e:
         print(f"Error retrieving Unpaywall info for DOI {doi}: {e}")
@@ -487,7 +557,7 @@ def get_unpaywall_info(
 
 def get_full_text_from_doi(
     doi: str, email: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+) -> dict[str, str | bool | None] | None:
     """
     Get full text content from a DOI.
 
@@ -502,20 +572,19 @@ def get_full_text_from_doi(
         save_to: Specific path to save full text (overrides save_file if provided)
 
     Returns:
-        The full text content if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the full text
-        to that file.
+        Dictionary with 'content', 'saved_to', and 'truncated' keys if successful,
+        None otherwise.
+        Large content (>100KB) is automatically truncated for LLM response.
 
     Examples:
-        >>> text = get_full_text_from_doi("10.1038/nature12373", "user@example.com")
+        >>> result = get_full_text_from_doi("10.1038/nature12373", "user@example.com")
+        >>> result['content']  # The full text (truncated if large)
+        >>> result['saved_to']  # Path where file was saved
+        >>> result['truncated']  # True if content was truncated
         >>> get_full_text_from_doi(
         ...     "10.1038/nature12373", "user@example.com", save_file=True
         ... )
-        # Saves with auto-generated filename in temp directory
-        >>> get_full_text_from_doi(
-        ...     "10.1038/nature12373", "user@example.com", save_to="paper.txt"
-        ... )
-        # Saves to specified path
+        # Full content saved to file, truncated version returned to LLM
     """
     try:
         em = get_email_manager()
@@ -523,9 +592,14 @@ def get_full_text_from_doi(
         dfr = DOIFetcher(email=validated_email)
         full_text = dfr.get_full_text(doi)
 
+        saved_path = None
         # Save to file if requested
-        if full_text:
-            clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
+        if full_text and (save_file or save_to):
+            try:
+                clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
+            except IdentifierError:
+                clean_doi = doi.replace("/", "_").replace(":", "_")
+
             saved_path = file_manager.handle_file_save(
                 content=full_text,
                 base_name="fulltext",
@@ -538,7 +612,19 @@ def get_full_text_from_doi(
             if saved_path:
                 logger.info(f"Full text saved to: {saved_path}")
 
-        return full_text
+        # Apply content size limits for return to LLM
+        if full_text:
+            limited_content, was_truncated = _apply_content_limits(
+                full_text, str(saved_path) if saved_path else None
+            )
+        else:
+            limited_content, was_truncated = "", False
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error retrieving full text for DOI {doi}: {e}")
         return None
@@ -561,14 +647,17 @@ def get_full_text_info(
         save_to: Specific path to save full text info (overrides save_file if provided)
 
     Returns:
-        Information about full text availability if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the full text info
-        to that file.
+        Dictionary containing full text availability info with save path if successful,
+        None otherwise.
+        When file saving is requested, includes 'saved_to' key with the file path.
 
     Examples:
-        >>> info = get_full_text_info("10.1038/nature12373", "user@email.com")
-        >>> get_full_text_info("10.1038/nature12373", "user@email.com", save_file=True)
-        # Saves with auto-generated filename in temp directory
+        >>> result = get_full_text_info("10.1038/nature12373", "user@email.com")
+        >>> result['success']  # Full text availability status
+        >>> result = get_full_text_info(
+        ...     "10.1038/nature12373", "user@email.com", save_file=True
+        ... )
+        >>> result['saved_to']  # Path where file was saved
         >>> get_full_text_info(
         ...     "10.1038/nature12373", "user@email.com", save_to="fulltext_info.json"
         ... )
@@ -587,8 +676,9 @@ def get_full_text_info(
             "info": str(result),
         }
 
+        saved_path = None
         # Save to file if requested
-        if full_text_info:
+        if full_text_info and (save_file or save_to):
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -606,6 +696,10 @@ def get_full_text_info(
             if saved_path:
                 logger.info(f"Full text info saved to: {saved_path}")
 
+        # Return full text info with save path info if file was saved
+        if saved_path:
+            full_text_info["saved_to"] = str(saved_path)
+
         return full_text_info
     except Exception as e:
         print(f"Error retrieving full text info for DOI {doi}: {e}")
@@ -614,7 +708,7 @@ def get_full_text_info(
 
 def get_text_from_pdf_url(
     pdf_url: str, email: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+) -> dict[str, str | bool | None] | None:
     """
     Extract text from a PDF URL using DOIFetcher.
 
@@ -629,24 +723,21 @@ def get_text_from_pdf_url(
         save_to: Specific path to save extracted text (overrides save_file if provided)
 
     Returns:
-        The extracted text if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the extracted text
-        to that file.
+        Dictionary with 'content', 'saved_to', and 'truncated' keys if successful,
+        None otherwise.
+        Large content (>100KB) is automatically truncated for LLM response.
 
     Examples:
-        >>> text = get_text_from_pdf_url(
+        >>> result = get_text_from_pdf_url(
         ...     "https://example.com/paper.pdf", "user@email.com"
         ... )
+        >>> result['content']  # The extracted text (truncated if large)
+        >>> result['saved_to']  # Path where file was saved
+        >>> result['truncated']  # True if content was truncated
         >>> get_text_from_pdf_url(
         ...     "https://example.com/paper.pdf", "user@email.com", save_file=True
         ... )
-        # Saves with auto-generated filename in temp directory
-        >>> get_text_from_pdf_url(
-        ...     "https://example.com/paper.pdf",
-        ...     "user@email.com",
-        ...     save_to="pdf_text.txt"
-        ... )
-        # Saves to specified path
+        # Full content saved to file, truncated version returned to LLM
     """
     try:
         em = get_email_manager()
@@ -654,8 +745,9 @@ def get_text_from_pdf_url(
         dfr = DOIFetcher(email=validated_email)
         extracted_text = dfr.text_from_pdf_url(pdf_url)
 
+        saved_path = None
         # Save to file if requested
-        if extracted_text:
+        if extracted_text and (save_file or save_to):
             url_identifier = (
                 pdf_url.split("/")[-1].replace(".pdf", "")
                 if "/" in pdf_url
@@ -673,15 +765,31 @@ def get_text_from_pdf_url(
             if saved_path:
                 logger.info(f"PDF URL text saved to: {saved_path}")
 
-        return extracted_text
+        # Apply content size limits for return to LLM
+        if extracted_text:
+            limited_content, was_truncated = _apply_content_limits(
+                extracted_text, str(saved_path) if saved_path else None
+            )
+        else:
+            limited_content, was_truncated = "", False
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
         return None
 
 
 def extract_pdf_text(
-    pdf_url: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+    pdf_url: str,
+    save_file: bool = False,
+    save_to: str | None = None,
+    stream_large_files: bool = True,
+    max_content_size: int = 100 * 1024,  # 100KB default
+) -> dict[str, str | int | bool | None] | None:
     """
     Extract text from a PDF URL using the standalone pdf_fetcher.
 
@@ -690,18 +798,23 @@ def extract_pdf_text(
         save_file: Whether to save extracted text to temp directory with
             auto-generated filename
         save_to: Specific path to save extracted text (overrides save_file if provided)
+        stream_large_files: If True, attempt to stream large PDFs directly to disk
+        max_content_size: Maximum size (in characters) to return in 'content'.
+                         Larger content is truncated with instructions.
 
     Returns:
-        The extracted text if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the extracted
-        text to that file.
+        Dictionary with extraction results and file info, or None if failed.
+        Contains 'content', 'saved_to', 'content_length', 'streamed', and
+        'truncated' keys.
+        Large content (>100KB) is automatically truncated to prevent token overflow.
 
     Examples:
-        >>> text = extract_pdf_text("https://example.com/paper.pdf")
+        >>> result = extract_pdf_text("https://example.com/paper.pdf")
+        >>> result['content']  # The extracted text (truncated if >100KB)
+        >>> result['content_length']  # Original character count
+        >>> result['truncated']  # True if content was truncated
         >>> extract_pdf_text("https://example.com/paper.pdf", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> extract_pdf_text("https://example.com/paper.pdf", save_to="extracted.txt")
-        # Saves to specified path
+        # Full content saved to file, truncated version returned to LLM
     """
     try:
         result = extract_text_from_pdf(pdf_url)
@@ -710,15 +823,24 @@ def extract_pdf_text(
             print(f"Error extracting text from PDF URL {pdf_url}: {result}")
             return None
 
-        # Save to file if requested
-        if result:
+        if not result:
+            return None
+
+        content_length = len(result)
+        saved_path = None
+        was_streamed = False
+        was_truncated = False
+
+        # Always save full content to file if requested (before truncation)
+        if save_file or save_to:
             url_identifier = (
                 pdf_url.split("/")[-1].replace(".pdf", "")
                 if "/" in pdf_url
                 else "pdf_extract"
             )
+
             saved_path = file_manager.handle_file_save(
-                content=result,
+                content=result,  # Save full content
                 base_name="pdf_text",
                 identifier=url_identifier,
                 file_format="txt",
@@ -729,15 +851,48 @@ def extract_pdf_text(
             if saved_path:
                 logger.info(f"PDF text saved to: {saved_path}")
 
-        return result
+        # Apply content size limits for return to LLM
+        return_content = result
+        if content_length > max_content_size:
+            was_truncated = True
+            truncate_point = max_content_size - 200  # Leave room for truncation message
+
+            save_msg = (
+                f"{saved_path}"
+                if saved_path
+                else "file not saved - use save_file=True or save_to=path"
+            )
+            truncation_msg = (
+                f"\n\n[CONTENT TRUNCATED - Showing first {truncate_point:,} "
+                f"of {content_length:,} characters. Full content saved to: {save_msg}]"
+            )
+            return_content = result[:truncate_point] + truncation_msg
+
+            logger.info(
+                f"Large PDF content ({content_length:,} chars) "
+                f"truncated for LLM response"
+            )
+        elif content_length > 50 * 1024:  # 50KB warning threshold
+            logger.warning(
+                f"Large content ({content_length:,} characters) "
+                f"may approach token limits"
+            )
+
+        return {
+            "content": return_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "content_length": content_length,
+            "streamed": was_streamed,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
         return None
 
 
 def clean_text(
-    text: str, email: str, save_file: bool = False, save_to: str | None = None
-) -> str:
+    text: str | None, email: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, str | bool | None] | None:
     """
     Clean text using DOIFetcher's text cleaning functionality.
 
@@ -752,23 +907,30 @@ def clean_text(
         save_to: Specific path to save cleaned text (overrides save_file if provided)
 
     Returns:
-        The cleaned text.
-        If save_to is provided or save_file is True, also saves the cleaned text
-        to that file.
+        Dictionary with 'content', 'saved_to', and 'truncated' keys.
+        Large content (>100KB) is automatically truncated for LLM response.
 
     Examples:
-        >>> cleaned = clean_text("messy text", "user@email.com")
+        >>> result = clean_text("messy text", "user@email.com")
+        >>> result['content']  # The cleaned text (truncated if large)
+        >>> result['saved_to']  # Path where file was saved
+        >>> result['truncated']  # True if content was truncated
         >>> clean_text("messy text", "user@email.com", save_file=True)
-        # Saves with auto-generated filename in temp directory
+        # Full content saved to file, truncated version returned to LLM
         >>> clean_text("messy text", "user@email.com", save_to="cleaned.txt")
         # Saves to specified path
     """
+    # Handle None input
+    if text is None:
+        return None
+
     try:
         em = get_email_manager()
         validated_email = em.validate_for_api("crossref", email)
         dfr = DOIFetcher(email=validated_email)
         cleaned_text = dfr.clean_text(text)
 
+        saved_path = None
         # Save to file if requested
         if cleaned_text and (save_file or save_to):
             # Generate identifier from text preview
@@ -785,10 +947,28 @@ def clean_text(
             if saved_path:
                 logger.info(f"Cleaned text saved to: {saved_path}")
 
-        return cleaned_text
+        # Apply content size limits for return to LLM
+        if cleaned_text:
+            limited_content, was_truncated = _apply_content_limits(
+                cleaned_text, str(saved_path) if saved_path else None
+            )
+        else:
+            limited_content, was_truncated = "", False
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error cleaning text: {e}")
-        return text
+        # Return original text in structured format on error
+        limited_content, was_truncated = _apply_content_limits(text, None)
+        return {
+            "content": limited_content,
+            "saved_to": None,
+            "truncated": was_truncated,
+        }
 
 
 # PubMed utilities tools
@@ -845,7 +1025,7 @@ def pmid_to_doi(pmid: str) -> str | None:
 
 def get_doi_text(
     doi: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+) -> dict[str, str | bool | None] | None:
     """
     Get full text from a DOI.
 
@@ -856,22 +1036,26 @@ def get_doi_text(
         save_to: Specific path to save full text (overrides save_file if provided)
 
     Returns:
-        The full text if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the full text
-        to that file.
+        Dictionary with 'content' and 'saved_to' keys if successful, None otherwise.
+        - content: The full text content
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> text = get_doi_text("10.1038/nature12373")
-        >>> get_doi_text("10.1038/nature12373", save_file=True)
-        # Saves with auto-generated filename in temp directory
+        >>> result = get_doi_text("10.1038/nature12373")
+        >>> result['content']  # The full text
+        >>> result = get_doi_text("10.1038/nature12373", save_file=True)
+        >>> result['saved_to']  # Path where file was saved
         >>> get_doi_text("10.1038/nature12373", save_to="paper_text.txt")
-        # Saves to specified path
+        # Saves to specified path and returns save location
     """
     try:
         full_text = aupu.get_doi_text(doi)
+        if not full_text:
+            return None
 
+        saved_path = None
         # Save to file if requested
-        if full_text:
+        if save_file or save_to:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -889,7 +1073,16 @@ def get_doi_text(
             if saved_path:
                 logger.info(f"Full text saved to: {saved_path}")
 
-        return full_text
+        # Apply content size limits for return to LLM
+        limited_content, was_truncated = _apply_content_limits(
+            full_text, str(saved_path) if saved_path else None
+        )
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error getting text for DOI {doi}: {e}")
         return None
@@ -914,7 +1107,7 @@ def get_pmid_from_pmcid(pmcid: str) -> str | None:
 
 def get_pmcid_text(
     pmcid: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+) -> dict[str, str | bool | None] | None:
     """
     Get full text from a PMC ID.
 
@@ -925,22 +1118,24 @@ def get_pmcid_text(
         save_to: Specific path to save full text (overrides save_file if provided)
 
     Returns:
-        The full text if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the full text
-        to that file.
+        Dictionary with 'content' and 'saved_to' keys if successful, None otherwise.
+        - content: The full text content
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> text = get_pmcid_text("PMC1234567")
-        >>> get_pmcid_text("PMC1234567", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_pmcid_text("PMC1234567", save_to="pmc_text.txt")
-        # Saves to specified path
+        >>> result = get_pmcid_text("PMC1234567")
+        >>> result['content']  # The full text
+        >>> result = get_pmcid_text("PMC1234567", save_file=True)
+        >>> result['saved_to']  # Path where file was saved
     """
     try:
         full_text = aupu.get_pmcid_text(pmcid)
+        if not full_text:
+            return None
 
+        saved_path = None
         # Save to file if requested
-        if full_text:
+        if save_file or save_to:
             try:
                 clean_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -958,7 +1153,16 @@ def get_pmcid_text(
             if saved_path:
                 logger.info(f"PMC text saved to: {saved_path}")
 
-        return full_text
+        # Apply content size limits for return to LLM
+        limited_content, was_truncated = _apply_content_limits(
+            full_text, str(saved_path) if saved_path else None
+        )
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error getting text for PMCID {pmcid}: {e}")
         return None
@@ -966,7 +1170,7 @@ def get_pmcid_text(
 
 def get_pmid_text(
     pmid: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+) -> dict[str, str | bool | None] | None:
     """
     Get full text from a PubMed ID.
 
@@ -977,22 +1181,24 @@ def get_pmid_text(
         save_to: Specific path to save full text (overrides save_file if provided)
 
     Returns:
-        The full text if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the full text
-        to that file.
+        Dictionary with 'content' and 'saved_to' keys if successful, None otherwise.
+        - content: The full text content
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> text = get_pmid_text("23851394")
-        >>> get_pmid_text("23851394", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_pmid_text("23851394", save_to="pmid_text.txt")
-        # Saves to specified path
+        >>> result = get_pmid_text("23851394")
+        >>> result['content']  # The full text
+        >>> result = get_pmid_text("23851394", save_file=True)
+        >>> result['saved_to']  # Path where file was saved
     """
     try:
         full_text = aupu.get_pmid_text(pmid)
+        if not full_text:
+            return None
 
+        saved_path = None
         # Save to file if requested
-        if full_text:
+        if save_file or save_to:
             try:
                 clean_pmid = IdentifierUtils.normalize_pmid(pmid, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -1010,7 +1216,16 @@ def get_pmid_text(
             if saved_path:
                 logger.info(f"PMID text saved to: {saved_path}")
 
-        return full_text
+        # Apply content size limits for return to LLM
+        limited_content, was_truncated = _apply_content_limits(
+            full_text, str(saved_path) if saved_path else None
+        )
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error getting text for PMID {pmid}: {e}")
         return None
@@ -1018,7 +1233,7 @@ def get_pmid_text(
 
 def get_full_text_from_bioc(
     pmid: str, save_file: bool = False, save_to: str | None = None
-) -> str | None:
+) -> dict[str, str | bool | None] | None:
     """
     Get full text from BioC format for a PubMed ID.
 
@@ -1029,22 +1244,24 @@ def get_full_text_from_bioc(
         save_to: Specific path to save BioC text (overrides save_file if provided)
 
     Returns:
-        The full text from BioC if successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the BioC text
-        to that file.
+        Dictionary with 'content', 'saved_to', and 'truncated' keys if successful,
+        None otherwise.
+        Large content (>100KB) is automatically truncated for LLM response.
 
     Examples:
-        >>> text = get_full_text_from_bioc("23851394")
-        >>> get_full_text_from_bioc("23851394", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_full_text_from_bioc("23851394", save_to="bioc_text.txt")
-        # Saves to specified path
+        >>> result = get_full_text_from_bioc("23851394")
+        >>> result['content']  # The BioC text (truncated if large)
+        >>> result['saved_to']  # Path where file was saved
+        >>> result['truncated']  # True if content was truncated
     """
     try:
         bioc_text = aupu.get_full_text_from_bioc(pmid)
+        if not bioc_text:
+            return None
 
+        saved_path = None
         # Save to file if requested
-        if bioc_text:
+        if save_file or save_to:
             try:
                 clean_pmid = IdentifierUtils.normalize_pmid(pmid, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -1062,7 +1279,16 @@ def get_full_text_from_bioc(
             if saved_path:
                 logger.info(f"BioC text saved to: {saved_path}")
 
-        return bioc_text
+        # Apply content size limits for return to LLM
+        limited_content, was_truncated = _apply_content_limits(
+            bioc_text, str(saved_path) if saved_path else None
+        )
+
+        return {
+            "content": limited_content,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+        }
     except Exception as e:
         print(f"Error getting BioC text for PMID {pmid}: {e}")
         return None
@@ -1085,17 +1311,15 @@ def search_pubmed_for_pmids(
         save_to: Specific path to save search results (overrides save_file if provided)
 
     Returns:
-        A dictionary containing PMIDs list, total count, and query info if
-        successful, None otherwise.
-        If save_to is provided or save_file is True, also saves the search results
-        to that file.
+        Dictionary containing PMIDs list, total count, and query info with save info if
+        successful, None otherwise. When file saving is requested, includes 'saved_to'
+        key with the file path.
 
     Examples:
         >>> results = search_pubmed_for_pmids("CRISPR")
-        >>> search_pubmed_for_pmids("CRISPR", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> search_pubmed_for_pmids("CRISPR", save_to="pubmed_search.json")
-        # Saves to specified path
+        >>> results["pmids"]  # List of PMIDs
+        >>> results = search_pubmed_for_pmids("CRISPR", save_file=True)
+        >>> results["saved_to"]  # Path where file was saved
     """
     esearch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     params = {
@@ -1135,6 +1359,7 @@ def search_pubmed_for_pmids(
             }
 
         # Save to file if requested
+        saved_path = None
         if search_results and (save_file or save_to):
             try:
                 saved_path = file_manager.handle_file_save(
@@ -1150,6 +1375,10 @@ def search_pubmed_for_pmids(
                     logger.info(f"PubMed search results saved to: {saved_path}")
             except Exception as e:
                 logger.warning(f"Failed to save PubMed search results file: {e}")
+
+        # Add save path info if file was saved
+        if saved_path:
+            search_results["saved_to"] = str(saved_path)
 
         return search_results
 
@@ -1335,7 +1564,7 @@ def validate_identifier(identifier: str, expected_type: str | None = None) -> bo
 # Citation and reference tools
 def get_paper_references(
     doi: str, save_file: bool = False, save_to: str | None = None
-) -> list[dict] | None:
+) -> dict[str, list | str | None] | None:
     """Get list of references cited by a paper.
 
     Args:
@@ -1345,26 +1574,23 @@ def get_paper_references(
         save_to: Specific path to save references (overrides save_file if provided)
 
     Returns:
-        List of reference dictionaries with DOI, title, journal, etc. or None if fails
-        If save_to is provided or save_file is True, also saves the references
-        to that file.
+        Dictionary with 'data' and 'saved_to' keys if successful, None if fails.
+        - data: List of reference dictionaries with DOI, title, journal, etc.
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> refs = get_paper_references("10.1038/nature12373")
-        >>> get_paper_references("10.1038/nature12373", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_paper_references("10.1038/nature12373", save_to="references.json")
-        # Saves to specified path
-        >>> len(refs) if refs else 0
+        >>> result = get_paper_references("10.1038/nature12373")
+        >>> result['data']  # List of reference dictionaries
+        >>> result['saved_to']  # Path where file was saved
+        >>> len(result['data']) if result else 0
         25
-        >>> refs[0]['title'] if refs else None
-        'Reference paper title'
     """
     try:
         references = CitationUtils.get_references_crossref(doi)
 
         # Save to file if requested
-        if references:
+        saved_path = None
+        if references and (save_file or save_to):
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -1382,7 +1608,11 @@ def get_paper_references(
             if saved_path:
                 logger.info(f"Paper references saved to: {saved_path}")
 
-        return references
+        return (
+            {"data": references, "saved_to": str(saved_path) if saved_path else None}
+            if references
+            else None
+        )
     except Exception as e:
         logger.warning(f"Error getting references for DOI: {doi} - {e}")
         return None
@@ -1390,7 +1620,7 @@ def get_paper_references(
 
 def get_paper_citations(
     doi: str, save_file: bool = False, save_to: str | None = None
-) -> list[dict] | None:
+) -> dict[str, list | str | None] | None:
     """Get list of papers that cite a given paper.
 
     Args:
@@ -1400,27 +1630,23 @@ def get_paper_citations(
         save_to: Specific path to save citations (overrides save_file if provided)
 
     Returns:
-        List of citing paper dictionaries with DOI, title, authors, etc. or
-        None if fails
-        If save_to is provided or save_file is True, also saves the citations
-        to that file.
+        Dictionary with 'data' and 'saved_to' keys if successful, None if fails.
+        - data: List of citing paper dictionaries with DOI, title, authors, etc.
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> citations = get_paper_citations("10.1038/nature12373")
-        >>> get_paper_citations("10.1038/nature12373", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_paper_citations("10.1038/nature12373", save_to="citations.json")
-        # Saves to specified path
-        >>> len(citations) if citations else 0
+        >>> result = get_paper_citations("10.1038/nature12373")
+        >>> result['data']  # List of citing paper dictionaries
+        >>> result['saved_to']  # Path where file was saved
+        >>> len(result['data']) if result else 0
         150
-        >>> citations[0]['title'] if citations else None
-        'Citing paper title'
     """
     try:
         citations = CitationUtils.get_citations_crossref(doi)
 
         # Save to file if requested
-        if citations:
+        saved_path = None
+        if citations and (save_file or save_to):
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -1438,7 +1664,11 @@ def get_paper_citations(
             if saved_path:
                 logger.info(f"Paper citations saved to: {saved_path}")
 
-        return citations
+        return (
+            {"data": citations, "saved_to": str(saved_path) if saved_path else None}
+            if citations
+            else None
+        )
     except Exception as e:
         logger.warning(f"Error getting citations for DOI: {doi} - {e}")
         return None
@@ -1446,7 +1676,7 @@ def get_paper_citations(
 
 def get_citation_network(
     doi: str, save_file: bool = False, save_to: str | None = None
-) -> dict | None:
+) -> dict[str, Any] | None:
     """Get comprehensive citation network information from OpenAlex.
 
     Args:
@@ -1457,27 +1687,25 @@ def get_citation_network(
             provided)
 
     Returns:
-        Dictionary with citation counts, concepts, referenced works, etc. or
-        None if fails
-        If save_to is provided or save_file is True, also saves the citation network
-        to that file.
+        Dictionary with citation network data and save info, or None if fails.
+        Contains 'data' key with citation info and 'saved_to' key with file path.
 
     Examples:
-        >>> network = get_citation_network("10.1038/nature12373")
-        >>> get_citation_network("10.1038/nature12373", save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> get_citation_network("10.1038/nature12373", save_to="network.json")
-        # Saves to specified path
-        >>> network['cited_by_count'] if network else 0
+        >>> result = get_citation_network("10.1038/nature12373")
+        >>> result['data']['cited_by_count']  # Access citation data
         245
-        >>> network['concepts'][0]['display_name'] if network else None
-        'Genetics'
+        >>> result = get_citation_network("10.1038/nature12373", save_file=True)
+        >>> result['saved_to']  # Path where file was saved
+        '/Users/.../Documents/artl-mcp/citation_network_....json'
     """
     try:
         citation_network = CitationUtils.get_citation_network_openalex(doi)
+        if not citation_network:
+            return None
 
+        saved_path = None
         # Save to file if requested
-        if citation_network:
+        if save_file or save_to:
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -1495,7 +1723,10 @@ def get_citation_network(
             if saved_path:
                 logger.info(f"Citation network saved to: {saved_path}")
 
-        return citation_network
+        return {
+            "data": citation_network,
+            "saved_to": str(saved_path) if saved_path else None,
+        }
     except Exception as e:
         logger.warning(f"Error getting citation network for DOI: {doi} - {e}")
         return None
@@ -1503,7 +1734,7 @@ def get_citation_network(
 
 def find_related_papers(
     doi: str, max_results: int = 10, save_file: bool = False, save_to: str | None = None
-) -> list[dict] | None:
+) -> dict[str, list | str | None] | None:
     """Find papers related to a given paper through citations and references.
 
     Args:
@@ -1514,26 +1745,23 @@ def find_related_papers(
         save_to: Specific path to save related papers (overrides save_file if provided)
 
     Returns:
-        List of related paper dictionaries or None if fails
-        If save_to is provided or save_file is True, also saves the related papers
-        to that file.
+        Dictionary with 'data' and 'saved_to' keys if successful, None if fails.
+        - data: List of related paper dictionaries
+        - saved_to: Path where file was saved (None if not saved)
 
     Examples:
-        >>> related = find_related_papers("10.1038/nature12373", 5)
-        >>> find_related_papers("10.1038/nature12373", 5, save_file=True)
-        # Saves with auto-generated filename in temp directory
-        >>> find_related_papers("10.1038/nature12373", 5, save_to="related.json")
-        # Saves to specified path
-        >>> len(related) if related else 0
+        >>> result = find_related_papers("10.1038/nature12373", 5)
+        >>> result['data']  # List of related paper dictionaries
+        >>> result['saved_to']  # Path where file was saved
+        >>> len(result['data']) if result else 0
         5
-        >>> related[0]['relationship'] if related else None
-        'cites_this_paper'
     """
     try:
         related_papers = CitationUtils.find_related_papers(doi, max_results)
 
         # Save to file if requested
-        if related_papers:
+        saved_path = None
+        if related_papers and (save_file or save_to):
             try:
                 clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
             except IdentifierError:
@@ -1551,7 +1779,14 @@ def find_related_papers(
             if saved_path:
                 logger.info(f"Related papers saved to: {saved_path}")
 
-        return related_papers
+        return (
+            {
+                "data": related_papers,
+                "saved_to": str(saved_path) if saved_path else None,
+            }
+            if related_papers
+            else None
+        )
     except Exception as e:
         logger.warning(f"Error finding related papers for DOI: {doi} - {e}")
         return None

@@ -52,14 +52,39 @@ uvx artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-result
 - Related paper discovery through citation networks
 
 ### 💾 **File Management**
-- Automatic file saving with configurable directories
-- Cross-platform filename sanitization
-- Multiple output formats (JSON, TXT, CSV, PDF)
-- Temp file management with cleanup
+- **Save path reporting** - tools tell you exactly where files were saved
+- **Content size management** - large content (>100KB) automatically truncated for LLM responses
+- **Memory-efficient streaming** for large files (PDFs, datasets)  
+- **Backward compatible** - existing code continues to work
+- **Cross-platform filename sanitization**
+- **Multiple output formats** (JSON, TXT, CSV, PDF)
+- **Configurable directories** and temp file management
 
 ## Available MCP Tools
 
 When running as an MCP server, you get access to 32 tools organized into categories:
+
+### 🔄 **Enhanced Return Values**
+
+All file-saving tools now return **structured data** with save path information:
+
+```json
+{
+  "data": { /* tool-specific content */ },
+  "saved_to": "/path/to/saved/file.json"
+}
+```
+
+**Text-based tools** include content size management:
+
+```json
+{
+  "content": "Full or truncated content...",
+  "saved_to": "/path/to/saved/file.txt",
+  "truncated": false,
+  "content_length": 45678
+}
+```
 
 ### Literature Search
 - `search_papers_by_keyword` - Advanced keyword search with filtering

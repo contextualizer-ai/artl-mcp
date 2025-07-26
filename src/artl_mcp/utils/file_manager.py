@@ -331,6 +331,68 @@ class FileManager:
 
         return result
 
+    def stream_download_to_file(
+        self,
+        url: str,
+        filename: str,
+        file_format: FileFormat,
+        output_dir: Path | None = None,
+        chunk_size: int = 8192,
+        headers: dict[str, str] | None = None,
+    ) -> tuple[Path, int]:
+        """Stream download content directly to file to avoid loading into memory.
+
+        Args:
+            url: URL to download from
+            filename: Target filename
+            file_format: File format (determines write mode)
+            output_dir: Directory to save to (defaults to output_dir)
+            chunk_size: Size of chunks to read/write (default 8KB)
+            headers: Optional HTTP headers for request
+
+        Returns:
+            Tuple of (file_path, total_bytes_downloaded)
+
+        Raises:
+            FileManagerError: If download or saving fails
+        """
+        import requests
+
+        target_dir = output_dir or self.output_dir
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = target_dir / filename
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        total_bytes = 0
+        write_mode = "wb" if file_format == "pdf" else "w"
+        encoding = None if file_format == "pdf" else "utf-8"
+
+        try:
+            with requests.get(
+                url, headers=headers or {}, stream=True, timeout=60
+            ) as response:
+                response.raise_for_status()
+
+                with open(file_path, write_mode, encoding=encoding) as f:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if chunk:  # filter out keep-alive chunks
+                            if file_format == "pdf":
+                                f.write(chunk)
+                            else:
+                                f.write(chunk.decode("utf-8", errors="replace"))
+                            total_bytes += len(chunk)
+
+            return file_path, total_bytes
+
+        except Exception as e:
+            # Clean up partial file on error
+            if file_path.exists():
+                file_path.unlink(missing_ok=True)
+            raise FileManagerError(
+                f"Failed to stream download {url} to {file_path}: {e}"
+            ) from e
+
     def handle_file_save(
         self,
         content: Any,

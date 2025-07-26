@@ -357,7 +357,6 @@ class TestPDFProcessingCleanup:
                 side_effect=ConnectionError("Network error"),
             ),
         ):
-
             result = extract_text_from_pdf(invalid_pdf_url)
 
             # Even on failure, cleanup should still be attempted
@@ -689,7 +688,6 @@ class TestFileManagerIntegration:
             tempfile.TemporaryDirectory() as temp_output,
             tempfile.TemporaryDirectory() as temp_temp,
         ):
-
             with patch.dict(
                 "os.environ",
                 {

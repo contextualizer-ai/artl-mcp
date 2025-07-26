@@ -136,7 +136,9 @@ class TestDOIWorkflows:
 
             # And: They can use the PMID to get abstracts
             abstract = get_abstract_from_pubmed_id(pmid)
-            assert isinstance(abstract, str)
+            assert isinstance(abstract, dict)
+            assert "content" in abstract
+            assert isinstance(abstract["content"], str)
 
     @pytest.mark.external_api
     @pytest.mark.slow
@@ -151,9 +153,11 @@ class TestDOIWorkflows:
 
         # Then: They should get substantial text content
         if full_text:  # Full text might not always be available
-            assert isinstance(full_text, str)
-            assert len(full_text) > 500  # Should be substantial
-            assert "microbiome" in full_text.lower()  # Expected content
+            assert isinstance(full_text, dict)
+            assert "content" in full_text
+            assert isinstance(full_text["content"], str)
+            assert len(full_text["content"]) > 500  # Should be substantial
+            assert "microbiome" in full_text["content"].lower()  # Expected content
 
     def test_doi_url_extraction_workflow(self):
         """User story: Researcher has DOI URL, needs clean DOI."""
@@ -188,10 +192,12 @@ class TestPMIDWorkflows:
         abstract = get_abstract_from_pubmed_id(pmid)
 
         # Then: They should get readable abstract text
-        if abstract and len(abstract) > 50:  # API might return empty
-            assert isinstance(abstract, str)
-            assert "deglycase" in abstract.lower()
-            assert len(abstract) > 100  # Should be substantial
+        if abstract and len(abstract["content"]) > 50:  # API might return empty
+            assert isinstance(abstract, dict)
+            assert "content" in abstract
+            assert isinstance(abstract["content"], str)
+            assert "deglycase" in abstract["content"].lower()
+            assert len(abstract["content"]) > 100  # Should be substantial
 
     @pytest.mark.external_api
     @pytest.mark.slow
@@ -432,7 +438,9 @@ class TestCrossFormatWorkflows:
             # CrossRef API returns nested structure
             message = metadata.get("message", metadata)
             assert "title" in message
-            assert isinstance(abstract, str)
+            assert isinstance(abstract, dict)
+            assert "content" in abstract
+            assert isinstance(abstract["content"], str)
 
             if unpaywall_info:  # Unpaywall might not have all papers
                 assert isinstance(unpaywall_info, dict)
