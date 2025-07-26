@@ -1,7 +1,7 @@
 """Email address management for ARTL MCP.
 
 This module provides utilities for managing email addresses required by various APIs,
-with support for environment variables and validation to prevent bogus addresses.
+with support for environment variables and basic format validation.
 """
 
 import os
@@ -10,19 +10,7 @@ from pathlib import Path
 
 
 class EmailManager:
-    """Manages email addresses for API requests with validation support."""
-
-    # Common bogus email patterns to reject
-    BOGUS_PATTERNS = [
-        r".*@example\.com$",
-        r".*@test\.test$",
-        r".*dummy.*@.*",
-        r".*fake.*@.*",
-        r".*placeholder.*@.*",
-        r".*invalid.*@.*",
-        r".*noreply.*@.*",
-        r".*no-reply.*@.*",
-    ]
+    """Manages email addresses for API requests with format validation."""
 
     def __init__(self, client_config: dict | None = None):
         """Initialize the email manager.
@@ -51,15 +39,11 @@ class EmailManager:
             Valid email address or None if none found
 
         Raises:
-            ValueError: If provided_email is bogus/invalid
+            ValueError: If provided_email is invalid
         """
         # Check provided email first
         if provided_email:
             if self._is_valid_email(provided_email):
-                if self._is_bogus_email(provided_email):
-                    raise ValueError(
-                        f"Bogus email address not allowed: {provided_email}"
-                    )
                 return provided_email
             else:
                 raise ValueError(f"Invalid email format: {provided_email}")
@@ -70,31 +54,19 @@ class EmailManager:
 
         # Try MCP client configuration (for clients that don't pass env vars)
         client_email = self.client_config.get("ARTL_EMAIL_ADDR")
-        if (
-            client_email
-            and self._is_valid_email(client_email)
-            and not self._is_bogus_email(client_email)
-        ):
+        if client_email and self._is_valid_email(client_email):
             self._cached_email = client_email
             return client_email
 
         # Try environment variable
         env_email = os.getenv("ARTL_EMAIL_ADDR")
-        if (
-            env_email
-            and self._is_valid_email(env_email)
-            and not self._is_bogus_email(env_email)
-        ):
+        if env_email and self._is_valid_email(env_email):
             self._cached_email = env_email
             return env_email
 
         # Try local/.env file
         env_file_email = self._read_env_file()
-        if (
-            env_file_email
-            and self._is_valid_email(env_file_email)
-            and not self._is_bogus_email(env_file_email)
-        ):
+        if env_file_email and self._is_valid_email(env_file_email):
             self._cached_email = env_file_email
             return env_file_email
 
@@ -110,14 +82,14 @@ class EmailManager:
             Valid email address
 
         Raises:
-            ValueError: If no valid email found or email is bogus
+            ValueError: If no valid email found
         """
         email = self.get_email(provided_email)
         if not email:
             raise ValueError(
                 "No valid email address found. Please:\n"
                 "1. Set ARTL_EMAIL_ADDR environment variable, or\n"
-                "2. Add ARTL_EMAIL_ADDR=your@email.com to local/.env file, or\n"
+                "2. Add ARTL_EMAIL_ADDR=<YOUR_EMAIL_ADDRESS> to local/.env file, or\n"
                 "3. Configure ARTL_EMAIL_ADDR in your MCP client settings, or\n"
                 "4. Provide --email parameter to CLI commands, or\n"
                 "5. Include your email in natural language requests"
@@ -125,22 +97,30 @@ class EmailManager:
         return email
 
     def _is_valid_email(self, email: str) -> bool:
-        """Check if email has valid format."""
+        """Check if email has basic syntactic structure."""
         if not email or not isinstance(email, str):
             return False
-        pattern = r"^(?!.*\.\.)[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        return (
-            bool(re.match(pattern, email))
-            and not email.startswith(".")
-            and not email.endswith(".")
-        )
 
-    def _is_bogus_email(self, email: str) -> bool:
-        """Check if email matches bogus patterns."""
-        for pattern in self.BOGUS_PATTERNS:
-            if re.match(pattern, email, re.IGNORECASE):
-                return True
-        return False
+        # Must have exactly one @ symbol
+        if email.count("@") != 1:
+            return False
+
+        local, domain = email.split("@")
+
+        # Must have characters before and after @
+        if not local or not domain:
+            return False
+
+        # Domain must have at least one dot with characters after it
+        if "." not in domain:
+            return False
+
+        domain_parts = domain.split(".")
+        # Must have characters after the final dot (extension)
+        if not domain_parts[-1]:
+            return False
+
+        return True
 
     def _read_env_file(self) -> str | None:
         """Read email from local/.env file."""
@@ -153,9 +133,6 @@ class EmailManager:
                 for line in f:
                     line = line.strip()
                     if line.startswith("ARTL_EMAIL_ADDR="):
-                        return line.split("=", 1)[1].strip()
-                    # Also support legacy email_address format
-                    elif line.startswith("email_address="):
                         return line.split("=", 1)[1].strip()
         except Exception:
             return None
@@ -179,22 +156,10 @@ class EmailManager:
         if email:
             if not self._is_valid_email(email):
                 raise ValueError(f"Invalid email format: {email}")
-            if self._is_bogus_email(email):
-                raise ValueError(
-                    f"{api_name} API requires a real institutional email address"
-                )
             return email
 
         # Otherwise use require_email for environment/file email
         validated_email = self.require_email()
-
-        # API-specific validation
-        if api_name.lower() in ["unpaywall", "crossref"]:
-            # These APIs prefer institutional emails
-            if validated_email.endswith("@example.com"):
-                raise ValueError(
-                    f"{api_name} API requires a real institutional email address"
-                )
 
         return validated_email
 
@@ -211,11 +176,11 @@ class EmailManager:
             return None
 
         # Look for email patterns in the text
-        email_pattern = r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b"
+        email_pattern = r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+\b"
         matches = re.findall(email_pattern, text)
 
         for match in matches:
-            if self._is_valid_email(match) and not self._is_bogus_email(match):
+            if self._is_valid_email(match):
                 return match
 
         return None

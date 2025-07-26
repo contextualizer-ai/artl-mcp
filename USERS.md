@@ -67,6 +67,8 @@ When running as an MCP server, ARTL-MCP provides 35+ tools organized into these 
 - **`get_abstract_from_pubmed_id`** - Retrieve abstracts from PubMed
 - **`get_full_text_from_doi`** - Access full text from multiple sources
 - **`extract_pdf_text`** - Extract text from PDF URLs
+- **`download_pdf_from_doi`** - Download PDF files directly from DOI via Unpaywall (requires email)
+- **`download_pdf_from_url`** - Download PDF files directly from URL (no text extraction)
 
 ### Identifier Conversion Tools
 
@@ -161,6 +163,21 @@ Total found: 12,118 papers (showing first 20 PMIDs)
 I found several papers about CRISPR gene editing. However, to search for PDF URLs through 
 the Unpaywall service, I need an email address for API access. Please set your email 
 address using: export ARTL_EMAIL_ADDR="your@email.com"
+```
+
+#### Direct PDF Download (New Feature)
+
+**Query:** `"My email address is MAM@lbl.gov. Download and save the PDF for 10.1371/journal.pone.0123456. I want the filename to be 0123456.pdf. Tell me the full path in which it was saved."`
+
+**Response:**
+```
+I successfully downloaded the PDF for DOI 10.1371/journal.pone.0123456 using the Unpaywall API.
+
+File saved to: /Users/MAM/Documents/artl-mcp/0123456.pdf
+File size: 502,381 bytes (490 KB)
+PDF URL: https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0123456&type=printable
+
+The PDF file has been saved directly as a binary file without any text extraction or content processing.
 ```
 
 ### File Saving Behavior
@@ -698,6 +715,7 @@ service compliance, and academic courtesy.
 | `get_full_text_from_doi`   | Multiple sources     | **YES**        | Full text retrieval         |
 | `get_full_text_info`       | Multiple sources     | **YES**        | Text availability info      |
 | `get_text_from_pdf_url`    | Unpaywall            | **YES**        | PDF text processing         |
+| `download_pdf_from_doi`    | Unpaywall            | **YES**        | Direct PDF download via DOI |
 | `clean_text`               | DOIFetcher           | **YES**        | Text cleaning utilities     |
 
 **Functions NOT requiring email:**
@@ -715,7 +733,6 @@ The EmailManager looks for email addresses in this priority order:
 1. **Direct parameter** - Email passed to function call
 2. **`ARTL_EMAIL_ADDR` environment variable** - `export ARTL_EMAIL_ADDR=your@email.com`
 3. **`local/.env` file** - `ARTL_EMAIL_ADDR=your@email.com`
-4. **Legacy format** - `email_address=your@email.com` (deprecated)
 
 ### Email Validation Rules
 

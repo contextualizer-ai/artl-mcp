@@ -388,6 +388,7 @@ def test_extract_doi_from_url_edge_cases():
         assert result == expected, f"Failed for URL: {url}"
 
 
+@pytest.mark.external_api
 def test_get_abstract_from_pubmed_id_invalid_input():
     """Test abstract retrieval with invalid PMID inputs."""
     # Test with clearly invalid PMIDs
