@@ -1158,12 +1158,11 @@ def get_pmcid_text(
             full_text, str(saved_path) if saved_path else None
         )
 
-        result: dict[str, str | bool | None] = {
+        return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
             "truncated": was_truncated,
         }
-        return result
     except Exception as e:
         print(f"Error getting text for PMCID {pmcid}: {e}")
         return None
@@ -1222,12 +1221,11 @@ def get_pmid_text(
             full_text, str(saved_path) if saved_path else None
         )
 
-        result: dict[str, str | bool | None] = {
+        return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
             "truncated": was_truncated,
         }
-        return result
     except Exception as e:
         print(f"Error getting text for PMID {pmid}: {e}")
         return None

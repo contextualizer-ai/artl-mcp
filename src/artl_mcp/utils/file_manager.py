@@ -380,7 +380,7 @@ class FileManager:
                             if file_format == "pdf":
                                 f.write(chunk)
                             else:
-                                f.write(chunk.decode("utf-8", errors="ignore"))
+                                f.write(chunk.decode("utf-8", errors="replace"))
                             total_bytes += len(chunk)
 
             return file_path, total_bytes
