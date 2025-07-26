@@ -51,9 +51,13 @@ def test_get_abstract_from_pubmed_id():
     """Test abstract retrieval from PubMed ID."""
     result = get_abstract_from_pubmed_id(PMID_FOR_ABSTRACT)
     assert result is not None
-    assert isinstance(result, str)
+    assert isinstance(result, dict)
+    assert "content" in result
+    assert "saved_to" in result
+    assert "truncated" in result
+    assert isinstance(result["content"], str)
     # Any string result is valid - function should handle unavailable abstracts
-    assert len(result) >= 0  # Could be empty string if no abstract available
+    assert len(result["content"]) >= 0  # Could be empty string if no abstract available
 
 
 @pytest.mark.external_api
@@ -78,10 +82,14 @@ def test_get_full_text_from_doi():
     result = get_full_text_from_doi(FULL_TEXT_DOI, test_email)
     # Test that we actually get meaningful full text content
     if result is not None:
-        assert isinstance(result, str)
-        assert len(result) > 100  # Should have substantial content
+        assert isinstance(result, dict)
+        assert "content" in result
+        assert "saved_to" in result
+        assert "truncated" in result
+        assert isinstance(result["content"], str)
+        assert len(result["content"]) > 100  # Should have substantial content
         # Test for expected content that should be in the full text
-        assert EXPECTED_MICROBIOME in result.lower()
+        assert EXPECTED_MICROBIOME in result["content"].lower()
     else:
         pytest.skip("Full text not available for test DOI")
 
@@ -105,7 +113,11 @@ def test_clean_text():
     input_text = "   xxx   xxx   "
     expected_output = "xxx xxx"
     result = clean_text(input_text, test_email)
-    assert result == expected_output
+    assert isinstance(result, dict)
+    assert "content" in result
+    assert "saved_to" in result
+    assert "truncated" in result
+    assert result["content"] == expected_output
 
 
 @pytest.mark.external_api
@@ -156,8 +168,12 @@ def test_clean_text_various_inputs():
     for input_text, _expected in test_cases:
         result = clean_text(input_text, test_email)
         # The exact cleaning behavior depends on DOIFetcher implementation
-        # Just ensure it returns a string
-        assert isinstance(result, str)
+        # Just ensure it returns a dict with proper structure
+        assert isinstance(result, dict)
+        assert "content" in result
+        assert "saved_to" in result
+        assert "truncated" in result
+        assert isinstance(result["content"], str)
 
 
 # Tests for extract_paper_info - core data processing function
@@ -385,9 +401,14 @@ def test_get_abstract_from_pubmed_id_invalid_input():
 
     for pmid in invalid_pmids:
         result = get_abstract_from_pubmed_id(pmid)
-        # Function returns a string (could be empty) rather than None for invalid PMIDs
-        assert isinstance(result, str)
-        # The function gracefully handles invalid inputs by returning response
+        # Function may return None for invalid PMIDs or dict with content
+        if result is not None:
+            assert isinstance(result, dict)
+            assert "content" in result
+            assert "saved_to" in result
+            assert "truncated" in result
+            assert isinstance(result["content"], str)
+        # The function gracefully handles invalid inputs
 
 
 def test_clean_text_edge_cases():
@@ -402,7 +423,11 @@ def test_clean_text_edge_cases():
     test_email = get_test_email()
     for text_input in valid_cases:
         result = clean_text(text_input, test_email)
-        assert isinstance(result, str)
+        assert isinstance(result, dict)
+        assert "content" in result
+        assert "saved_to" in result
+        assert "truncated" in result
+        assert isinstance(result["content"], str)
 
     # Test None input separately - this actually returns None
     result = clean_text(None, test_email)

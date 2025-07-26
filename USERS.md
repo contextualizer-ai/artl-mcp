@@ -544,8 +544,34 @@ artl-cli get-all-identifiers --identifier "PMC3737249"
 
 Many tools support automatic file saving with consistent options:
 
-- **`--save-file`** - Save to temp directory with auto-generated filename
+- **`--save-file`** - Save to output directory with auto-generated filename
 - **`--save-to PATH`** - Save to specific path
+
+### Save Path Reporting
+
+When files are saved, tools now report exactly where the files were saved:
+
+**MCP Tools Return:**
+```json
+{
+  "data": { /* content */ },
+  "saved_to": "/Users/researcher/Documents/artl-mcp/metadata_10.1038_nature12373.json"
+}
+```
+
+**CLI Output:**
+```bash
+$ artl-cli get-doi-metadata --doi "10.1038/nature12373" --save-file
+File saved to: /Users/researcher/Documents/artl-mcp/metadata_10.1038_nature12373.json
+```
+
+### Memory Efficiency
+
+For large files (>10MB), ARTL-MCP includes memory efficiency features:
+
+- **Large content warnings** alert you when content exceeds memory thresholds
+- **Streaming downloads** for PDF processing (where supported)
+- **Chunked processing** to avoid loading entire large datasets into memory
 
 ### File Naming Convention
 

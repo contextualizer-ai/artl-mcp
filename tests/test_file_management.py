@@ -61,7 +61,6 @@ class TestFileManager:
             tempfile.TemporaryDirectory() as temp_output,
             tempfile.TemporaryDirectory() as temp_temp,
         ):
-
             with patch.dict(
                 "os.environ",
                 {
@@ -321,7 +320,14 @@ class TestFileWritingInTools:
                     # Verify content matches returned result
                     with open(saved_file) as f:
                         file_content = f.read()
-                    assert file_content == result
+                    assert isinstance(result, dict)
+                    assert "content" in result
+                    # Compare file content with the content field from structured return
+                    # Note: File contains full content, result["content"] might be
+                    # truncated
+                    assert file_content == result["content"] or result.get(
+                        "truncated", False
+                    )
 
     @pytest.mark.external_api
     @pytest.mark.slow
@@ -342,7 +348,14 @@ class TestFileWritingInTools:
                     # Verify content matches returned result
                     with open(saved_file) as f:
                         file_content = f.read()
-                    assert file_content == result
+                    assert isinstance(result, dict)
+                    assert "content" in result
+                    # Compare file content with the content field from structured return
+                    # Note: File contains full content, result["content"] might be
+                    # truncated
+                    assert file_content == result["content"] or result.get(
+                        "truncated", False
+                    )
 
     @pytest.mark.external_api
     def test_search_papers_by_keyword_file_saving(self):
@@ -360,7 +373,12 @@ class TestFileWritingInTools:
                     # Verify content is valid JSON and matches result
                     with open(saved_file) as f:
                         data = json.load(f)
-                    assert data == result
+                    # The file contains the original data without the saved_to key
+                    # Compare the file content with the result excluding saved_to
+                    result_without_saved_to = {
+                        k: v for k, v in result.items() if k != "saved_to"
+                    }
+                    assert data == result_without_saved_to
 
     def test_extract_pdf_text_file_saving(self):
         """Test extract_pdf_text saves files correctly."""
@@ -371,14 +389,21 @@ class TestFileWritingInTools:
             with patch.object(file_manager, "output_dir", Path(temp_dir)):
                 result = extract_pdf_text(pdf_url, save_to="test_pdf_text.txt")
 
-                if result and "Error" not in result:
+                if result and "Error" not in str(result):
                     saved_file = Path(temp_dir) / "test_pdf_text.txt"
                     assert saved_file.exists()
 
                     # Verify content matches returned result
                     with open(saved_file) as f:
                         file_content = f.read()
-                    assert file_content == result
+                    assert isinstance(result, dict)
+                    assert "content" in result
+                    # Compare file content with the content field from structured return
+                    # Note: File contains full content, result["content"] might be
+                    # truncated
+                    assert file_content == result["content"] or result.get(
+                        "truncated", False
+                    )
 
 
 class TestFileWritingErrorHandling:
