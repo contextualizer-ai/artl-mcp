@@ -8,7 +8,11 @@ import requests
 
 import artl_mcp.utils.pubmed_utils as aupu
 from artl_mcp.utils.citation_utils import CitationUtils
-from artl_mcp.utils.config_manager import get_email_manager
+from artl_mcp.utils.config_manager import (
+    get_config_value,
+    get_email_manager,
+    should_use_alternative_sources,
+)
 from artl_mcp.utils.conversion_utils import IdentifierConverter
 from artl_mcp.utils.doi_fetcher import DOIFetcher
 from artl_mcp.utils.file_manager import FileFormat, file_manager
@@ -2166,4 +2170,285 @@ def download_pdf_from_doi(
             "pdf_url": None,
             "doi": doi,
             "error": f"Unexpected error: {e}",
+        }
+
+
+# Europe PMC search functions
+def _search_europepmc_flexible(
+    query: str,
+    page_size: int = 25,
+    synonym: bool = True,
+    sort: str = "RELEVANCE",
+    result_type: str = "core",
+    source_filters: list[str] | None = None,
+    auto_paginate: bool = False,
+    max_results: int = 100,
+    cursor_mark: str = "*",
+) -> dict[str, Any] | None:
+    """
+    Flexible Europe PMC search with comprehensive parameter support.
+
+    This is an internal function that provides full access to Europe PMC API parameters.
+    For simple keyword searches, use search_keywords_for_ids() instead.
+
+    Args:
+        query: Search query/keywords
+        page_size: Results per page (max 1000)
+        synonym: Include synonyms in search (recommended: True)
+        sort: Sort order - RELEVANCE, DATE, CITED
+        result_type: core (full metadata), lite (minimal), idlist (IDs only)
+        source_filters: List of sources to include (e.g., ["med", "pmc"])
+        auto_paginate: Automatically retrieve all results up to max_results
+        max_results: Maximum total results when auto_paginate=True
+        cursor_mark: Pagination cursor (use "*" for first page)
+
+    Returns:
+        Dictionary containing search results from Europe PMC API
+        None if search fails
+
+    Note:
+        This function respects the PUBMED_OFFLINE environment variable.
+        When True, it uses Europe PMC. When False, it may defer to PubMed.
+    """
+    try:
+        # Check if we should use alternative sources
+        if not should_use_alternative_sources():
+            logger.info(
+                "NCBI services available, consider using search_pubmed_for_pmids "
+                "instead"
+            )
+
+        # Build URL and parameters
+        base_url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
+
+        params: dict[str, str] = {
+            "query": query,
+            "format": "json",
+            "pageSize": str(min(page_size, 1000)),  # API max is 1000
+            "synonym": "true" if synonym else "false",
+            "resultType": result_type,
+            "cursorMark": cursor_mark,
+        }
+
+        # Add sort if specified
+        if sort and sort != "RELEVANCE":
+            params["sort"] = sort
+
+        # Add source filters
+        if source_filters:
+            source_query = " OR ".join([f"src:{src}" for src in source_filters])
+            params["query"] = f"({query}) AND ({source_query})"
+
+        # Set headers
+        headers = {
+            "Accept": "application/json",
+            "User-Agent": "ARTL-MCP/1.0 (https://github.com/contextualizer-ai/artl-mcp)",
+        }
+
+        # Make request
+        response = requests.get(base_url, params=params, headers=headers, timeout=30)
+        response.raise_for_status()
+
+        data = response.json()
+
+        # Handle auto-pagination
+        if auto_paginate and result_type == "core":
+            all_results = data.get("resultList", {}).get("result", [])
+            next_cursor = data.get("nextCursorMark")
+
+            while (
+                next_cursor
+                and len(all_results) < max_results
+                and len(all_results) < data.get("hitCount", 0)
+            ):
+                # Get next page
+                params["cursorMark"] = next_cursor
+                params["pageSize"] = str(
+                    min(page_size, max_results - len(all_results), 1000)
+                )
+
+                response = requests.get(
+                    base_url, params=params, headers=headers, timeout=30
+                )
+                response.raise_for_status()
+
+                page_data = response.json()
+                page_results = page_data.get("resultList", {}).get("result", [])
+
+                if not page_results:
+                    break
+
+                all_results.extend(page_results)
+                next_cursor = page_data.get("nextCursorMark")
+
+                # Prevent infinite loops
+                if next_cursor == params["cursorMark"]:
+                    break
+
+            # Update data with all results
+            if "resultList" in data:
+                data["resultList"]["result"] = all_results[:max_results]
+                data["returnedCount"] = len(data["resultList"]["result"])
+
+        logger.info(
+            f"Europe PMC search returned {data.get('hitCount', 0)} total matches, "
+            f"{len(data.get('resultList', {}).get('result', []))} results retrieved"
+        )
+
+        return data
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error searching Europe PMC for query '{query}': {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error searching Europe PMC for query '{query}': {e}")
+        return None
+
+
+def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, Any]:
+    """
+    Search for scientific article IDs using keywords.
+
+    This tool provides a simple interface for finding PMIDs, PMCIDs, and DOIs
+    from keyword searches. When PUBMED_OFFLINE=true, it uses Europe PMC as the
+    primary search engine. Otherwise, it may use PubMed when available.
+
+    Perfect for:
+    - Finding article IDs to use with other ARTL-MCP tools
+    - Discovering papers by topic, author, or keywords
+    - Getting availability information (open access, PDF links)
+    - Research literature discovery
+
+    Args:
+        keywords: Natural language search terms (e.g., "CRISPR gene editing",
+                 "climate change microbiome", "machine learning healthcare")
+        max_results: Maximum number of articles to return (default: 10, max: 100)
+
+    Returns:
+        Dictionary with separate lists for each ID type and metadata:
+        {
+            "pmids": ["32132456", "31234567", ...],      # PubMed IDs
+            "pmcids": ["PMC7049895", "PMC8123456", ...], # PMC IDs
+            "dois": ["10.1038/s41586-020-2012-7", ...],  # DOIs
+            "total_count": 7261,                         # Total matches in database
+            "returned_count": 10,                        # Results in this response
+            "source": "europepmc",                       # Data source used
+            "query": "original keywords"                 # Your search terms
+        }
+
+    Examples:
+        >>> result = search_keywords_for_ids("rhizosphere microbiome")
+        >>> result["pmids"][:3]
+        ['40603217', '40459209', '40482721']
+        >>> result["total_count"]
+        9832
+        >>> len(result["dois"])
+        10
+
+        >>> result = search_keywords_for_ids("CRISPR", max_results=5)
+        >>> result["returned_count"]
+        5
+
+    Related Tools:
+        - get_abstract_from_pubmed_id(): Get abstracts using PMIDs from this search
+        - get_doi_metadata(): Get full metadata using DOIs from this search
+        - get_full_text_from_doi(): Get full text using DOIs from this search
+        - download_pdf_from_doi(): Download PDFs using DOIs from this search
+
+    Note:
+        Uses Europe PMC when PUBMED_OFFLINE=true (recommended for reliability).
+        Includes synonym expansion for comprehensive results.
+        Results include availability flags for immediate access assessment.
+    """
+    try:
+        # Check configuration
+        is_pubmed_offline = (
+            get_config_value("PUBMED_OFFLINE", "false").lower() == "true"
+        )
+
+        if not is_pubmed_offline:
+            # Try PubMed first, fall back to Europe PMC if it fails
+            try:
+                pubmed_result = search_pubmed_for_pmids(keywords, max_results)
+                if pubmed_result and pubmed_result.get("pmids"):
+                    # Convert PubMed result to our format
+                    return {
+                        "pmids": pubmed_result["pmids"],
+                        "pmcids": [],  # PubMed search doesn't return PMCIDs directly
+                        "dois": [],  # PubMed search doesn't return DOIs directly
+                        "total_count": pubmed_result["total_count"],
+                        "returned_count": pubmed_result["returned_count"],
+                        "source": "pubmed",
+                        "query": keywords,
+                    }
+            except Exception as e:
+                logger.warning(f"PubMed search failed, falling back to Europe PMC: {e}")
+
+        # Use Europe PMC (primary or fallback)
+        europepmc_result = _search_europepmc_flexible(
+            query=keywords,
+            page_size=max_results,
+            synonym=True,
+            sort="RELEVANCE",
+            result_type="core",
+            auto_paginate=False,
+            max_results=max_results,
+        )
+
+        if not europepmc_result:
+            return {
+                "pmids": [],
+                "pmcids": [],
+                "dois": [],
+                "total_count": 0,
+                "returned_count": 0,
+                "source": "europepmc",
+                "query": keywords,
+                "error": "Search failed",
+            }
+
+        # Extract IDs from Europe PMC results
+        results = europepmc_result.get("resultList", {}).get("result", [])
+
+        pmids = []
+        pmcids = []
+        dois = []
+
+        for paper in results:
+            # Extract PMID
+            pmid = paper.get("pmid")
+            if pmid:
+                pmids.append(pmid)
+
+            # Extract PMCID
+            pmcid = paper.get("pmcid")
+            if pmcid:
+                pmcids.append(pmcid)
+
+            # Extract DOI
+            doi = paper.get("doi")
+            if doi:
+                dois.append(doi)
+
+        return {
+            "pmids": pmids,
+            "pmcids": pmcids,
+            "dois": dois,
+            "total_count": europepmc_result.get("hitCount", 0),
+            "returned_count": len(results),
+            "source": "europepmc",
+            "query": keywords,
+        }
+
+    except Exception as e:
+        logger.error(f"Error in search_keywords_for_ids for query '{keywords}': {e}")
+        return {
+            "pmids": [],
+            "pmcids": [],
+            "dois": [],
+            "total_count": 0,
+            "returned_count": 0,
+            "source": "error",
+            "query": keywords,
+            "error": str(e),
         }

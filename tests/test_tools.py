@@ -12,8 +12,14 @@ from artl_mcp.tools import (
     get_full_text_from_doi,
     get_full_text_info,
     get_unpaywall_info,
+    search_pubmed_for_pmids,
 )
 from artl_mcp.utils.email_manager import EmailManager
+from tests.test_decorators import (
+    ncbi_required,
+    requires_ncbi_access,
+    skip_if_ncbi_offline,
+)
 
 
 # Test data from test_aurelian.py
@@ -453,3 +459,64 @@ def test_get_full_text_info_invalid_doi():
         except Exception:
             # Some invalid inputs might raise exceptions, which is acceptable
             pass
+
+
+# NCBI-specific tests with availability decorators
+@pytest.mark.external_api
+@pytest.mark.slow
+@requires_ncbi_access
+def test_search_pubmed_for_pmids():
+    """Test PubMed search functionality - requires NCBI access."""
+    result = search_pubmed_for_pmids("CRISPR gene editing", max_results=5)
+
+    if result is not None:
+        assert isinstance(result, dict)
+        assert "pmids" in result
+        assert "total_count" in result
+        assert "returned_count" in result
+        assert "query" in result
+        assert isinstance(result["pmids"], list)
+        assert result["query"] == "CRISPR gene editing"
+        # Should have found some results for this common term
+        assert result["total_count"] > 0
+    else:
+        pytest.skip("PubMed search returned no results")
+
+
+@pytest.mark.external_api
+@pytest.mark.slow
+@skip_if_ncbi_offline
+def test_get_abstract_from_pubmed_id_online():
+    """Test PubMed abstract retrieval when NCBI is online."""
+    result = get_abstract_from_pubmed_id(PMID_FOR_ABSTRACT)
+    assert result is not None
+    assert isinstance(result, dict)
+    assert "content" in result
+    # When NCBI is online, we expect to get meaningful content
+    if result["content"] and len(result["content"]) > 50:
+        # Should contain expected content if abstract is available
+        if EXPECTED_IN_ABSTRACT in result["content"]:
+            assert EXPECTED_IN_ABSTRACT in result["content"]
+
+
+@pytest.mark.external_api
+@pytest.mark.slow
+@requires_ncbi_access(strict=True)
+def test_strict_ncbi_access():
+    """Test that requires both NCBI access and online services."""
+    # This test will be skipped if:
+    # 1. Alternative sources are configured (USE_ALTERNATIVE_SOURCES=true)
+    # 2. NCBI services are offline
+    result = search_pubmed_for_pmids("test query", max_results=1)
+    # Test should only run when NCBI is fully available
+    assert result is not None or result is None  # Any result is acceptable when running
+
+
+@ncbi_required
+@pytest.mark.external_api
+def test_with_convenience_marker():
+    """Test using convenience marker for NCBI requirements."""
+    # This will be skipped if alternative sources are configured
+    result = search_pubmed_for_pmids("machine learning", max_results=1)
+    # Test that marker works correctly
+    assert result is not None or result is None

@@ -42,6 +42,7 @@ from artl_mcp.tools import (
     pmcid_to_doi,
     pmid_to_doi,
     pmid_to_pmcid,
+    search_keywords_for_ids,
     # Search tools
     search_papers_by_keyword,
     search_pubmed_for_pmids,
@@ -95,10 +96,12 @@ DOI, PMID, or PMCID.
 This server offers six main categories of functionality:
 
 ## 1. Literature Search and Discovery
-- **search_papers_by_keyword** 📁: Search article metadata via keywords
+- **search_keywords_for_ids**: ⭐ **RECOMMENDED** - Simple keyword search
+  returning PMIDs, PMCIDs, and DOIs (auto-detects PUBMED_OFFLINE)
+- **search_papers_by_keyword** 📁: Search article metadata via keywords (CrossRef)
 - **search_recent_papers** 📁: Find recent publications for specific keywords or topics
-- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords and
-  return PMIDs with metadata
+- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords
+  (requires PubMed access)
 
 ## 2. Metadata and Abstract Retrieval
 - **get_doi_metadata** 📁: Get comprehensive metadata for papers using DOI
@@ -219,6 +222,7 @@ This server offers six main categories of functionality:
     mcp.tool(get_comprehensive_citation_info)
 
     # Search tools
+    mcp.tool(search_keywords_for_ids)  # Primary keyword search tool
     mcp.tool(search_papers_by_keyword)
     mcp.tool(search_recent_papers)
 

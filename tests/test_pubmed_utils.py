@@ -1,6 +1,10 @@
 import pytest
 
 import artl_mcp.utils.pubmed_utils as aupu
+from tests.test_decorators import (
+    requires_ncbi_access,
+    skip_if_ncbi_offline,
+)
 
 # Test data constants
 TEST_DOI = "10.1099/ijsem.0.005153"
@@ -13,6 +17,7 @@ TEST_DOI_CLEAN = "10.7717/peerj.16290"
 # DOI/PMID conversion tests - core ID conversion functionality
 @pytest.mark.external_api
 @pytest.mark.slow
+@requires_ncbi_access
 def test_doi_to_pmid():
     """Test DOI to PMID conversion."""
     result = aupu.doi_to_pmid(TEST_DOI)
@@ -30,6 +35,7 @@ def test_doi_to_pmid():
 
 @pytest.mark.external_api
 @pytest.mark.slow
+@requires_ncbi_access
 def test_pmid_to_doi():
     """Test PMID to DOI conversion."""
     result = aupu.pmid_to_doi(TEST_PMID)
@@ -185,6 +191,7 @@ def test_get_full_text_from_bioc_invalid():
 # Abstract retrieval tests - XML parsing and text normalization
 @pytest.mark.external_api
 @pytest.mark.slow
+@skip_if_ncbi_offline
 def test_get_abstract_from_pubmed():
     """Test abstract extraction with comprehensive XML parsing."""
     # Use a PMID known to have an abstract
