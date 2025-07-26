@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -1954,4 +1955,212 @@ def convert_identifier_format(
             "input_type": "unknown",
             "output_format": output_format,
             "error": str(e),
+        }
+
+
+def download_pdf_from_url(
+    pdf_url: str,
+    save_to: str | None = None,
+    filename: str | None = None,
+) -> dict[str, str | int | bool | None]:
+    """Download a PDF file from URL and save it without any conversion.
+
+    Downloads the raw PDF binary data and saves it as a .pdf file. No text
+    extraction or content processing is performed. No content is returned to
+    avoid streaming large data to the LLM agent.
+
+    Args:
+        pdf_url: Direct URL to the PDF file
+        save_to: Specific path to save PDF (overrides filename if provided)
+        filename: Custom filename for the PDF (will add .pdf extension if missing)
+
+    Returns:
+        Dictionary with download results and file info.
+        Contains 'saved_to', 'file_size_bytes', 'success' keys.
+        Deliberately excludes 'content' to avoid streaming PDF data to LLM.
+
+    Examples:
+        >>> result = download_pdf_from_url("https://example.com/paper.pdf")
+        >>> result['saved_to']  # Path where PDF was saved
+        '/Users/.../Documents/artl-mcp/paper.pdf'
+        >>> result['file_size_bytes']  # Size of downloaded PDF
+        1048576
+    """
+    from urllib.parse import urlparse
+
+    import requests
+
+    try:
+        # Generate filename if not provided
+        if not filename and not save_to:
+            # Extract filename from URL
+            parsed_url = urlparse(pdf_url)
+            url_filename = parsed_url.path.split("/")[-1]
+            if url_filename and url_filename.endswith(".pdf"):
+                filename = url_filename
+            else:
+                # Generate generic filename
+                filename = (
+                    f"downloaded_pdf_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                )
+        elif filename and not filename.endswith(".pdf"):
+            filename = f"{filename}.pdf"
+
+        # Use file_manager's stream download to save directly to disk
+        if save_to:
+            # Save to specific path
+            save_path = Path(save_to)
+            if not save_path.is_absolute():
+                save_path = file_manager.output_dir / save_path
+
+            # Ensure .pdf extension
+            if not save_path.name.endswith(".pdf"):
+                save_path = save_path.with_suffix(".pdf")
+
+            final_path, file_size = file_manager.stream_download_to_file(
+                url=pdf_url,
+                filename=save_path.name,
+                file_format="pdf",
+                output_dir=save_path.parent,
+            )
+        else:
+            # Use auto-generated filename in output directory
+            final_path, file_size = file_manager.stream_download_to_file(
+                url=pdf_url,
+                filename=filename or "download.pdf",
+                file_format="pdf",
+                output_dir=file_manager.output_dir,
+            )
+
+        logger.info(f"PDF downloaded and saved to: {final_path}")
+
+        return {
+            "saved_to": str(final_path),
+            "file_size_bytes": file_size,
+            "success": True,
+            "url": pdf_url,
+        }
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading PDF from {pdf_url}: {e}")
+        return {
+            "saved_to": None,
+            "file_size_bytes": 0,
+            "success": False,
+            "url": pdf_url,
+            "error": f"Download failed: {e}",
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error downloading PDF from {pdf_url}: {e}")
+        return {
+            "saved_to": None,
+            "file_size_bytes": 0,
+            "success": False,
+            "url": pdf_url,
+            "error": f"Unexpected error: {e}",
+        }
+
+
+def download_pdf_from_doi(
+    doi: str,
+    email: str,
+    save_to: str | None = None,
+    filename: str | None = None,
+) -> dict[str, str | int | bool | None]:
+    """Download PDF for a DOI using Unpaywall and save without conversion.
+
+    Uses Unpaywall API to find open access PDF URLs, then downloads and saves
+    the PDF file directly. No text extraction or content streaming to LLM.
+
+    IMPORTANT: This tool requires an email address. If the user hasn't provided one,
+    please ask them for their email address before calling this tool.
+
+    Args:
+        doi: The Digital Object Identifier of the article
+        email: Email address for API requests (required - ask user if not provided)
+        save_to: Specific path to save PDF (overrides filename if provided)
+        filename: Custom filename for the PDF (will add .pdf extension if missing)
+
+    Returns:
+        Dictionary with download results and file info.
+        Contains 'saved_to', 'file_size_bytes', 'success', 'pdf_url' keys.
+        Deliberately excludes 'content' to avoid streaming PDF data to LLM.
+
+    Examples:
+        >>> result = download_pdf_from_doi(
+        ...     "10.1371/journal.pone.0123456", "user@email.com"
+        ... )
+        >>> result['saved_to']  # Path where PDF was saved
+        '/Users/.../Documents/artl-mcp/unpaywall_pdf_10_1371_journal_pone_0123456.pdf'
+        >>> download_pdf_from_doi(
+        ...     "10.1371/journal.pone.0123456",
+        ...     "user@email.com",
+        ...     filename="my_paper.pdf"
+        ... )
+    """
+    try:
+        # First get Unpaywall info to find PDF URL
+        unpaywall_info = get_unpaywall_info(doi, email, strict=False)
+
+        if not unpaywall_info:
+            return {
+                "saved_to": None,
+                "file_size_bytes": 0,
+                "success": False,
+                "pdf_url": None,
+                "error": "Could not retrieve Unpaywall information",
+                "doi": doi,
+            }
+
+        # Look for open access PDF URL
+        pdf_url = None
+
+        # Check for best OA location
+        if "best_oa_location" in unpaywall_info and unpaywall_info["best_oa_location"]:
+            best_oa = unpaywall_info["best_oa_location"]
+            if best_oa.get("url_for_pdf"):
+                pdf_url = best_oa["url_for_pdf"]
+
+        # Fallback: check all OA locations
+        if not pdf_url and "oa_locations" in unpaywall_info:
+            for location in unpaywall_info.get("oa_locations", []):
+                if location.get("url_for_pdf"):
+                    pdf_url = location["url_for_pdf"]
+                    break
+
+        if not pdf_url:
+            return {
+                "saved_to": None,
+                "file_size_bytes": 0,
+                "success": False,
+                "pdf_url": None,
+                "error": "No open access PDF found in Unpaywall data",
+                "doi": doi,
+            }
+
+        # Generate filename if not provided
+        if not filename and not save_to:
+            try:
+                clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
+                clean_doi = clean_doi.replace("/", "_").replace(":", "_")
+            except IdentifierError:
+                clean_doi = doi.replace("/", "_").replace(":", "_")
+            filename = f"unpaywall_pdf_{clean_doi}.pdf"
+
+        # Download the PDF
+        result = download_pdf_from_url(pdf_url, save_to, filename)
+        result["pdf_url"] = pdf_url
+        result["doi"] = doi
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Error downloading PDF from DOI {doi}: {e}")
+        return {
+            "saved_to": None,
+            "file_size_bytes": 0,
+            "success": False,
+            "pdf_url": None,
+            "doi": doi,
+            "error": f"Unexpected error: {e}",
         }

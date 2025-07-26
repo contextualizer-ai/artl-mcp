@@ -12,6 +12,9 @@ from artl_mcp.tools import (
     # Enhanced identifier conversion tools
     doi_to_pmcid,
     doi_to_pmid,
+    # PDF download tools
+    download_pdf_from_doi,
+    download_pdf_from_url,
     # PubMed utilities tools
     extract_doi_from_url,
     extract_pdf_text,
@@ -89,32 +92,49 @@ DOI, PMID, or PMCID.
   - Prefixed: PMC:3737249
 - **Keywords**: Natural language search terms
 
-This server offers five main categories of functionality:
+This server offers six main categories of functionality:
 
 ## 1. Literature Search and Discovery
 - **search_papers_by_keyword** 📁: Search article metadata via keywords
 - **search_recent_papers** 📁: Find recent publications for specific keywords or topics
-- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords and return
-PMIDs with metadata
+- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords and
+  return PMIDs with metadata
 
 ## 2. Metadata and Abstract Retrieval
 - **get_doi_metadata** 📁: Get comprehensive metadata for papers using DOI
 - **get_abstract_from_pubmed_id** 📁: Retrieve abstracts from PubMed using PMID
-- **get_doi_fetcher_metadata** 📁: Enhanced metadata retrieval with email requirement
+- **get_doi_fetcher_metadata** 📁: Enhanced metadata retrieval with email
+  requirement
 - **get_unpaywall_info** 📁: Check open access availability via Unpaywall
 
 ## 3. Full Text Access and Processing
-- **get_full_text_from_doi** 📁: Retrieve full text content using DOI (requires email)
+- **get_full_text_from_doi** 📁: Retrieve full text content using DOI
+  (requires email)
 - **get_full_text_info** 📁: Get detailed full text availability information
-- **get_text_from_pdf_url** 📁: Extract text content from PDF URLs
-- **extract_pdf_text** 📁: Standalone PDF text extraction
 - **get_pmcid_text** 📁: Get full text from PubMed Central ID
 - **get_pmid_text** 📁: Get full text using PMID
 - **get_full_text_from_bioc** 📁: Retrieve full text in BioC format
 - **get_doi_text** 📁: Direct text retrieval using DOI
 - **clean_text** 📁: Clean and format extracted text content
 
-## 4. Identifier Conversion and Utilities
+## 4. PDF Operations (Choose Based on Your Goal)
+
+### PDF Download (No Text Extraction)
+- **download_pdf_from_url** 📁: Download PDF binary file from direct URL
+  (no email needed)
+- **download_pdf_from_doi** 📁: Find and download PDF via Unpaywall from DOI
+  (requires email)
+
+### PDF Text Extraction
+- **extract_pdf_text** 📁: Extract text from PDF URL (no email needed)
+- **get_text_from_pdf_url** 📁: Extract text from PDF URL with enhanced
+  processing (requires email)
+
+### PDF URL Discovery
+- **get_unpaywall_info** 📁: Find open access PDF URLs for any DOI
+  (requires email)
+
+## 5. Identifier Conversion and Utilities
 - **extract_doi_from_url**: Extract DOI from various URL formats
 - **convert_identifier_format** 📁: Convert between ID formats (raw, CURIE, URL)
 - **doi_to_pmid**: Convert DOI to PMID
@@ -126,7 +146,7 @@ PMIDs with metadata
 - **get_all_identifiers** 📁: Get all available IDs for any identifier
 - **validate_identifier**: Validate identifier format
 
-## 5. Citation Networks and Related Papers
+## 6. Citation Networks and Related Papers
 - **get_paper_references** 📁: Get papers cited by a given paper
 - **get_paper_citations** 📁: Get papers that cite a given paper
 - **get_citation_network** 📁: Get comprehensive citation network from OpenAlex
@@ -146,7 +166,8 @@ PMIDs with metadata
 - **Format Consistency**: All tools return identifiers in standardized formats
 - **Error Handling**: Graceful handling of invalid identifiers and API failures
 - **Rate Limiting**: Proper headers and timeouts for respectful API usage
-- **Comprehensive Coverage**: Support for DOI, PMID, PMCID conversion in all directions
+- **Comprehensive Coverage**: Support for DOI, PMID, PMCID conversion in all
+  directions
 
 """,
     )
@@ -163,6 +184,10 @@ PMIDs with metadata
     mcp.tool(get_full_text_info)
     mcp.tool(get_text_from_pdf_url)
     mcp.tool(clean_text)
+
+    # PDF download tools
+    mcp.tool(download_pdf_from_doi)
+    mcp.tool(download_pdf_from_url)
 
     # Standalone tools
     mcp.tool(extract_pdf_text)
