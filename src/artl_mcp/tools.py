@@ -2141,7 +2141,9 @@ def download_pdf_from_doi(
         # Generate filename if not provided
         if not filename and not save_to:
             try:
-                clean_doi = IdentifierUtils.normalize_doi(doi, "raw")  # type: ignore[arg-type]
+                if not isinstance(doi, str):
+                    raise ValueError(f"Expected DOI to be of type str, but got {type(doi).__name__}")
+                clean_doi = IdentifierUtils.normalize_doi(doi, "raw")
                 clean_doi = clean_doi.replace("/", "_").replace(":", "_")
             except IdentifierError:
                 clean_doi = doi.replace("/", "_").replace(":", "_")
