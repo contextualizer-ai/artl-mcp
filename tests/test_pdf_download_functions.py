@@ -266,7 +266,9 @@ class TestDownloadPdfFromDoi:
         mock_download_url.assert_called_once()
         call_args = mock_download_url.call_args
         # Function is called as download_pdf_from_url(pdf_url, save_to, filename)
-        assert call_args[0][1] == "/custom/path/paper.pdf"  # Second positional argument is save_to
+        assert (
+            call_args[0][1] == "/custom/path/paper.pdf"
+        )  # Second positional argument is save_to
 
     @patch("artl_mcp.tools.get_unpaywall_info")
     def test_download_pdf_from_doi_unpaywall_error(self, mock_unpaywall):
