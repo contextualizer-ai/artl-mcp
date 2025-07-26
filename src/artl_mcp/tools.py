@@ -1986,7 +1986,7 @@ def download_pdf_from_url(
         >>> result['file_size_bytes']  # Size of downloaded PDF
         1048576
     """
-    from urllib.parse import urlparse
+    # urlparse is already imported at the top of the file
 
     import requests
 
