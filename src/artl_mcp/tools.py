@@ -3753,7 +3753,6 @@ def get_europepmc_pdf_as_markdown(
     - Research workflows requiring structured paper content
     - High-throughput PDF processing with memory efficiency
     """
-    import io
     import time
 
     try:
