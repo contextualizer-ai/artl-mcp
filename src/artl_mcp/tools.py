@@ -2307,92 +2307,127 @@ def _search_europepmc_flexible(
         return None
 
 
-def search_europepmc_papers(keywords: str, max_results: int = 10) -> dict[str, Any]:
+def search_europepmc_papers(
+    keywords: str, max_results: int = 10, result_type: str = "lite"
+) -> dict[str, Any]:
     """
-    Search Europe PMC for papers and return identifiers, links, and access information.
+    Search Europe PMC for papers and return comprehensive paper information.
 
     This tool searches Europe PMC database using keywords and returns comprehensive
-    information including IDs, links, and full text/PDF availability. It ONLY uses
-    Europe PMC - no PubMed or NCBI APIs are accessed.
+    information including complete metadata, abstracts, and access information. 
+    It ONLY uses Europe PMC - no PubMed or NCBI APIs are accessed.
 
     What it does:
     1. Searches Europe PMC database with your keywords
-    2. Extracts PMIDs, PMCIDs, DOIs from results
-    3. Provides direct links to papers
-    4. Indicates full text and PDF availability
-    5. Returns structured data for further processing
+    2. Returns complete paper metadata (not just IDs)
+    3. Provides direct links to papers, PDFs, and full text
+    4. Includes abstracts, keywords, author affiliations (in core mode)
+    5. Indicates full text and PDF availability
 
     Args:
         keywords: Search terms (e.g., "rhizosphere microbiome", "CRISPR gene editing")
         max_results: Number of papers to return (default: 10, max: 100)
+        result_type: Level of detail to return - "lite" or "core"
+            - "lite": Basic metadata, titles, authors, access flags (faster, smaller)
+            - "core": Full metadata including abstracts, keywords, affiliations, 
+                     MeSH terms, grants, full text URLs (richer, larger)
+
+    Result Type Comparison:
+        "lite" mode returns:
+        - Basic identifiers (PMID, PMCID, DOI)
+        - Title, author string, journal, publication year
+        - Access flags (isOpenAccess, hasPDF, inPMC)
+        - Publication type and basic metadata
+        - ~8KB for 10 papers
+
+        "core" mode additionally includes:
+        - Complete abstract text
+        - Individual author details with affiliations
+        - Keywords and MeSH terms
+        - Grant/funding information  
+        - Multiple full text URLs with access types
+        - Journal details and publication status
+        - ~64KB for 10 papers (8x larger)
+
+        Neither mode includes citation lists - those require separate API calls.
 
     Returns:
-        Dictionary with categorized results:
+        Dictionary with complete paper information:
         {
-            "pmids": ["40603217", "40635331"],           # PubMed IDs
-            "pmcids": ["PMC12241448"],                   # PMC IDs
-            "dois": ["10.1016/j.tplants.2025.06.001"],   # DOIs
-            "papers": [                                   # Full paper details
+            "papers": [                                   # Complete paper objects
                 {
-                    "title": "Paper title",
-                    "pmid": "40603217",
-                    "doi": "10.1016/...",
-                    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/40603217",
-                    "doi_url": "https://doi.org/10.1016/...",
-                    "has_full_text": true,
-                    "has_pdf": true,
-                    "is_open_access": true
+                    "id": "40603217",                     # Europe PMC ID
+                    "source": "MED",                      # Source database  
+                    "pmid": "40603217",                   # PubMed ID
+                    "pmcid": "PMC12241448",              # PMC ID (if available)
+                    "doi": "10.1016/j.tplants.2025.06.001", # DOI
+                    "title": "The chemical interaction...", # Full title
+                    "authorString": "Bouwmeester H, ...",    # Author string
+                    "journalTitle": "Trends Plant Sci",      # Journal name
+                    "pubYear": "2025",                       # Publication year
+                    "isOpenAccess": "Y",                     # Open access flag
+                    "inEPMC": "Y",                          # In Europe PMC
+                    "inPMC": "Y",                           # In PMC
+                    "hasPDF": "Y",                          # PDF available
+                    "hasSuppl": "Y",                        # Supplementary materials
+                    "pubType": "review; journal article",   # Publication type
+                    
+                    # Additional fields in "core" mode:
+                    "abstractText": "Research into...",     # Full abstract
+                    "authorList": {...},                    # Detailed author info
+                    "keywordList": {...},                   # Keywords
+                    "meshHeadingList": {...},              # MeSH terms
+                    "grantsList": {...},                   # Funding info
+                    "fullTextUrlList": {...},             # Full text URLs
                 }
             ],
-            "total_count": 19756,                        # Total matches found
+            "pmids": ["40603217", "40635331"],           # Extracted PubMed IDs
+            "pmcids": ["PMC12241448"],                   # Extracted PMC IDs  
+            "dois": ["10.1016/j.tplants.2025.06.001"],   # Extracted DOIs
+            "total_count": 9832,                         # Total matches in Europe PMC
             "returned_count": 10,                        # Papers in this response
+            "result_type": "lite",                       # Mode used for this search
             "source": "europepmc",                       # Always Europe PMC
             "query": "rhizosphere microbiome"            # Your search terms
         }
 
     Examples:
+        # Basic search with lite mode (default)
         >>> result = search_europepmc_papers("rhizosphere microbiome")
         >>> len(result["papers"])  # Number of papers returned
-        3
-        >>> result["papers"][0]["doi_url"]  # Direct link to first paper
-        'https://doi.org/10.1016/j.tplants.2025.06.001'
-        >>> [p for p in result["papers"] if p["has_pdf"]]  # Papers with PDFs
+        10
+        >>> result["papers"][0]["title"]  # Paper title
+        'The chemical interaction between plants and the rhizosphere microbiome.'
+        >>> result["papers"][0]["isOpenAccess"]  # Check access
+        'Y'
+
+        # Rich search with core mode for detailed analysis
+        >>> result = search_europepmc_papers("CRISPR", max_results=5, result_type="core")
+        >>> result["papers"][0]["abstractText"]  # Full abstract text
+        'CRISPR-Cas9 technology has revolutionized...'
+        >>> result["papers"][0]["keywordList"]["keyword"]  # Keywords
+        ['CRISPR', 'Gene editing', 'Cas9']
+
+        # Filter by access type
+        >>> open_access = [p for p in result["papers"] if p["isOpenAccess"] == "Y"]
+        >>> with_pdfs = [p for p in result["papers"] if p["hasPDF"] == "Y"]
 
     Perfect for:
-    - Finding papers on specific topics from Europe PMC
-    - Getting direct links to papers and PDFs
-    - Checking open access availability
-    - Literature discovery without NCBI dependencies
+    - Literature discovery and analysis
+    - Finding papers with specific access requirements (open access, PDFs)
+    - Getting abstracts and keywords for content analysis
+    - Building citation databases and literature reviews
+    - Accessing papers through multiple URL types
+    - Research planning with author and affiliation information
     """
     try:
-        # Check if we should use alternative sources
-        should_use_alternatives = should_use_alternative_sources()
-
-        if not should_use_alternatives:
-            # Try PubMed first, fall back to Europe PMC if it fails
-            try:
-                pubmed_result = search_pubmed_for_pmids(keywords, max_results)
-                if pubmed_result and pubmed_result.get("pmids"):
-                    # Convert PubMed result to our format
-                    return {
-                        "pmids": pubmed_result["pmids"],
-                        "pmcids": [],  # PubMed search doesn't return PMCIDs directly
-                        "dois": [],  # PubMed search doesn't return DOIs directly
-                        "total_count": pubmed_result["total_count"],
-                        "returned_count": pubmed_result["returned_count"],
-                        "source": "pubmed",
-                        "query": keywords,
-                    }
-            except Exception as e:
-                logger.warning(f"PubMed search failed, falling back to Europe PMC: {e}")
-
-        # Use Europe PMC (primary or fallback)
+        # Use Europe PMC exclusively - no PubMed fallback
         europepmc_result = _search_europepmc_flexible(
             query=keywords,
             page_size=max_results,
             synonym=True,
             sort="RELEVANCE",
-            result_type="core",
+            result_type=result_type,
             auto_paginate=False,
             max_results=max_results,
         )
@@ -2402,8 +2437,10 @@ def search_europepmc_papers(keywords: str, max_results: int = 10) -> dict[str, A
                 "pmids": [],
                 "pmcids": [],
                 "dois": [],
+                "papers": [],
                 "total_count": 0,
                 "returned_count": 0,
+                "result_type": result_type,
                 "source": "europepmc",
                 "query": keywords,
                 "error": "Search failed",
@@ -2423,40 +2460,16 @@ def search_europepmc_papers(keywords: str, max_results: int = 10) -> dict[str, A
             pmcid = paper.get("pmcid")
             doi = paper.get("doi")
 
-            # Build comprehensive paper info
-            paper_info = {
-                "title": paper.get("title", ""),
-                "pmid": pmid,
-                "pmcid": pmcid,
-                "doi": doi,
-                "authors": paper.get("authorString", ""),
-                "journal": paper.get("journalTitle", ""),
-                "pub_year": paper.get("pubYear", ""),
-                "has_full_text": paper.get("hasTextMinedTerms", "N") == "Y",
-                "has_pdf": paper.get("hasPDF", "N") == "Y",
-                "is_open_access": paper.get("isOpenAccess", "N") == "Y",
-                "epub_date": paper.get("electronicPublicationDate", ""),
-            }
+            # Start with the complete paper object from Europe PMC
+            paper_info = dict(paper)  # Copy all fields from Europe PMC response
 
-            # Add direct links
+            # Collect identifiers for summary lists
             if pmid:
                 pmids.append(pmid)
-                paper_info["pubmed_url"] = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}"
             if pmcid:
                 pmcids.append(pmcid)
-                paper_info["pmc_url"] = (
-                    f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}"
-                )
             if doi:
                 dois.append(doi)
-                paper_info["doi_url"] = f"https://doi.org/{doi}"
-
-            # Add Europe PMC specific link
-            europepmc_id = paper.get("id", "")
-            if europepmc_id:
-                paper_info["europepmc_url"] = (
-                    f"https://europepmc.org/article/med/{europepmc_id}"
-                )
 
             papers.append(paper_info)
 
@@ -2467,6 +2480,7 @@ def search_europepmc_papers(keywords: str, max_results: int = 10) -> dict[str, A
             "papers": papers,
             "total_count": europepmc_result.get("hitCount", 0),
             "returned_count": len(results),
+            "result_type": result_type,
             "source": "europepmc",
             "query": keywords,
         }
@@ -2477,8 +2491,10 @@ def search_europepmc_papers(keywords: str, max_results: int = 10) -> dict[str, A
             "pmids": [],
             "pmcids": [],
             "dois": [],
+            "papers": [],
             "total_count": 0,
             "returned_count": 0,
+            "result_type": result_type,
             "source": "error",
             "query": keywords,
             "error": str(e),
