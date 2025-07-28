@@ -1,4 +1,4 @@
-.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version claude-demo clean-claude-demos claude-demos-all claude-demos-file-saving claude-demo-full-text
+.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version clean-claude-demos claude-demos-all
 
 # Default target - use test-coverage for comprehensive CI/release checks
 all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query test-version
@@ -192,14 +192,6 @@ local/claude-demo-full-text.txt:
 clean-claude-demos:
 	rm -f local/claude-demo-*.txt
 
-# Run Claude demo with cleanup (wrapper target)
+# Run all Claude demos with cleanup (comprehensive meta-target)
 claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
-	@echo "✅ Claude demo completed! Check local/claude-demo-*.txt for output"
-
-# Run only file saving demos
-claude-demos-file-saving: clean-claude-demos local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
-	@echo "✅ File saving demos completed! Check local/claude-demo-*-save.txt for output"
-
-# Run just the full text demo (convenient alias)
-claude-demo: local/claude-demo-full-text.txt
-	@echo "✅ Full text demo completed! Check local/claude-demo-full-text.txt for output"
+	@echo "✅ All Claude demos completed! Check local/claude-demo-*.txt for output"
