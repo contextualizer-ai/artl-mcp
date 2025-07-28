@@ -190,10 +190,7 @@ class TestCLIHelp:
         result = runner.invoke(cli, ["--help"])
 
         assert result.exit_code == 0
-        assert (
-            "Europe PMC Paper Search" in result.output
-            or "All Roads to Literature MCP server" in result.output
-        )
+        assert "All Roads to Literature MCP server" in result.output
         assert "--doi-query" in result.output
         assert "--pmid-search" in result.output
         assert "--max-results" in result.output

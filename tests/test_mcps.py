@@ -18,6 +18,7 @@ async def test_search_europepmc_papers_contains_content():
             "search_europepmc_papers", {"keywords": "neuroblastoma", "max_results": 5}
         )
 
-        # Extract text from TextContent object and check for expected keyword
+        # Extract text from TextContent object and validate structured response
         result_text = result.text if hasattr(result, "text") else str(result)
-        assert "neuroblastoma" in result_text.lower() or "pmids" in result_text.lower()
+        # search_europepmc_papers should return structured data with pmids
+        assert "pmids" in result_text.lower()
