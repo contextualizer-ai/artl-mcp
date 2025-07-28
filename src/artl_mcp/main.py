@@ -10,6 +10,7 @@ from artl_mcp.tools import (
     get_all_identifiers_from_europepmc,
     get_europepmc_full_text,
     get_europepmc_paper_by_id,
+    get_europepmc_pdf,
     search_europepmc_papers,
     # Search tools
     search_pubmed_for_pmids,
@@ -28,7 +29,7 @@ def create_mcp():
         instructions="""
 Europe PMC Literature Discovery and ID Translation Tools
 
-This MCP server provides FOUR TOOLS for scientific literature discovery and
+This MCP server provides FIVE TOOLS for scientific literature discovery and
 identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
 ## Tool Selection Guide
@@ -37,6 +38,7 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 **For FULL METADATA from identifier** → Use `get_europepmc_paper_by_id`
 **For ID TRANSLATION/LINKS** → Use `get_all_identifiers_from_europepmc`
 **For FULL TEXT CONTENT** → Use `get_europepmc_full_text`
+**For PDF DOWNLOAD** → Use `get_europepmc_pdf`
 
 ## Available Tools
 
@@ -59,6 +61,11 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 - **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
 - **OUTPUT**: Clean Markdown with preserved structure, tables, and figures
 - Use this for: Getting complete paper content for LLM analysis
+
+**5. get_europepmc_pdf** - Download PDF files from Europe PMC
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: PDF file download with metadata and path information
+- Use this for: Getting the actual PDF file for papers available in Europe PMC
 
 Key Features:
 - Automatic identifier detection and normalization
@@ -93,6 +100,10 @@ get_all_identifiers_from_europepmc("10.1038/nature12373")
 # Get full text content as Markdown
 get_europepmc_full_text("10.1038/nature12373")
 get_europepmc_full_text("PMC3737249", save_file=True)
+
+# Download PDF files
+get_europepmc_pdf("10.1038/nature12373")
+get_europepmc_pdf("PMC3737249", save_to="/path/to/save/location")
 ```
 
 All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubMed APIs.
@@ -153,6 +164,7 @@ All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubM
     mcp.tool(get_europepmc_paper_by_id)  # Get full metadata from any ID
     mcp.tool(get_all_identifiers_from_europepmc)  # Get all IDs and links
     mcp.tool(get_europepmc_full_text)  # Get full text content as Markdown
+    mcp.tool(get_europepmc_pdf)  # Download PDF files from Europe PMC
 
     # Other tools commented out to avoid NCBI API calls
     # mcp.tool(search_papers_by_keyword)

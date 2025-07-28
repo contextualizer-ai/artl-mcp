@@ -188,10 +188,14 @@ local/claude-demo-full-text.txt:
 	@echo "🤖 Claude CLI: Get full text content in Markdown format and save to file"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get the full text content for DOI 10.1371/journal.pone.0000217 from Europe PMC in Markdown format and save it to a file. Tell me exactly what sections were found and the filename where it was saved. Also show me the first few lines of the Markdown content." 2>&1 | tee $@
 
+local/claude-demo-pdf-download.txt:
+	@echo "🤖 Claude CLI: Download PDF from Europe PMC and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Download the PDF for DOI 10.1371/journal.pone.0000217 from Europe PMC and save it to a file. Tell me the exact filename where the PDF was saved and the file size." 2>&1 | tee $@
+
 # Clean up Claude demo output files
 clean-claude-demos:
 	rm -f local/claude-demo-*.txt
 
 # Run all Claude demos with cleanup (comprehensive meta-target)
-claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
+claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-download.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
 	@echo "✅ All Claude demos completed! Check local/claude-demo-*.txt for output"

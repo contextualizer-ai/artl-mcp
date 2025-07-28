@@ -3485,3 +3485,181 @@ def _get_text_content(elem) -> str:
     full_text = re.sub(r"\s+", " ", full_text)
 
     return full_text.strip()
+
+
+def get_europepmc_pdf(
+    identifier: str, save_to: str | None = None, filename: str | None = None
+) -> dict[str, Any] | None:
+    """Download PDF from Europe PMC for any scientific identifier.
+
+    Searches Europe PMC for the paper, finds available PDF URLs from the paper's
+    full text URL list, and downloads the PDF file directly. Works with DOI, PMID,
+    or PMCID identifiers.
+
+    **BEST FOR**: Downloading PDF files from Europe PMC
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: Downloaded PDF file with metadata about the download
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_to: Specific path to save PDF (overrides filename if provided)
+        filename: Custom filename for the PDF (will add .pdf extension if missing)
+
+    Returns:
+        Dictionary with download results and file info:
+        {
+            "saved_to": "/path/to/file.pdf",        # Path where PDF was saved
+            "file_size_bytes": 1048576,             # Size of downloaded PDF
+            "success": True,                        # Download success status
+            "pdf_url": "https://...",               # URL used for download
+            "identifier": "10.1038/nature12373",   # Input identifier
+            "paper_info": {                         # Basic paper metadata
+                "title": "...",
+                "authors": "...",
+                "journal": "...",
+                "year": "..."
+            }
+        }
+
+        Returns None if no PDF found or identifier invalid.
+
+    Examples:
+        # Download PDF for a DOI
+        >>> result = get_europepmc_pdf("10.1038/nature12373")
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_pdf_10_1038_nature12373.pdf'
+        >>> result["success"]
+        True
+
+        # Download with custom filename
+        >>> result = get_europepmc_pdf("PMC3737249", filename="my_paper.pdf")
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/my_paper.pdf'
+
+        # Download to specific path
+        >>> result = get_europepmc_pdf(
+        ...     "23851394", save_to="/path/to/paper.pdf"
+        ... )
+
+    Perfect for:
+    - Downloading open access PDFs from Europe PMC
+    - Getting PDF files for papers found through Europe PMC search
+    - Building PDF archives from scientific literature
+    - Accessing full-text papers in PDF format
+    """
+    try:
+        # First, get paper metadata from Europe PMC
+        paper_data = get_europepmc_paper_by_id(identifier)
+        if not paper_data:
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        # Extract basic paper information for metadata
+        paper_info = {
+            "title": paper_data.get("title", ""),
+            "authors": paper_data.get("authorString", ""),
+            "journal": paper_data.get("journalTitle", ""),
+            "year": paper_data.get("pubYear", ""),
+            "doi": paper_data.get("doi", ""),
+            "pmid": paper_data.get("pmid", ""),
+            "pmcid": paper_data.get("pmcid", ""),
+        }
+
+        # Remove None values from paper_info
+        paper_info = {k: v for k, v in paper_info.items() if v}
+
+        # Look for PDF URLs in the full text URL list
+        pdf_url = None
+        full_text_urls = []
+
+        if "fullTextUrlList" in paper_data and paper_data["fullTextUrlList"]:
+            for url_entry in paper_data["fullTextUrlList"].get("fullTextUrl", []):
+                url = url_entry.get("url", "")
+                availability = url_entry.get("availability", "")
+                document_style = url_entry.get("documentStyle", "")
+                site = url_entry.get("site", "")
+
+                full_text_urls.append(
+                    {
+                        "url": url,
+                        "availability": availability,
+                        "document_style": document_style,
+                        "site": site,
+                    }
+                )
+
+                # Look for PDF URLs - prioritize different types
+                if url and (
+                    url.lower().endswith(".pdf") or "pdf" in document_style.lower()
+                ):
+                    if not pdf_url:  # Take the first PDF found
+                        pdf_url = url
+                    # Prefer Open Access PDFs
+                    elif availability.lower() == "open access":
+                        pdf_url = url
+
+        # If no direct PDF found, check if paper has PMC full text access
+        if not pdf_url and paper_data.get("inPMC") == "Y" and paper_data.get("pmcid"):
+            # Try Europe PMC's PDF endpoint (if it exists)
+            pmcid = paper_data.get("pmcid")
+            potential_pdf_url = (
+                f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/pdf"
+            )
+
+            # Test if the PDF endpoint exists
+            try:
+                test_response = requests.head(potential_pdf_url, timeout=10)
+                if test_response.status_code == 200:
+                    pdf_url = potential_pdf_url
+            except requests.exceptions.RequestException:
+                pass  # PDF endpoint doesn't exist or isn't accessible
+
+        if not pdf_url:
+            logger.info(f"No PDF URL found for {identifier} in Europe PMC")
+            return {
+                "saved_to": None,
+                "file_size_bytes": 0,
+                "success": False,
+                "pdf_url": None,
+                "identifier": identifier,
+                "paper_info": paper_info,
+                "error": "No PDF URL found in Europe PMC data",
+                "available_urls": full_text_urls,
+            }
+
+        logger.info(f"Found PDF URL for {identifier}: {pdf_url}")
+
+        # Generate filename if not provided
+        if not filename and not save_to:
+            clean_id = str(identifier).replace("/", "_").replace(":", "_")
+            filename = f"europepmc_pdf_{clean_id}.pdf"
+
+        # Download the PDF using existing functionality
+        download_result = download_pdf_from_url(pdf_url, save_to, filename)
+
+        # Enhance the result with Europe PMC specific information
+        if download_result:
+            # Create enhanced result with proper typing
+            enhanced_result: dict[str, Any] = dict(download_result)
+            enhanced_result["identifier"] = identifier
+            enhanced_result["paper_info"] = paper_info
+            enhanced_result["available_urls"] = full_text_urls
+            enhanced_result["source"] = "europe_pmc"
+            return enhanced_result
+
+        return download_result
+
+    except Exception as e:
+        logger.error(f"Error getting PDF from Europe PMC for '{identifier}': {e}")
+        return {
+            "saved_to": None,
+            "file_size_bytes": 0,
+            "success": False,
+            "pdf_url": None,
+            "identifier": identifier,
+            "paper_info": {},
+            "error": f"Unexpected error: {e}",
+        }
