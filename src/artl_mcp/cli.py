@@ -13,10 +13,12 @@ from artl_mcp.tools import (
     extract_doi_from_url,
     extract_pdf_text,
     get_abstract_from_pubmed_id,
+    get_all_identifiers_from_europepmc,
     get_doi_fetcher_metadata,
     # Original tools
     get_doi_metadata,
     get_doi_text,
+    get_europepmc_paper_by_id,
     get_full_text_from_bioc,
     get_full_text_from_doi,
     get_full_text_info,
@@ -50,15 +52,37 @@ def cli():
     pass
 
 
-# Core search tools that work reliably
+# Core Europe PMC tools that work reliably
 @cli.command("search-europepmc-papers")
 @click.option("--keywords", required=True, help="Search terms/keywords")
 @click.option(
     "--max-results", default=10, help="Maximum number of results (default 10, max 100)"
 )
-def search_europepmc_papers_cmd(keywords: str, max_results: int) -> None:
+@click.option(
+    "--result-type", 
+    default="lite", 
+    type=click.Choice(["lite", "core"]),
+    help="Result detail level: lite (basic) or core (full metadata with abstracts)"
+)
+def search_europepmc_papers_cmd(keywords: str, max_results: int, result_type: str) -> None:
     """Search Europe PMC for papers and return identifiers, links, and access info."""
-    result = search_europepmc_papers(keywords, max_results)
+    result = search_europepmc_papers(keywords, max_results, result_type)
+    output_result(result)
+
+
+@cli.command("get-europepmc-paper-by-id")
+@click.option("--identifier", required=True, help="Any identifier: DOI, PMID, or PMCID")
+def get_europepmc_paper_by_id_cmd(identifier: str) -> None:
+    """Get full Europe PMC metadata for any scientific identifier."""
+    result = get_europepmc_paper_by_id(identifier)
+    output_result(result)
+
+
+@cli.command("get-all-identifiers-from-europepmc")
+@click.option("--identifier", required=True, help="Any identifier: DOI, PMID, or PMCID")
+def get_all_identifiers_from_europepmc_cmd(identifier: str) -> None:
+    """Get all available identifiers and links for a paper from Europe PMC."""
+    result = get_all_identifiers_from_europepmc(identifier)
     output_result(result)
 
 

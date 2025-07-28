@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"identifiers\": {\n    \"pmid\": \"23851394\",\n    \"doi\": \"10.1038/nature12352\",\n    \"europepmc_id\": \"23851394\",\n    \"source\": \"MED\"\n  },\n  \"urls\": {\n    \"pubmed\": \"https://pubmed.ncbi.nlm.nih.gov/23851394\",\n    \"doi\": \"https://doi.org/10.1038/nature12352\",\n    \"europepmc\": \"https://europepmc.org/article/MED/23851394\"\n  },\n  \"access\": {\n    \"is_open_access\": false,\n    \"has_pdf\": false,\n    \"in_pmc\": false,\n    \"in_europepmc\": false,\n    \"has_full_text\": false,\n    \"has_supplementary\": false\n  },\n  \"basic_info\": {\n    \"title\": \"Insights into the phylogeny and coding potential of microbial dark matter.\",\n    \"journal\": \"Nature\",\n    \"year\": \"2013\",\n    \"authors\": \"Rinke C, Schwientek P, Sczyrba A, Ivanova NN, Anderson IJ, Cheng JF, Darling A, Malfatti S, Swan BK, Gies EA, Dodsworth JA, Hedlund BP, Tsiamis G, Sievert SM, Liu WT, Eisen JA, Hallam SJ, Kyrpides NC, Stepanauskas R, Rubin EM, Hugenholtz P, Woyke T.\",\n    \"publication_type\": \"research support, non-u.s. gov't; research support, u.s. gov't, non-p.h.s.; journal article\"\n  },\n  \"_search_info\": {\n    \"input_identifier\": \"23851394\",\n    \"detected_type\": \"pmid\",\n    \"normalized_identifier\": \"23851394\",\n    \"query_used\": \"ext_id:23851394 AND src:med\",\n    \"source\": \"europepmc\"\n  }\n}"
+    }
+  ],
+  "isError": false
+}

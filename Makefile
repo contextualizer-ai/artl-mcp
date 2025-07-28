@@ -1,4 +1,4 @@
-.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version claude-demo clean-claude-demos
+.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version claude-demo clean-claude-demos claude-demos-all claude-demos-file-saving
 
 # Default target - use test-coverage for comprehensive CI/release checks
 all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query test-version
@@ -158,15 +158,40 @@ test-version:
 	@echo "🔢 Testing version flag..."
 	uv run artl-mcp --version
 
-# Claude CLI example using local MCP server
+# Claude CLI examples using local MCP server
 local/claude-demo-rhizosphere.txt:
-	@echo "🤖 Claude CLI: Search Europe PMC for rhizosphere microbiome papers..."
+	@echo "🤖 Claude CLI: Search Europe PMC for rhizosphere microbiome papers"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Search Europe PMC for rhizosphere microbiome papers" 2>&1 | tee $@
+
+local/claude-demo-get-paper-by-id.txt:
+	@echo "🤖 Claude CLI: Get full paper metadata for DOI:10.1038/nature12352 using Europe PMC"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get full paper metadata for DOI 10.1038/nature12373 using Europe PMC" 2>&1 | tee $@
+
+local/claude-demo-get-all-identifiers.txt:
+	@echo "🤖 Claude CLI: Get all identifiers and links for PMID:23851394 using Europe PMC"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get all available identifiers and access links for PMID:23851394 using Europe PMC" 2>&1 | tee $@
+
+# File saving demonstration targets
+local/claude-demo-search-with-save.txt:
+	@echo "🤖 Claude CLI: Search Europe PMC for CRISPR papers and save results to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Search Europe PMC for 5 CRISPR papers using core mode and save the results to a file. Tell me the exact filename where the results were saved." 2>&1 | tee $@
+
+local/claude-demo-paper-metadata-save.txt:
+	@echo "🤖 Claude CLI: Get paper metadata for DOI and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get full paper metadata for DOI 10.1038/nature12373 from Europe PMC and save it to a file. Tell me the exact filename where the metadata was saved." 2>&1 | tee $@
+
+local/claude-demo-identifiers-save.txt:
+	@echo "🤖 Claude CLI: Get all identifiers for PMID and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get all identifiers and access links for PMID 23851394 from Europe PMC and save to a file. Tell me the exact filename where the identifiers were saved." 2>&1 | tee $@
 
 # Clean up Claude demo output files
 clean-claude-demos:
 	rm -f local/claude-demo-*.txt
 
 # Run Claude demo with cleanup (wrapper target)
-claude-demo: clean-claude-demos local/claude-demo-rhizosphere.txt
-	@echo "✅ Claude demo completed! Check local/claude-demo-rhizosphere.txt for output"
+claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
+	@echo "✅ Claude demo completed! Check local/claude-demo-*.txt for output"
+
+# Run only file saving demos
+claude-demos-file-saving: clean-claude-demos local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
+	@echo "✅ File saving demos completed! Check local/claude-demo-*-save.txt for output"

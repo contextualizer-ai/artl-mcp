@@ -7,6 +7,8 @@ from fastmcp import FastMCP
 
 from artl_mcp.client import run_client
 from artl_mcp.tools import (
+    get_all_identifiers_from_europepmc,
+    get_europepmc_paper_by_id,
     search_europepmc_papers,
     # Search tools
     search_pubmed_for_pmids,
@@ -23,45 +25,63 @@ def create_mcp():
     mcp = FastMCP(
         "artl-mcp",
         instructions="""
-Europe PMC Paper Search - Focused Literature Discovery Tool
+Europe PMC Literature Discovery and ID Translation Tools
 
-This MCP server provides ONE TOOL for searching scientific literature using Europe PMC.
-No NCBI/PubMed APIs are accessed - only Europe PMC.
+This MCP server provides THREE TOOLS for scientific literature discovery and identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
-## Available Tool
+## Tool Selection Guide
 
-**search_europepmc_papers** - Search Europe PMC and get comprehensive paper information
+**For KEYWORD SEARCHES** → Use `search_europepmc_papers`
+**For FULL METADATA from identifier** → Use `get_europepmc_paper_by_id` 
+**For ID TRANSLATION/LINKS** → Use `get_all_identifiers_from_europepmc`
 
-What it does:
-1. Searches Europe PMC database with your keywords
-2. Returns PMIDs, PMCIDs, DOIs for found papers
-3. Provides direct links (PubMed, PMC, DOI URLs)
-4. Indicates full text and PDF availability
-5. Shows open access status
+## Available Tools
 
-Parameters:
-- `keywords`: Search terms (e.g., "rhizosphere microbiome", "CRISPR gene editing")
-- `max_results`: Number of papers to return (default: 10, max: 100)
+**1. search_europepmc_papers** - Search Europe PMC for papers by keywords
+- **INPUT**: Keywords/search terms
+- **OUTPUT**: Multiple papers with metadata and identifiers
+- Use this for: Literature discovery, topic research, finding papers on subjects
 
-Returns comprehensive paper information including:
-- Identifiers: PMIDs, PMCIDs, DOIs
-- Metadata: title, authors, journal, publication year
-- Links: Direct URLs to PubMed, PMC, DOI
-- Availability: full text, PDF, open access status
+**2. get_europepmc_paper_by_id** - Get complete paper metadata from any identifier
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: Complete metadata including abstract, keywords, authors
+- Use this for: Getting full details about a specific paper you already have an ID for
+
+**3. get_all_identifiers_from_europepmc** - Get all available IDs and links for a paper
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: All available identifiers + direct URLs + access status
+- Use this for: ID translation (DOI→PMID), finding all access points, link generation
+
+Key Features:
+- Automatic identifier detection and normalization
+- Comprehensive Europe PMC metadata retrieval
+- Direct URL generation for all databases (PubMed, PMC, DOI, Europe PMC)
+- Access status checking (open access, PDF availability)
+- File saving capabilities for all functions
+- Exclusive Europe PMC usage - no NCBI API dependencies
 
 Perfect for:
-- Finding papers on specific topics
-- Getting direct links to papers and PDFs
-- Checking open access availability
-- Literature discovery without NCBI dependencies
+- Literature discovery and analysis
+- Identifier translation and cross-referencing
+- Finding all access points for papers
+- Building comprehensive literature databases
+- Research requiring detailed paper metadata
 
 Example usage:
 ```
-search_europepmc_papers(keywords="rhizosphere microbiome", max_results=5)
+# Search for papers
+search_europepmc_papers(keywords="CRISPR gene editing", max_results=10, result_type="core")
+
+# Get full metadata from any identifier
+get_europepmc_paper_by_id("10.1038/nature12373")
+get_europepmc_paper_by_id("23851394")  # PMID
+get_europepmc_paper_by_id("PMC3737249")  # PMCID
+
+# Get all identifiers and links
+get_all_identifiers_from_europepmc("10.1038/nature12373")
 ```
 
-This tool exclusively uses Europe PMC and will never attempt to contact
-NCBI/PubMed APIs.
+All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubMed APIs.
 
 """,
     )
@@ -114,8 +134,12 @@ NCBI/PubMed APIs.
     # mcp.tool(find_related_papers)
     # mcp.tool(get_comprehensive_citation_info)
 
-    # Search tools - ONLY Europe PMC search enabled
+    # Europe PMC tools - Search and ID translation
     mcp.tool(search_europepmc_papers)  # Europe PMC search tool
+    mcp.tool(get_europepmc_paper_by_id)  # Get full metadata from any ID
+    mcp.tool(get_all_identifiers_from_europepmc)  # Get all IDs and links
+    
+    # Other tools commented out to avoid NCBI API calls
     # mcp.tool(search_papers_by_keyword)
     # mcp.tool(search_recent_papers)
 

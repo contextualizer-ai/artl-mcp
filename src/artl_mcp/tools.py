@@ -2308,7 +2308,7 @@ def _search_europepmc_flexible(
 
 
 def search_europepmc_papers(
-    keywords: str, max_results: int = 10, result_type: str = "lite"
+    keywords: str, max_results: int = 10, result_type: str = "lite", save_file: bool = False, save_to: str | None = None
 ) -> dict[str, Any]:
     """
     Search Europe PMC for papers and return comprehensive paper information.
@@ -2325,7 +2325,30 @@ def search_europepmc_papers(
     5. Indicates full text and PDF availability
 
     Args:
-        keywords: Search terms (e.g., "rhizosphere microbiome", "CRISPR gene editing")
+        keywords: Search query using Europe PMC syntax. Supports:
+            Basic searches:
+            - Simple terms: "CRISPR", "machine learning", "cancer immunotherapy"
+            - Phrases: "rhizosphere microbiome", "gene editing"
+            
+            Advanced syntax:
+            - Boolean operators: "CRISPR AND gene editing", "microbiome OR microbiota"
+            - Field searches: title:"CRISPR", author:"Smith", journal:"Nature"
+            - Wildcards: "bacteri*" (matches bacteria, bacterial, etc.)
+            - Negation: "CRISPR NOT review"
+            - Parentheses: "(CRISPR OR gene editing) AND therapy"
+            
+            Specialized filters:
+            - Source: src:med (PubMed), src:pmc (PMC), src:ppr (preprints)
+            - Publication type: PUB_TYPE:"Review", PUB_TYPE:"Clinical Trial"
+            - Date ranges: first_pdate:[2020-01-01 TO 2024-12-31]
+            - Open access: OPEN_ACCESS:Y
+            - Language: LANG:eng
+            
+            Examples:
+            - "title:microbiome AND src:pmc" - PMC papers with microbiome in title
+            - "author:smith AND first_pdate:[2020 TO 2024]" - Smith papers from 2020-2024
+            - "CRISPR AND PUB_TYPE:Review AND OPEN_ACCESS:Y" - Open access CRISPR reviews
+            
         max_results: Number of papers to return (default: 10, max: 100)
         result_type: Level of detail to return - "lite" or "core"
             - "lite": Basic metadata, titles, authors, access flags (faster, smaller)
@@ -2410,6 +2433,11 @@ def search_europepmc_papers(
         >>> result["papers"][0]["keywordList"]["keyword"]  # Keywords
         ['CRISPR', 'Gene editing', 'Cas9']
 
+        # Advanced query examples
+        >>> result = search_europepmc_papers('title:"machine learning" AND src:pmc')
+        >>> result = search_europepmc_papers('author:"Smith" AND first_pdate:[2020 TO 2024]')
+        >>> result = search_europepmc_papers('CRISPR AND PUB_TYPE:"Review" AND OPEN_ACCESS:Y')
+        
         # Filter by access type
         >>> open_access = [p for p in result["papers"] if p["isOpenAccess"] == "Y"]
         >>> with_pdfs = [p for p in result["papers"] if p["hasPDF"] == "Y"]
@@ -2475,7 +2503,7 @@ def search_europepmc_papers(
 
             papers.append(paper_info)
 
-        return {
+        search_results = {
             "pmids": pmids,
             "pmcids": pmcids,
             "dois": dois,
@@ -2486,6 +2514,30 @@ def search_europepmc_papers(
             "source": "europepmc",
             "query": keywords,
         }
+        
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                saved_path = file_manager.handle_file_save(
+                    content=search_results,
+                    base_name="europepmc_search",
+                    identifier=keywords.replace(" ", "_").replace(":", "_"),
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC search results saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save Europe PMC search results: {e}")
+        
+        # Add save path info if file was saved
+        if saved_path:
+            search_results["saved_to"] = str(saved_path)
+            
+        return search_results
 
     except Exception as e:
         logger.error(f"Error in search_europepmc_papers for query '{keywords}': {e}")
@@ -2501,3 +2553,378 @@ def search_europepmc_papers(
             "query": keywords,
             "error": str(e),
         }
+
+
+def get_europepmc_paper_by_id(
+    identifier: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
+    """Get full Europe PMC metadata for any scientific identifier.
+    
+    Automatically detects identifier type (DOI, PMID, PMCID) and retrieves complete
+    paper metadata from Europe PMC using core mode for maximum detail.
+    
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373" 
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save metadata to temp directory with auto-generated filename
+        save_to: Specific path to save metadata (overrides save_file if provided)
+        
+    Returns:
+        Dictionary with complete Europe PMC paper metadata including:
+        - All identifiers (PMID, PMCID, DOI, Europe PMC ID)
+        - Complete metadata (title, authors, journal, abstract, keywords)
+        - Full text availability and access information
+        - Publication details and citation data
+        - File save information if requested
+        
+        Returns None if no paper found or identifier invalid.
+        
+    Examples:
+        # Using DOI
+        >>> paper = get_europepmc_paper_by_id("10.1038/nature12373")
+        >>> paper["title"]
+        'CRISPR-Cas systems: RNA-mediated adaptive immunity in bacteria and archaea'
+        >>> paper["abstractText"][:50]
+        'Clustered regularly interspaced short palindromic...'
+        
+        # Using PMID  
+        >>> paper = get_europepmc_paper_by_id("23851394")
+        >>> paper["authorList"]["author"][0]["fullName"]
+        'Sorek R'
+        
+        # Save to file
+        >>> result = get_europepmc_paper_by_id("PMC3737249", save_file=True)
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_paper_PMC3737249.json'
+        
+    Perfect for:
+    - Getting complete paper information from any identifier type
+    - Research analysis requiring full metadata and abstracts
+    - Converting between identifier types while getting full data
+    - Building comprehensive literature databases
+    """
+    try:
+        # Use IdentifierUtils to detect and normalize the identifier
+        id_info = IdentifierUtils.normalize_identifier(identifier)
+        id_type = id_info["type"]
+        normalized_id = id_info["value"]
+        
+        logger.info(f"Detected identifier type: {id_type} for input: {identifier}")
+        
+        # Construct appropriate Europe PMC query based on identifier type
+        if id_type == "doi":
+            # DOI queries in Europe PMC
+            query = f'doi:"{normalized_id}"'
+        elif id_type == "pmid":
+            # PMID queries need special handling - search as external ID in MED source
+            query = f'ext_id:{normalized_id} AND src:med'
+        elif id_type == "pmcid":
+            # PMCID queries can use the PMC ID directly
+            pmc_number = normalized_id.replace("PMC", "") if normalized_id.startswith("PMC") else normalized_id
+            query = f'pmcid:PMC{pmc_number}'
+        else:
+            logger.warning(f"Unsupported identifier type: {id_type}")
+            return None
+            
+        logger.info(f"Using Europe PMC query: {query}")
+        
+        # Search Europe PMC using core mode for full metadata
+        result = _search_europepmc_flexible(
+            query=query,
+            page_size=1,  # We only want one result
+            synonym=False,  # Don't expand for exact ID matches
+            sort="RELEVANCE",
+            result_type="core",  # Use core for full metadata including abstracts
+            auto_paginate=False,
+            max_results=1,
+        )
+        
+        if not result or not result.get("resultList", {}).get("result"):
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+            
+        papers = result["resultList"]["result"]
+        if not papers:
+            return None
+            
+        # Get the first (and should be only) paper
+        paper_data = papers[0]
+        
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                # Create clean identifier for filename
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=paper_data,
+                    base_name="europepmc_paper",
+                    identifier=clean_id,
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC paper metadata saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save paper metadata: {e}")
+        
+        # Add metadata about the search
+        paper_data["_search_info"] = {
+            "input_identifier": identifier,
+            "detected_type": id_type,
+            "normalized_identifier": normalized_id,
+            "query_used": query,
+            "source": "europepmc",
+            "result_type": "core"
+        }
+        
+        # Add save info if file was saved
+        if saved_path:
+            paper_data["saved_to"] = str(saved_path)
+            
+        return paper_data
+        
+    except Exception as e:
+        logger.error(f"Error getting Europe PMC paper for identifier '{identifier}': {e}")
+        return None
+
+
+def get_all_identifiers_from_europepmc(
+    identifier: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
+    """Get all available identifiers and links for a paper from Europe PMC.
+    
+    **BEST FOR**: Identifier translation, cross-referencing, finding all access points
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: All available IDs + direct URLs + access status for that ONE paper
+    
+    This is the OPTIMAL tool when you have ONE paper identifier and need:
+    - All other identifiers for the same paper (PMID ↔ DOI ↔ PMCID translation)
+    - Direct access URLs (PubMed, PMC, DOI, Europe PMC links)
+    - Access status (open access, PDF availability, etc.)
+    
+    Use this instead of search when you have a specific paper identifier.
+    
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394" 
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save identifiers to temp directory with auto-generated filename
+        save_to: Specific path to save identifiers (overrides save_file if provided)
+        
+    Returns:
+        Dictionary with all available identifiers and access information:
+        {
+            "identifiers": {
+                "pmid": "23851394",           # PubMed ID
+                "pmcid": "PMC3737249",        # PMC ID
+                "doi": "10.1038/nature12373", # DOI
+                "europepmc_id": "23851394",   # Europe PMC internal ID
+                "source": "MED"               # Source database
+            },
+            "urls": {
+                "pubmed": "https://pubmed.ncbi.nlm.nih.gov/23851394",
+                "pmc": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3737249/",
+                "doi": "https://doi.org/10.1038/nature12373",
+                "europepmc": "https://europepmc.org/article/MED/23851394",
+                "full_text_urls": [...]       # Additional full text URLs if available
+            },
+            "access": {
+                "is_open_access": True,
+                "has_pdf": True,
+                "in_pmc": True,
+                "in_europepmc": True,
+                "has_full_text": True,
+                "has_supplementary": False
+            },
+            "basic_info": {
+                "title": "Paper title...",
+                "journal": "Nature",
+                "year": "2013",
+                "authors": "Author list..."
+            }
+        }
+        
+        Returns None if no paper found or identifier invalid.
+        
+    Examples:
+        # Get all IDs and links for a DOI
+        >>> result = get_all_identifiers_from_europepmc("10.1038/nature12373")
+        >>> result["identifiers"]["pmid"]
+        '23851394'
+        >>> result["urls"]["pmc"]
+        'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3737249/'
+        >>> result["access"]["is_open_access"]
+        True
+        
+        # Get identifiers from PMID
+        >>> result = get_all_identifiers_from_europepmc("23851394")
+        >>> result["identifiers"]["doi"]
+        '10.1038/nature12373'
+        
+        # Save results to file
+        >>> result = get_all_identifiers_from_europepmc("PMC3737249", save_file=True)
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_identifiers_PMC3737249.json'
+        
+    Perfect for:
+    - ID translation and cross-referencing
+    - Finding all access points for a paper
+    - Checking open access availability
+    - Building comprehensive paper databases with all identifiers
+    - Creating direct links to papers in multiple databases
+    """
+    try:
+        # Use IdentifierUtils to detect and normalize the identifier
+        id_info = IdentifierUtils.normalize_identifier(identifier)
+        id_type = id_info["type"]
+        normalized_id = id_info["value"]
+        
+        logger.info(f"Detected identifier type: {id_type} for input: {identifier}")
+        
+        # Construct appropriate Europe PMC query based on identifier type
+        if id_type == "doi":
+            query = f'doi:"{normalized_id}"'
+        elif id_type == "pmid":
+            query = f'ext_id:{normalized_id} AND src:med'
+        elif id_type == "pmcid":
+            pmc_number = normalized_id.replace("PMC", "") if normalized_id.startswith("PMC") else normalized_id
+            query = f'pmcid:PMC{pmc_number}'
+        else:
+            logger.warning(f"Unsupported identifier type: {id_type}")
+            return None
+            
+        logger.info(f"Using Europe PMC query: {query}")
+        
+        # Search Europe PMC using lite mode (sufficient for identifier extraction)
+        result = _search_europepmc_flexible(
+            query=query,
+            page_size=1,
+            synonym=False,
+            sort="RELEVANCE", 
+            result_type="lite",  # Lite mode has all the identifiers we need
+            auto_paginate=False,
+            max_results=1,
+        )
+        
+        if not result or not result.get("resultList", {}).get("result"):
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+            
+        papers = result["resultList"]["result"]
+        if not papers:
+            return None
+            
+        paper = papers[0]
+        
+        # Extract all available identifiers
+        identifiers = {
+            "pmid": paper.get("pmid"),
+            "pmcid": paper.get("pmcid"), 
+            "doi": paper.get("doi"),
+            "europepmc_id": paper.get("id"),
+            "source": paper.get("source")
+        }
+        
+        # Remove None values
+        identifiers = {k: v for k, v in identifiers.items() if v is not None}
+        
+        # Build URLs for all available identifiers
+        urls = {}
+        
+        if identifiers.get("pmid"):
+            urls["pubmed"] = f"https://pubmed.ncbi.nlm.nih.gov/{identifiers['pmid']}"
+            
+        if identifiers.get("pmcid"):
+            urls["pmc"] = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{identifiers['pmcid']}/"
+            
+        if identifiers.get("doi"):
+            urls["doi"] = f"https://doi.org/{identifiers['doi']}"
+            
+        if identifiers.get("europepmc_id") and identifiers.get("source"):
+            urls["europepmc"] = f"https://europepmc.org/article/{identifiers['source']}/{identifiers['europepmc_id']}"
+            
+        # Extract full text URLs if available in core mode data
+        full_text_urls = []
+        if "fullTextUrlList" in paper and paper["fullTextUrlList"]:
+            for url_entry in paper["fullTextUrlList"].get("fullTextUrl", []):
+                full_text_urls.append({
+                    "url": url_entry.get("url"),
+                    "availability": url_entry.get("availability"),
+                    "document_style": url_entry.get("documentStyle"),
+                    "site": url_entry.get("site")
+                })
+        
+        if full_text_urls:
+            urls["full_text_urls"] = full_text_urls
+            
+        # Extract access information
+        access = {
+            "is_open_access": paper.get("isOpenAccess") == "Y",
+            "has_pdf": paper.get("hasPDF") == "Y", 
+            "in_pmc": paper.get("inPMC") == "Y",
+            "in_europepmc": paper.get("inEPMC") == "Y",
+            "has_full_text": bool(full_text_urls) or paper.get("inEPMC") == "Y",
+            "has_supplementary": paper.get("hasSuppl") == "Y"
+        }
+        
+        # Extract basic paper information
+        basic_info = {
+            "title": paper.get("title"),
+            "journal": paper.get("journalTitle"),
+            "year": paper.get("pubYear"),
+            "authors": paper.get("authorString"),
+            "publication_type": paper.get("pubType")
+        }
+        
+        # Remove None values from basic_info
+        basic_info = {k: v for k, v in basic_info.items() if v is not None}
+        
+        # Compile final result
+        result_data = {
+            "identifiers": identifiers,
+            "urls": urls,
+            "access": access,
+            "basic_info": basic_info,
+            "_search_info": {
+                "input_identifier": identifier,
+                "detected_type": id_type,
+                "normalized_identifier": normalized_id,
+                "query_used": query,
+                "source": "europepmc"
+            }
+        }
+        
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=result_data,
+                    base_name="europepmc_identifiers", 
+                    identifier=clean_id,
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC identifiers saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save identifiers: {e}")
+        
+        # Add save info if file was saved
+        if saved_path:
+            result_data["saved_to"] = str(saved_path)
+            
+        return result_data
+        
+    except Exception as e:
+        logger.error(f"Error getting identifiers from Europe PMC for '{identifier}': {e}")
+        return None
