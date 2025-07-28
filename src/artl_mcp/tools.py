@@ -2974,7 +2974,7 @@ def get_europepmc_full_text(
     Args:
         identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
             - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
-            - PMID: "23851394", "PMID:23851394", "pmid:23851394"  
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
             - PMCID: "PMC3737249", "3737249", "PMC:3737249"
         save_file: Whether to save full text to temp directory with
             auto-generated filename
@@ -3014,7 +3014,7 @@ def get_europepmc_full_text(
         # Get full text as Markdown
         >>> result = get_europepmc_full_text("10.1038/nature12373")
         >>> result["content"][:100]
-        '# CRISPR-Cas systems: RNA-mediated adaptive immunity\\n\\n## Abstract\\n\\nClustered regularly...'
+        '# CRISPR-Cas systems: RNA-mediated adaptive immunity\\n\\n## Abstract\\n...'
         >>> result["sections"]["abstract"]
         'Clustered regularly interspaced short palindromic...'
 
@@ -3040,16 +3040,22 @@ def get_europepmc_full_text(
             logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
             return None
 
-        # Extract PMCID for full text XML endpoint (only PMC articles have full text XML)
+        # Extract PMCID for full text XML endpoint
+        # (only PMC articles have full text XML)
         pmcid = paper_data.get("pmcid")
-        
+
         if not pmcid:
-            logger.info(f"No PMCID found for {identifier} - full text XML only available for PMC articles")
+            logger.info(
+                f"No PMCID found for {identifier} - "
+                f"full text XML only available for PMC articles"
+            )
             return None
 
         # Construct Europe PMC full text XML URL using PMCID
-        xml_url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
-        
+        xml_url = (
+            f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
+        )
+
         logger.info(f"Fetching full text XML from: {xml_url}")
 
         # Set headers for Europe PMC API
@@ -3060,11 +3066,14 @@ def get_europepmc_full_text(
 
         # Fetch XML content
         response = requests.get(xml_url, headers=headers, timeout=30)
-        
+
         if response.status_code == 404:
-            logger.info(f"No full text XML available for {identifier} (PMCID: {pmcid}) - Europe PMC returned 404")
+            logger.info(
+                f"No full text XML available for {identifier} (PMCID: {pmcid}) - "
+                f"Europe PMC returned 404"
+            )
             return None
-        
+
         response.raise_for_status()
         xml_content = response.text
 
@@ -3074,7 +3083,7 @@ def get_europepmc_full_text(
 
         # Convert XML to Markdown using lxml
         markdown_content, sections = _convert_jats_xml_to_markdown(xml_content)
-        
+
         if not markdown_content:
             logger.warning(f"Failed to convert XML to Markdown for {identifier}")
             return None
@@ -3096,7 +3105,7 @@ def get_europepmc_full_text(
         # Source information
         source_info = {
             "xml_source": "europe_pmc",
-            "conversion_method": "jats_to_markdown", 
+            "conversion_method": "jats_to_markdown",
             "original_format": "xml",
             "xml_url": xml_url,
             "europepmc_id": pmcid,
@@ -3149,28 +3158,29 @@ def get_europepmc_full_text(
 
 def _convert_jats_xml_to_markdown(xml_content: str) -> tuple[str, dict[str, str]]:
     """Convert JATS XML to clean Markdown format.
-    
+
     Parses scientific article XML (JATS format) and converts to LLM-friendly
     Markdown with preserved structure, tables, and figures.
-    
+
     Args:
         xml_content: Raw XML content from Europe PMC
-        
+
     Returns:
         Tuple of (markdown_content, sections_dict)
         - markdown_content: Complete article as Markdown string
         - sections_dict: Dictionary of individual sections
     """
-    from lxml import etree
     import re
+
+    from lxml import etree
 
     try:
         # Parse XML with lxml
-        root = etree.fromstring(xml_content.encode('utf-8'))
-        
+        root = etree.fromstring(xml_content.encode("utf-8"))
+
         markdown_parts = []
         sections = {}
-        
+
         # Extract article title
         title_elem = root.find(".//article-title")
         if title_elem is not None:
@@ -3184,9 +3194,11 @@ def _convert_jats_xml_to_markdown(xml_content: str) -> tuple[str, dict[str, str]
             given_names = contrib.find(".//given-names")
             surname = contrib.find(".//surname")
             if given_names is not None and surname is not None:
-                full_name = f"{_get_text_content(given_names)} {_get_text_content(surname)}"
+                full_name = (
+                    f"{_get_text_content(given_names)} {_get_text_content(surname)}"
+                )
                 authors.append(full_name)
-        
+
         if authors:
             authors_str = ", ".join(authors)
             markdown_parts.append(f"**Authors:** {authors_str}\n")
@@ -3207,7 +3219,7 @@ def _convert_jats_xml_to_markdown(xml_content: str) -> tuple[str, dict[str, str]
                 section_md = _convert_section_to_markdown(sec, level=2)
                 if section_md.strip():
                     markdown_parts.append(f"{section_md}\n")
-                    
+
                     # Try to identify section type
                     title_elem = sec.find(".//title")
                     if title_elem is not None:
@@ -3232,12 +3244,12 @@ def _convert_jats_xml_to_markdown(xml_content: str) -> tuple[str, dict[str, str]
 
         # Combine all parts
         full_markdown = "\n".join(markdown_parts)
-        
+
         # Clean up extra whitespace
-        full_markdown = re.sub(r'\n{3,}', '\n\n', full_markdown)
-        
+        full_markdown = re.sub(r"\n{3,}", "\n\n", full_markdown)
+
         return full_markdown, sections
-        
+
     except etree.XMLSyntaxError as e:
         logger.error(f"XML parsing error: {e}")
         return "", {}
@@ -3250,57 +3262,57 @@ def _convert_element_to_markdown(elem, level: int = 1) -> str:
     """Convert an XML element to Markdown format."""
     if elem is None:
         return ""
-    
+
     markdown_parts = []
-    
+
     # Handle different element types
     tag = elem.tag
-    
+
     if tag == "p":
         # Paragraph
         text = _get_text_content(elem)
         if text.strip():
             markdown_parts.append(f"{text}\n")
-    
+
     elif tag == "title":
         # Section title
         text = _get_text_content(elem)
         if text.strip():
             heading = "#" * level
             markdown_parts.append(f"{heading} {text}\n")
-    
+
     elif tag == "table-wrap":
         # Table
         table_md = _convert_table_to_markdown(elem)
         if table_md:
             markdown_parts.append(f"{table_md}\n")
-    
+
     elif tag == "fig":
         # Figure
         fig_md = _convert_figure_to_markdown(elem)
         if fig_md:
             markdown_parts.append(f"{fig_md}\n")
-    
+
     elif tag in ["list", "list-item"]:
         # Lists
         list_md = _convert_list_to_markdown(elem)
         if list_md:
             markdown_parts.append(f"{list_md}\n")
-    
+
     else:
         # Process child elements
         for child in elem:
             child_md = _convert_element_to_markdown(child, level)
             if child_md:
                 markdown_parts.append(child_md)
-    
+
     return "".join(markdown_parts)
 
 
 def _convert_section_to_markdown(sec_elem, level: int = 2) -> str:
     """Convert a section element to Markdown."""
     markdown_parts = []
-    
+
     # Section title
     title_elem = sec_elem.find(".//title")
     if title_elem is not None:
@@ -3308,7 +3320,7 @@ def _convert_section_to_markdown(sec_elem, level: int = 2) -> str:
         if title.strip():
             heading = "#" * level
             markdown_parts.append(f"{heading} {title}\n\n")
-    
+
     # Section content
     for child in sec_elem:
         if child.tag != "title":  # Skip title, already processed
@@ -3332,7 +3344,7 @@ def _convert_section_to_markdown(sec_elem, level: int = 2) -> str:
                 fig_md = _convert_figure_to_markdown(child)
                 if fig_md:
                     markdown_parts.append(f"{fig_md}\n\n")
-    
+
     return "".join(markdown_parts)
 
 
@@ -3342,26 +3354,30 @@ def _convert_table_to_markdown(table_elem) -> str:
         table = table_elem.find(".//table")
         if table is None:
             return ""
-        
+
         markdown_rows = []
-        
+
         # Process table rows
         rows = table.findall(".//tr")
         if not rows:
             return ""
-        
+
         for i, row in enumerate(rows):
             cells = row.findall(".//td") + row.findall(".//th")
             if cells:
                 cell_texts = [_get_text_content(cell).strip() for cell in cells]
                 markdown_row = "| " + " | ".join(cell_texts) + " |"
                 markdown_rows.append(markdown_row)
-                
+
                 # Add header separator after first row
                 if i == 0:
-                    separator = "| " + " | ".join(["-" * max(3, len(text)) for text in cell_texts]) + " |"
+                    separator = (
+                        "| "
+                        + " | ".join(["-" * max(3, len(text)) for text in cell_texts])
+                        + " |"
+                    )
                     markdown_rows.append(separator)
-        
+
         if markdown_rows:
             # Add table caption if available
             caption_elem = table_elem.find(".//caption")
@@ -3369,11 +3385,11 @@ def _convert_table_to_markdown(table_elem) -> str:
                 caption = _get_text_content(caption_elem)
                 if caption.strip():
                     return f"**Table:** {caption}\n\n" + "\n".join(markdown_rows)
-            
+
             return "\n".join(markdown_rows)
-        
+
         return ""
-        
+
     except Exception as e:
         logger.warning(f"Error converting table to Markdown: {e}")
         return ""
@@ -3388,16 +3404,16 @@ def _convert_figure_to_markdown(fig_elem) -> str:
             caption = _get_text_content(caption_elem)
             if caption.strip():
                 return f"![Figure: {caption}](figure_description)"
-        
+
         # Fallback to figure label
         label_elem = fig_elem.find(".//label")
         if label_elem is not None:
             label = _get_text_content(label_elem)
             if label.strip():
                 return f"![{label}](figure_description)"
-        
+
         return "![Figure](figure_description)"
-        
+
     except Exception as e:
         logger.warning(f"Error converting figure to Markdown: {e}")
         return ""
@@ -3411,9 +3427,9 @@ def _convert_list_to_markdown(list_elem) -> str:
             text = _get_text_content(item)
             if text.strip():
                 items.append(f"- {text}")
-        
+
         return "\n".join(items) if items else ""
-        
+
     except Exception as e:
         logger.warning(f"Error converting list to Markdown: {e}")
         return ""
@@ -3430,9 +3446,9 @@ def _convert_references_to_markdown(ref_list_elem) -> str:
                 ref_text = _get_text_content(citation)
                 if ref_text.strip():
                     refs.append(f"- {ref_text}")
-        
+
         return "\n".join(refs) if refs else ""
-        
+
     except Exception as e:
         logger.warning(f"Error converting references to Markdown: {e}")
         return ""
@@ -3442,29 +3458,30 @@ def _get_text_content(elem) -> str:
     """Extract clean text content from an XML element."""
     if elem is None:
         return ""
-    
+
     # Get all text including from child elements
     text_parts = []
-    
+
     # Add element's direct text
     if elem.text:
         text_parts.append(elem.text)
-    
+
     # Recursively add text from child elements
     for child in elem:
         child_text = _get_text_content(child)
         if child_text:
             text_parts.append(child_text)
-        
+
         # Add tail text after child element
         if child.tail:
             text_parts.append(child.tail)
-    
+
     # Join and clean up
     full_text = "".join(text_parts)
-    
+
     # Clean up whitespace
     import re
-    full_text = re.sub(r'\s+', ' ', full_text)
-    
+
+    full_text = re.sub(r"\s+", " ", full_text)
+
     return full_text.strip()
