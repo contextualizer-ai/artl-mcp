@@ -3,13 +3,13 @@ import json
 from fastmcp import Client
 
 
-async def run_client(doi: str, mcp):
+async def run_client(query: str, mcp):
     """Call the MCP tool using an in-memory client connection."""
     async with Client(mcp) as client:
-        # Search for papers using the DOI as a keyword
-        # This will find the specific paper in Europe PMC
+        # Search for papers using the query as keywords
+        # This can be research keywords, DOI, or other search terms
         result = await client.call_tool(
-            "search_europepmc_papers", {"keywords": doi, "max_results": 5}
+            "search_europepmc_papers", {"keywords": query, "max_results": 5}
         )
 
         for item in result:
