@@ -1,4 +1,3 @@
-import io
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
