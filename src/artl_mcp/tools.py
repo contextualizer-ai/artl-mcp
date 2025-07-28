@@ -2307,60 +2307,62 @@ def _search_europepmc_flexible(
         return None
 
 
-def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, Any]:
+def search_europepmc_papers(keywords: str, max_results: int = 10) -> dict[str, Any]:
     """
-    Search for scientific article IDs using keywords.
+    Search Europe PMC for papers and return identifiers, links, and access information.
 
-    This tool provides a simple interface for finding PMIDs, PMCIDs, and DOIs
-    from keyword searches. When PUBMED_OFFLINE=true, it uses Europe PMC as the
-    primary search engine. Otherwise, it may use PubMed when available.
+    This tool searches Europe PMC database using keywords and returns comprehensive
+    information including IDs, links, and full text/PDF availability. It ONLY uses
+    Europe PMC - no PubMed or NCBI APIs are accessed.
 
-    Perfect for:
-    - Finding article IDs to use with other ARTL-MCP tools
-    - Discovering papers by topic, author, or keywords
-    - Getting availability information (open access, PDF links)
-    - Research literature discovery
+    What it does:
+    1. Searches Europe PMC database with your keywords
+    2. Extracts PMIDs, PMCIDs, DOIs from results
+    3. Provides direct links to papers
+    4. Indicates full text and PDF availability
+    5. Returns structured data for further processing
 
     Args:
-        keywords: Natural language search terms (e.g., "CRISPR gene editing",
-                 "climate change microbiome", "machine learning healthcare")
-        max_results: Maximum number of articles to return (default: 10, max: 100)
+        keywords: Search terms (e.g., "rhizosphere microbiome", "CRISPR gene editing")
+        max_results: Number of papers to return (default: 10, max: 100)
 
     Returns:
-        Dictionary with separate lists for each ID type and metadata:
+        Dictionary with categorized results:
         {
-            "pmids": ["32132456", "31234567", ...],      # PubMed IDs
-            "pmcids": ["PMC7049895", "PMC8123456", ...], # PMC IDs
-            "dois": ["10.1038/s41586-020-2012-7", ...],  # DOIs
-            "total_count": 7261,                         # Total matches in database
-            "returned_count": 10,                        # Results in this response
-            "source": "europepmc",                       # Data source used
-            "query": "original keywords"                 # Your search terms
+            "pmids": ["40603217", "40635331"],           # PubMed IDs
+            "pmcids": ["PMC12241448"],                   # PMC IDs
+            "dois": ["10.1016/j.tplants.2025.06.001"],   # DOIs
+            "papers": [                                   # Full paper details
+                {
+                    "title": "Paper title",
+                    "pmid": "40603217",
+                    "doi": "10.1016/...",
+                    "pubmed_url": "https://pubmed.ncbi.nlm.nih.gov/40603217",
+                    "doi_url": "https://doi.org/10.1016/...",
+                    "has_full_text": true,
+                    "has_pdf": true,
+                    "is_open_access": true
+                }
+            ],
+            "total_count": 19756,                        # Total matches found
+            "returned_count": 10,                        # Papers in this response
+            "source": "europepmc",                       # Always Europe PMC
+            "query": "rhizosphere microbiome"            # Your search terms
         }
 
     Examples:
-        >>> result = search_keywords_for_ids("rhizosphere microbiome")
-        >>> result["pmids"][:3]
-        ['40603217', '40459209', '40482721']
-        >>> result["total_count"]
-        9832
-        >>> len(result["dois"])
-        10
+        >>> result = search_europepmc_papers("rhizosphere microbiome")
+        >>> len(result["papers"])  # Number of papers returned
+        3
+        >>> result["papers"][0]["doi_url"]  # Direct link to first paper
+        'https://doi.org/10.1016/j.tplants.2025.06.001'
+        >>> [p for p in result["papers"] if p["has_pdf"]]  # Papers with PDFs
 
-        >>> result = search_keywords_for_ids("CRISPR", max_results=5)
-        >>> result["returned_count"]
-        5
-
-    Related Tools:
-        - get_abstract_from_pubmed_id(): Get abstracts using PMIDs from this search
-        - get_doi_metadata(): Get full metadata using DOIs from this search
-        - get_full_text_from_doi(): Get full text using DOIs from this search
-        - download_pdf_from_doi(): Download PDFs using DOIs from this search
-
-    Note:
-        Uses Europe PMC when PUBMED_OFFLINE=true (recommended for reliability).
-        Includes synonym expansion for comprehensive results.
-        Results include availability flags for immediate access assessment.
+    Perfect for:
+    - Finding papers on specific topics from Europe PMC
+    - Getting direct links to papers and PDFs
+    - Checking open access availability
+    - Literature discovery without NCBI dependencies
     """
     try:
         # Check if we should use alternative sources
@@ -2407,33 +2409,62 @@ def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, A
                 "error": "Search failed",
             }
 
-        # Extract IDs from Europe PMC results
+        # Extract comprehensive information from Europe PMC results
         results = europepmc_result.get("resultList", {}).get("result", [])
 
         pmids = []
         pmcids = []
         dois = []
+        papers = []
 
         for paper in results:
-            # Extract PMID
+            # Extract basic identifiers
             pmid = paper.get("pmid")
+            pmcid = paper.get("pmcid")
+            doi = paper.get("doi")
+
+            # Build comprehensive paper info
+            paper_info = {
+                "title": paper.get("title", ""),
+                "pmid": pmid,
+                "pmcid": pmcid,
+                "doi": doi,
+                "authors": paper.get("authorString", ""),
+                "journal": paper.get("journalTitle", ""),
+                "pub_year": paper.get("pubYear", ""),
+                "has_full_text": paper.get("hasTextMinedTerms", "N") == "Y",
+                "has_pdf": paper.get("hasPDF", "N") == "Y",
+                "is_open_access": paper.get("isOpenAccess", "N") == "Y",
+                "epub_date": paper.get("electronicPublicationDate", ""),
+            }
+
+            # Add direct links
             if pmid:
                 pmids.append(pmid)
-
-            # Extract PMCID
-            pmcid = paper.get("pmcid")
+                paper_info["pubmed_url"] = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}"
             if pmcid:
                 pmcids.append(pmcid)
-
-            # Extract DOI
-            doi = paper.get("doi")
+                paper_info["pmc_url"] = (
+                    f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}"
+                )
             if doi:
                 dois.append(doi)
+                paper_info["doi_url"] = f"https://doi.org/{doi}"
+
+            # Add Europe PMC specific link
+            europepmc_id = paper.get("id", "")
+            if europepmc_id:
+                paper_info["europepmc_url"] = (
+                    f"https://europepmc.org/article/med/{europepmc_id}"
+                )
+
+            papers.append(paper_info)
 
         return {
             "pmids": pmids,
             "pmcids": pmcids,
             "dois": dois,
+            "papers": papers,
             "total_count": europepmc_result.get("hitCount", 0),
             "returned_count": len(results),
             "source": "europepmc",
@@ -2441,7 +2472,7 @@ def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, A
         }
 
     except Exception as e:
-        logger.error(f"Error in search_keywords_for_ids for query '{keywords}': {e}")
+        logger.error(f"Error in search_europepmc_papers for query '{keywords}': {e}")
         return {
             "pmids": [],
             "pmcids": [],

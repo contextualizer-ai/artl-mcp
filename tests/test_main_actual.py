@@ -20,7 +20,7 @@ class TestCreateMCP:
 
         # Check basic properties
         assert mcp.name == "artl-mcp"
-        assert "All Roads to Literature" in mcp.instructions
+        assert "Europe PMC Paper Search" in mcp.instructions
 
     def test_create_mcp_has_required_tools(self):
         """Test that create_mcp registers all required tools."""
@@ -29,7 +29,7 @@ class TestCreateMCP:
         # FastMCP stores tools differently - check available tools
         # Tools should be available via the MCP instance
         assert mcp.name == "artl-mcp"
-        assert "All Roads to Literature" in mcp.instructions
+        assert "Europe PMC Paper Search" in mcp.instructions
 
         # The tool registration happens during create_mcp() call
         # Just verify the MCP instance was created successfully with tools
@@ -190,7 +190,10 @@ class TestCLIHelp:
         result = runner.invoke(cli, ["--help"])
 
         assert result.exit_code == 0
-        assert "All Roads to Literature MCP server" in result.output
+        assert (
+            "Europe PMC Paper Search" in result.output
+            or "All Roads to Literature MCP server" in result.output
+        )
         assert "--doi-query" in result.output
         assert "--pmid-search" in result.output
         assert "--max-results" in result.output

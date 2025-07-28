@@ -7,47 +7,9 @@ from fastmcp import FastMCP
 
 from artl_mcp.client import run_client
 from artl_mcp.tools import (
-    clean_text,
-    convert_identifier_format,
-    # Enhanced identifier conversion tools
-    doi_to_pmcid,
-    doi_to_pmid,
-    # PDF download tools
-    download_pdf_from_doi,
-    download_pdf_from_url,
-    # PubMed utilities tools
-    extract_doi_from_url,
-    extract_pdf_text,
-    find_related_papers,
-    get_abstract_from_pubmed_id,
-    get_all_identifiers,
-    get_citation_network,
-    get_comprehensive_citation_info,
-    # DOIFetcher-based tools
-    get_doi_fetcher_metadata,
-    # Original tools
-    get_doi_metadata,
-    get_doi_text,
-    get_full_text_from_bioc,
-    get_full_text_from_doi,
-    get_full_text_info,
-    get_paper_citations,
-    # Citation and reference tools
-    get_paper_references,
-    get_pmcid_text,
-    get_pmid_from_pmcid,
-    get_pmid_text,
-    get_text_from_pdf_url,
-    get_unpaywall_info,
-    pmcid_to_doi,
-    pmid_to_doi,
-    pmid_to_pmcid,
-    search_keywords_for_ids,
+    search_europepmc_papers,
     # Search tools
-    search_papers_by_keyword,
     search_pubmed_for_pmids,
-    search_recent_papers,
-    validate_identifier,
 )
 
 try:
@@ -61,170 +23,101 @@ def create_mcp():
     mcp = FastMCP(
         "artl-mcp",
         instructions="""
-All Roads to Literature (ARtL) MCP provides comprehensive tools for retrieving
-scientific literature metadata, full text, abstracts, and citation networks via
-DOI, PMID, or PMCID.
+Europe PMC Paper Search - Focused Literature Discovery Tool
 
-## 🗂️ COMPREHENSIVE FILE SAVING CAPABILITIES
+This MCP server provides ONE TOOL for searching scientific literature using Europe PMC.
+No NCBI/PubMed APIs are accessed - only Europe PMC.
 
-**IMPORTANT**: Most tools support automatic file saving with two options:
-- **`save_file: true`** - Auto-saves to temp directory with generated filename
-- **`save_to: "path/file.ext"`** - Saves to your specified path (overrides save_file)
+## Available Tool
 
-**Supported file formats**: JSON (metadata), TXT (full text), PDF, XML, YAML, CSV
-**Cross-platform paths**: Works on Windows, macOS, and Linux
-**Environment configuration**:
-- `ARTL_OUTPUT_DIR` - Custom output directory
-- `ARTL_TEMP_DIR` - Custom temp directory
-- `ARTL_KEEP_TEMP_FILES` - Retention policy
+**search_europepmc_papers** - Search Europe PMC and get comprehensive paper information
 
-## Supported Identifier Formats
-- **DOI**: Multiple formats supported
-  - Raw: 10.1038/nature12373
-  - CURIE: doi:10.1038/nature12373
-  - URLs: https://doi.org/10.1038/nature12373, http://dx.doi.org/...
-- **PMID**: Multiple formats supported
-  - Raw: 23851394
-  - Prefixed: PMID:23851394
-  - Colon-separated: pmid:23851394
-- **PMCID**: Multiple formats supported
-  - Full: PMC3737249
-  - Numeric: 3737249
-  - Prefixed: PMC:3737249
-- **Keywords**: Natural language search terms
+What it does:
+1. Searches Europe PMC database with your keywords
+2. Returns PMIDs, PMCIDs, DOIs for found papers
+3. Provides direct links (PubMed, PMC, DOI URLs)
+4. Indicates full text and PDF availability
+5. Shows open access status
 
-This server offers six main categories of functionality:
+Parameters:
+- `keywords`: Search terms (e.g., "rhizosphere microbiome", "CRISPR gene editing")
+- `max_results`: Number of papers to return (default: 10, max: 100)
 
-## 1. Literature Search and Discovery
-- **search_keywords_for_ids**: ⭐ **RECOMMENDED** - Simple keyword search
-  returning PMIDs, PMCIDs, and DOIs (auto-detects PUBMED_OFFLINE)
-- **search_papers_by_keyword** 📁: Search article metadata via keywords (CrossRef)
-- **search_recent_papers** 📁: Find recent publications for specific keywords or topics
-- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords
-  (requires PubMed access)
+Returns comprehensive paper information including:
+- Identifiers: PMIDs, PMCIDs, DOIs
+- Metadata: title, authors, journal, publication year
+- Links: Direct URLs to PubMed, PMC, DOI
+- Availability: full text, PDF, open access status
 
-## 2. Metadata and Abstract Retrieval
-- **get_doi_metadata** 📁: Get comprehensive metadata for papers using DOI
-- **get_abstract_from_pubmed_id** 📁: Retrieve abstracts from PubMed using PMID
-- **get_doi_fetcher_metadata** 📁: Enhanced metadata retrieval with email
-  requirement
-- **get_unpaywall_info** 📁: Check open access availability via Unpaywall
+Perfect for:
+- Finding papers on specific topics
+- Getting direct links to papers and PDFs
+- Checking open access availability
+- Literature discovery without NCBI dependencies
 
-## 3. Full Text Access and Processing
-- **get_full_text_from_doi** 📁: Retrieve full text content using DOI
-  (requires email)
-- **get_full_text_info** 📁: Get detailed full text availability information
-- **get_pmcid_text** 📁: Get full text from PubMed Central ID
-- **get_pmid_text** 📁: Get full text using PMID
-- **get_full_text_from_bioc** 📁: Retrieve full text in BioC format
-- **get_doi_text** 📁: Direct text retrieval using DOI
-- **clean_text** 📁: Clean and format extracted text content
+Example usage:
+```
+search_europepmc_papers(keywords="rhizosphere microbiome", max_results=5)
+```
 
-## 4. PDF Operations (Choose Based on Your Goal)
-
-### PDF Download (No Text Extraction)
-- **download_pdf_from_url** 📁: Download PDF binary file from direct URL
-  (no email needed)
-- **download_pdf_from_doi** 📁: Find and download PDF via Unpaywall from DOI
-  (requires email)
-
-### PDF Text Extraction
-- **extract_pdf_text** 📁: Extract text from PDF URL (no email needed)
-- **get_text_from_pdf_url** 📁: Extract text from PDF URL with enhanced
-  processing (requires email)
-
-### PDF URL Discovery
-- **get_unpaywall_info** 📁: Find open access PDF URLs for any DOI
-  (requires email)
-
-## 5. Identifier Conversion and Utilities
-- **extract_doi_from_url**: Extract DOI from various URL formats
-- **convert_identifier_format** 📁: Convert between ID formats (raw, CURIE, URL)
-- **doi_to_pmid**: Convert DOI to PMID
-- **doi_to_pmcid**: Convert DOI to PMCID
-- **pmid_to_doi**: Convert PMID to DOI
-- **pmid_to_pmcid**: Convert PMID to PMCID
-- **pmcid_to_doi**: Convert PMCID to DOI
-- **get_pmid_from_pmcid**: Get PMID from PMC ID
-- **get_all_identifiers** 📁: Get all available IDs for any identifier
-- **validate_identifier**: Validate identifier format
-
-## 6. Citation Networks and Related Papers
-- **get_paper_references** 📁: Get papers cited by a given paper
-- **get_paper_citations** 📁: Get papers that cite a given paper
-- **get_citation_network** 📁: Get comprehensive citation network from OpenAlex
-- **find_related_papers** 📁: Find papers related through citations
-- **get_comprehensive_citation_info** 📁: Get citation data from multiple sources
-
-**📁 = Supports file saving with `save_file` and `save_to` parameters**
-
-## Usage Notes
-- **Identifier Flexibility**: All tools accept multiple identifier formats and
-  auto-normalize
-- **Format Interconversion**: Use convert_identifier_format to convert between
-  DOI CURIEs (doi:10.1234/example), DOI URLs (https://doi.org/10.1234/example),
-  and raw formats (10.1234/example)
-- **Email Requirements**: Many tools require email addresses for API access
-  (CrossRef, Unpaywall)
-- **Format Consistency**: All tools return identifiers in standardized formats
-- **Error Handling**: Graceful handling of invalid identifiers and API failures
-- **Rate Limiting**: Proper headers and timeouts for respectful API usage
-- **Comprehensive Coverage**: Support for DOI, PMID, PMCID conversion in all
-  directions
+This tool exclusively uses Europe PMC and will never attempt to contact
+NCBI/PubMed APIs.
 
 """,
     )
 
-    # Register all tools
-    # Original tools
-    mcp.tool(get_doi_metadata)
-    mcp.tool(get_abstract_from_pubmed_id)
+    # Register only Europe PMC search tool
+    # All other tools commented out to avoid NCBI API calls
 
-    # DOIFetcher-based tools (require email)
-    mcp.tool(get_doi_fetcher_metadata)
-    mcp.tool(get_unpaywall_info)
-    mcp.tool(get_full_text_from_doi)
-    mcp.tool(get_full_text_info)
-    mcp.tool(get_text_from_pdf_url)
-    mcp.tool(clean_text)
+    # # Original tools
+    # mcp.tool(get_doi_metadata)
+    # mcp.tool(get_abstract_from_pubmed_id)
 
-    # PDF download tools
-    mcp.tool(download_pdf_from_doi)
-    mcp.tool(download_pdf_from_url)
+    # # DOIFetcher-based tools (require email)
+    # mcp.tool(get_doi_fetcher_metadata)
+    # mcp.tool(get_unpaywall_info)
+    # mcp.tool(get_full_text_from_doi)
+    # mcp.tool(get_full_text_info)
+    # mcp.tool(get_text_from_pdf_url)
+    # mcp.tool(clean_text)
 
-    # Standalone tools
-    mcp.tool(extract_pdf_text)
+    # # PDF download tools
+    # mcp.tool(download_pdf_from_doi)
+    # mcp.tool(download_pdf_from_url)
 
-    # PubMed utilities tools
-    mcp.tool(extract_doi_from_url)
-    mcp.tool(doi_to_pmid)
-    mcp.tool(pmid_to_doi)
-    mcp.tool(get_doi_text)
-    mcp.tool(get_pmid_from_pmcid)
-    mcp.tool(get_pmcid_text)
-    mcp.tool(get_pmid_text)
-    mcp.tool(get_full_text_from_bioc)
-    mcp.tool(search_pubmed_for_pmids)
+    # # Standalone tools
+    # mcp.tool(extract_pdf_text)
 
-    # Enhanced identifier conversion tools
-    mcp.tool(convert_identifier_format)
-    mcp.tool(doi_to_pmcid)
-    mcp.tool(pmid_to_pmcid)
-    mcp.tool(pmcid_to_doi)
-    mcp.tool(get_all_identifiers)
-    mcp.tool(validate_identifier)
+    # # PubMed utilities tools
+    # mcp.tool(extract_doi_from_url)
+    # mcp.tool(doi_to_pmid)
+    # mcp.tool(pmid_to_doi)
+    # mcp.tool(get_doi_text)
+    # mcp.tool(get_pmid_from_pmcid)
+    # mcp.tool(get_pmcid_text)
+    # mcp.tool(get_pmid_text)
+    # mcp.tool(get_full_text_from_bioc)
+    # mcp.tool(search_pubmed_for_pmids)
 
-    # Citation and reference tools
-    mcp.tool(get_paper_references)
-    mcp.tool(get_paper_citations)
-    mcp.tool(get_citation_network)
-    mcp.tool(find_related_papers)
-    mcp.tool(get_comprehensive_citation_info)
+    # # Enhanced identifier conversion tools
+    # mcp.tool(convert_identifier_format)
+    # mcp.tool(doi_to_pmcid)
+    # mcp.tool(pmid_to_pmcid)
+    # mcp.tool(pmcid_to_doi)
+    # mcp.tool(get_all_identifiers)
+    # mcp.tool(validate_identifier)
 
-    # Search tools
-    mcp.tool(search_keywords_for_ids)  # Primary keyword search tool
-    mcp.tool(search_papers_by_keyword)
-    mcp.tool(search_recent_papers)
+    # # Citation and reference tools
+    # mcp.tool(get_paper_references)
+    # mcp.tool(get_paper_citations)
+    # mcp.tool(get_citation_network)
+    # mcp.tool(find_related_papers)
+    # mcp.tool(get_comprehensive_citation_info)
+
+    # Search tools - ONLY Europe PMC search enabled
+    mcp.tool(search_europepmc_papers)  # Europe PMC search tool
+    # mcp.tool(search_papers_by_keyword)
+    # mcp.tool(search_recent_papers)
 
     return mcp
 

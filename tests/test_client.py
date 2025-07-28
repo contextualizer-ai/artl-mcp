@@ -41,7 +41,8 @@ class TestRunClient:
 
                 # Verify call_tool was called correctly
                 mock_client.call_tool.assert_called_once_with(
-                    "get_doi_metadata", {"doi": "10.1038/nature12373"}
+                    "search_europepmc_papers",
+                    {"keywords": "10.1038/nature12373", "max_results": 5},
                 )
 
                 # Verify JSON was pretty printed

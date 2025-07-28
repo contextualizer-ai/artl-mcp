@@ -277,40 +277,40 @@ class TestMCPIntegration:
     @pytest.mark.external_api
     @pytest.mark.slow
     @pytest.mark.asyncio
-    async def test_mcp_doi_metadata_workflow(self):
-        """User story: Researcher uses MCP client to get DOI metadata."""
+    async def test_mcp_europepmc_search_workflow(self):
+        """User story: Researcher uses MCP client to search Europe PMC."""
         # Given: A researcher connects to the MCP server
         mcp = create_mcp()
 
         async with Client(mcp) as client:
-            # When: They request DOI metadata through MCP
+            # When: They search for papers through MCP
             results = await client.call_tool(
-                "get_doi_metadata", {"doi": "10.1099/ijsem.0.005153"}
+                "search_europepmc_papers", {"keywords": "microbiome", "max_results": 5}
             )
 
-            # Then: They should get structured metadata
+            # Then: They should get structured search results
             assert len(results) > 0
             result_text = results[0].text
 
             if result_text and len(result_text) > 100:  # API might not be available
-                # Should contain JSON-like structured data
-                assert "DOI" in result_text or "title" in result_text
+                # Should contain search result data
+                assert "pmids" in result_text or "total_count" in result_text
 
     @pytest.mark.external_api
     @pytest.mark.slow
     @pytest.mark.asyncio
-    async def test_mcp_pubmed_abstract_workflow(self):
-        """User story: Researcher uses MCP to get PubMed abstracts."""
+    async def test_mcp_europepmc_detailed_workflow(self):
+        """User story: Researcher uses MCP to get detailed paper information."""
         # Given: A researcher connects to the MCP server
         mcp = create_mcp()
 
         async with Client(mcp) as client:
-            # When: They request abstract through MCP
+            # When: They search for specific papers through MCP
             results = await client.call_tool(
-                "get_abstract_from_pubmed_id", {"pmid": "31653696"}
+                "search_europepmc_papers", {"keywords": "CRISPR", "max_results": 3}
             )
 
-            # Then: They should get the abstract text
+            # Then: They should get detailed paper information
             assert len(results) > 0
             result_text = results[0].text
 
