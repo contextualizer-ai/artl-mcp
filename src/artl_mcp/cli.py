@@ -59,12 +59,14 @@ def cli():
     "--max-results", default=10, help="Maximum number of results (default 10, max 100)"
 )
 @click.option(
-    "--result-type", 
-    default="lite", 
+    "--result-type",
+    default="lite",
     type=click.Choice(["lite", "core"]),
-    help="Result detail level: lite (basic) or core (full metadata with abstracts)"
+    help="Result detail level: lite (basic) or core (full metadata with abstracts)",
 )
-def search_europepmc_papers_cmd(keywords: str, max_results: int, result_type: str) -> None:
+def search_europepmc_papers_cmd(
+    keywords: str, max_results: int, result_type: str
+) -> None:
     """Search Europe PMC for papers and return identifiers, links, and access info."""
     result = search_europepmc_papers(keywords, max_results, result_type)
     output_result(result)

@@ -27,12 +27,13 @@ def create_mcp():
         instructions="""
 Europe PMC Literature Discovery and ID Translation Tools
 
-This MCP server provides THREE TOOLS for scientific literature discovery and identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
+This MCP server provides THREE TOOLS for scientific literature discovery and
+identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
 ## Tool Selection Guide
 
 **For KEYWORD SEARCHES** → Use `search_europepmc_papers`
-**For FULL METADATA from identifier** → Use `get_europepmc_paper_by_id` 
+**For FULL METADATA from identifier** → Use `get_europepmc_paper_by_id`
 **For ID TRANSLATION/LINKS** → Use `get_all_identifiers_from_europepmc`
 
 ## Available Tools
@@ -70,7 +71,9 @@ Perfect for:
 Example usage:
 ```
 # Search for papers
-search_europepmc_papers(keywords="CRISPR gene editing", max_results=10, result_type="core")
+search_europepmc_papers(
+    keywords="CRISPR gene editing", max_results=10, result_type="core"
+)
 
 # Get full metadata from any identifier
 get_europepmc_paper_by_id("10.1038/nature12373")
@@ -138,7 +141,7 @@ All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubM
     mcp.tool(search_europepmc_papers)  # Europe PMC search tool
     mcp.tool(get_europepmc_paper_by_id)  # Get full metadata from any ID
     mcp.tool(get_all_identifiers_from_europepmc)  # Get all IDs and links
-    
+
     # Other tools commented out to avoid NCBI API calls
     # mcp.tool(search_papers_by_keyword)
     # mcp.tool(search_recent_papers)

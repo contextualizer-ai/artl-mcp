@@ -20,7 +20,10 @@ class TestCreateMCP:
 
         # Check basic properties
         assert mcp.name == "artl-mcp"
-        assert "Europe PMC Literature Discovery and ID Translation Tools" in mcp.instructions
+        assert (
+            "Europe PMC Literature Discovery and ID Translation Tools"
+            in mcp.instructions
+        )
 
     def test_create_mcp_has_required_tools(self):
         """Test that create_mcp registers all required tools."""
@@ -29,7 +32,10 @@ class TestCreateMCP:
         # FastMCP stores tools differently - check available tools
         # Tools should be available via the MCP instance
         assert mcp.name == "artl-mcp"
-        assert "Europe PMC Literature Discovery and ID Translation Tools" in mcp.instructions
+        assert (
+            "Europe PMC Literature Discovery and ID Translation Tools"
+            in mcp.instructions
+        )
 
         # The tool registration happens during create_mcp() call
         # Just verify the MCP instance was created successfully with tools
