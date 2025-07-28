@@ -1,3 +1,4 @@
+import io
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -4089,7 +4090,8 @@ def _fallback_text_extraction(pdf_bytes: io.BytesIO) -> dict[str, Any]:
     Fallback to basic PDFMiner text extraction if advanced methods fail.
 
     Parameters:
-        pdf_bytes (io.BytesIO): A BytesIO object containing the PDF file to extract text from.
+        pdf_bytes (io.BytesIO): A BytesIO object containing the PDF file to
+            extract text from.
     """
     try:
         from pdfminer.high_level import extract_text
