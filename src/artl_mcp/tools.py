@@ -4085,8 +4085,12 @@ def _clean_markdown_structure(content: str) -> str:
 
 
 def _fallback_text_extraction(pdf_bytes: io.BytesIO) -> dict[str, Any]:
-    """Fallback to basic PDFMiner text extraction if advanced methods fail."""
+    """
+    Fallback to basic PDFMiner text extraction if advanced methods fail.
 
+    Parameters:
+        pdf_bytes (io.BytesIO): A BytesIO object containing the PDF file to extract text from.
+    """
     try:
         from pdfminer.high_level import extract_text
 
