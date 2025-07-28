@@ -192,10 +192,14 @@ local/claude-demo-pdf-download.txt:
 	@echo "🤖 Claude CLI: Download PDF from Europe PMC and save to file"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Download the PDF for DOI 10.1371/journal.pone.0000217 from Europe PMC and save it to a file. Tell me the exact filename where the PDF was saved and the file size." 2>&1 | tee $@
 
+local/claude-demo-pdf-to-markdown.txt:
+	@echo "🤖 Claude CLI: Convert Europe PMC PDF to Markdown using streaming processing"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Convert the PDF for DOI 10.1371/journal.pone.0000217 from Europe PMC to Markdown format using streaming processing and save it to a file. Tell me the exact filename where the Markdown was saved, the processing method used, and show me a preview of the first few sections." 2>&1 | tee $@
+
 # Clean up Claude demo output files
 clean-claude-demos:
 	rm -f local/claude-demo-*.txt
 
 # Run all Claude demos with cleanup (comprehensive meta-target)
-claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-download.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
+claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-download.txt local/claude-demo-pdf-to-markdown.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
 	@echo "✅ All Claude demos completed! Check local/claude-demo-*.txt for output"

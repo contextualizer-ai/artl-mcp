@@ -1,3 +1,4 @@
+import io
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -3662,4 +3663,453 @@ def get_europepmc_pdf(
             "identifier": identifier,
             "paper_info": {},
             "error": f"Unexpected error: {e}",
+        }
+
+
+def get_europepmc_pdf_as_markdown(
+    identifier: str,
+    save_file: bool = False,
+    save_to: str | None = None,
+    extract_tables: bool = True,
+    processing_method: str = "auto",
+) -> dict[str, Any] | None:
+    """Download PDF from Europe PMC and convert to LLM-friendly Markdown in memory.
+
+    Streams PDF content directly from Europe PMC, converts to structured Markdown
+    using advanced PDF processing libraries (MarkItDown + pdfplumber), with no
+    temporary disk files. Optimized for academic papers with tables and structure.
+
+    **BEST FOR**: Getting PDF content as structured Markdown for LLM analysis
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: Clean Markdown content with preserved structure, tables, and metadata
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save Markdown to temp directory with
+            auto-generated filename
+        save_to: Specific path to save Markdown (overrides save_file if provided)
+        extract_tables: Whether to use table-aware processing for better
+            structured data extraction
+        processing_method: Method to use - "auto", "markitdown", "pdfplumber",
+            or "hybrid"
+
+    Returns:
+        Dictionary with Markdown content and metadata:
+        {
+            "content": "# Title\n\n## Abstract\n...",  # LLM-ready Markdown
+            "format": "markdown",
+            "processing": {
+                "method": "hybrid_in_memory",          # Processing approach used
+                "tables_extracted": 3,               # Number of tables found
+                "in_memory": True,                    # No disk I/O performed
+                "processing_time": 2.45              # Seconds taken
+            },
+            "paper_info": {                          # Basic paper metadata
+                "title": "...",
+                "authors": "...",
+                "journal": "...",
+                "year": "..."
+            },
+            "pdf_info": {
+                "pdf_url": "https://...",            # PDF source URL
+                "file_size_bytes": 1048576,          # PDF size in memory
+                "page_count": 12                     # Number of pages processed
+            },
+            "saved_to": "/path/to/file.md",          # If saved to file
+            "truncated": bool,                       # If content was truncated
+            "content_length": 45000                  # Character count
+        }
+
+        Returns None if no PDF found or identifier invalid.
+
+    Examples:
+        # Quick Markdown conversion
+        >>> result = get_europepmc_pdf_as_markdown("10.1038/nature12373")
+        >>> result["content"][:100]
+        '# CRISPR-Cas systems: RNA-mediated adaptive immunity\\n\\n## Abstract\\n...'
+        >>> result["processing"]["tables_extracted"]
+        3
+
+        # Table-focused processing for data-heavy papers
+        >>> result = get_europepmc_pdf_as_markdown(
+        ...     "PMC3737249", extract_tables=True, processing_method="pdfplumber"
+        ... )
+        >>> result["processing"]["method"]
+        'pdfplumber_in_memory'
+
+        # Save Markdown to file
+        >>> result = get_europepmc_pdf_as_markdown(
+        ...     "23851394", save_file=True
+        ... )
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_pdf_markdown_23851394.md'
+
+    Perfect for:
+    - LLM analysis of complete scientific papers in structured format
+    - Extracting tables and data from academic PDFs
+    - Converting PDFs to readable Markdown without disk I/O
+    - Research workflows requiring structured paper content
+    - High-throughput PDF processing with memory efficiency
+    """
+    import io
+    import time
+
+    try:
+        start_time = time.time()
+
+        # Step 1: Get PDF URL from Europe PMC (reuse existing logic)
+        paper_data = get_europepmc_paper_by_id(identifier)
+        if not paper_data:
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        # Extract basic paper information for metadata
+        paper_info = {
+            "title": paper_data.get("title", ""),
+            "authors": paper_data.get("authorString", ""),
+            "journal": paper_data.get("journalTitle", ""),
+            "year": paper_data.get("pubYear", ""),
+            "doi": paper_data.get("doi", ""),
+            "pmid": paper_data.get("pmid", ""),
+            "pmcid": paper_data.get("pmcid", ""),
+        }
+        paper_info = {k: v for k, v in paper_info.items() if v}
+
+        # Step 2: Find PDF URL using existing logic from get_europepmc_pdf
+        pdf_url = None
+        full_text_urls = []
+
+        if "fullTextUrlList" in paper_data and paper_data["fullTextUrlList"]:
+            for url_entry in paper_data["fullTextUrlList"].get("fullTextUrl", []):
+                url = url_entry.get("url", "")
+                availability = url_entry.get("availability", "")
+                document_style = url_entry.get("documentStyle", "")
+
+                full_text_urls.append(url_entry)
+
+                # Look for PDF URLs - prioritize different types
+                if url and (
+                    url.lower().endswith(".pdf") or "pdf" in document_style.lower()
+                ):
+                    if not pdf_url:  # Take the first PDF found
+                        pdf_url = url
+                    # Prefer Open Access PDFs
+                    elif availability.lower() == "open access":
+                        pdf_url = url
+
+        # Fallback: try Europe PMC PDF endpoint
+        if not pdf_url and paper_data.get("inPMC") == "Y" and paper_data.get("pmcid"):
+            pmcid = paper_data.get("pmcid")
+            potential_pdf_url = (
+                f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/pdf"
+            )
+            try:
+                test_response = requests.head(potential_pdf_url, timeout=10)
+                if test_response.status_code == 200:
+                    pdf_url = potential_pdf_url
+            except requests.exceptions.RequestException:
+                pass
+
+        if not pdf_url:
+            logger.info(f"No PDF URL found for {identifier} in Europe PMC")
+            return None
+
+        logger.info(f"Found PDF URL for {identifier}: {pdf_url}")
+
+        # Step 3: Download PDF to memory (streaming)
+        response = requests.get(pdf_url, timeout=60)
+        response.raise_for_status()
+
+        pdf_size = len(response.content)
+        pdf_bytes = io.BytesIO(response.content)
+
+        # Step 4: Process PDF in memory using the selected method
+        processing_result = _process_pdf_in_memory(
+            pdf_bytes, processing_method, extract_tables
+        )
+
+        processing_time = time.time() - start_time
+
+        # Step 5: Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=processing_result["content"],
+                    base_name="europepmc_pdf_markdown",
+                    identifier=clean_id,
+                    file_format="md",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"PDF Markdown saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save PDF Markdown: {e}")
+
+        # Step 6: Apply content limits for LLM response
+        limited_content, was_truncated = _apply_content_limits(
+            processing_result["content"], str(saved_path) if saved_path else None
+        )
+
+        # Step 7: Compile comprehensive result
+        return {
+            "content": limited_content,
+            "format": "markdown",
+            "processing": {
+                "method": f"{processing_result['method']}_in_memory",
+                "tables_extracted": processing_result.get("tables_extracted", 0),
+                "in_memory": True,
+                "processing_time": round(processing_time, 2),
+            },
+            "paper_info": paper_info,
+            "pdf_info": {
+                "pdf_url": pdf_url,
+                "file_size_bytes": pdf_size,
+                "page_count": processing_result.get("page_count", 0),
+            },
+            "identifier": identifier,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+            "content_length": len(processing_result["content"]),
+            "source": "europe_pmc_pdf_streaming",
+        }
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading PDF for {identifier}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error processing PDF as Markdown for '{identifier}': {e}")
+        return None
+
+
+def _process_pdf_in_memory(
+    pdf_bytes: io.BytesIO, method: str, extract_tables: bool
+) -> dict[str, Any]:
+    """Process PDF bytes in memory using the specified method.
+
+    Args:
+        pdf_bytes: PDF content as BytesIO object
+        method: Processing method - "auto", "markitdown", "pdfplumber", or "hybrid"
+        extract_tables: Whether to focus on table extraction
+
+    Returns:
+        Dictionary with processed content and metadata
+    """
+
+    # Determine the best method
+    if method == "auto":
+        method = "hybrid" if extract_tables else "markitdown"
+
+    if method == "markitdown":
+        return _process_with_markitdown(pdf_bytes)
+    elif method == "pdfplumber":
+        return _process_with_pdfplumber(pdf_bytes)
+    elif method == "hybrid":
+        return _process_with_hybrid(pdf_bytes)
+    else:
+        # Fallback to markitdown
+        return _process_with_markitdown(pdf_bytes)
+
+
+def _process_with_markitdown(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Process PDF using MarkItDown for fast, structured Markdown conversion."""
+
+    try:
+        from markitdown import MarkItDown
+
+        # Reset stream position
+        pdf_bytes.seek(0)
+
+        md = MarkItDown()
+        result = md.convert(pdf_bytes)
+
+        return {
+            "content": result.text_content,
+            "method": "markitdown",
+            "tables_extracted": 0,  # MarkItDown doesn't provide table count
+            "page_count": 0,  # MarkItDown doesn't provide page count
+        }
+
+    except Exception as e:
+        logger.error(f"Error with MarkItDown processing: {e}")
+        # Fallback to basic text extraction
+        return _fallback_text_extraction(pdf_bytes)
+
+
+def _process_with_pdfplumber(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Process PDF using pdfplumber for excellent table extraction."""
+
+    try:
+        import pdfplumber
+
+        # Reset stream position
+        pdf_bytes.seek(0)
+
+        with pdfplumber.open(pdf_bytes) as pdf:
+            markdown_parts = []
+            tables_found = 0
+
+            for page_num, page in enumerate(pdf.pages):
+                # Extract text
+                page_text = page.extract_text() or ""
+
+                # Extract tables
+                page_tables = page.extract_tables()
+
+                if page_tables:
+                    for table in page_tables:
+                        if table:  # Ensure table is not None/empty
+                            table_md = _convert_table_to_markdown_simple(table)
+                            # Insert table into text flow
+                            page_text += f"\n\n{table_md}\n\n"
+                            tables_found += 1
+
+                if page_text.strip():
+                    # Add page header if multi-page
+                    if len(pdf.pages) > 1:
+                        markdown_parts.append(f"## Page {page_num + 1}\n\n{page_text}")
+                    else:
+                        markdown_parts.append(page_text)
+
+            content = "\n\n".join(markdown_parts)
+
+            # Basic structure cleanup
+            content = _clean_markdown_structure(content)
+
+            return {
+                "content": content,
+                "method": "pdfplumber",
+                "tables_extracted": tables_found,
+                "page_count": len(pdf.pages),
+            }
+
+    except Exception as e:
+        logger.error(f"Error with pdfplumber processing: {e}")
+        return _fallback_text_extraction(pdf_bytes)
+
+
+def _process_with_hybrid(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Hybrid processing: try MarkItDown first, enhance with pdfplumber tables."""
+
+    try:
+        # First, try MarkItDown for structure
+        markitdown_result = _process_with_markitdown(pdf_bytes)
+
+        # Then extract tables separately with pdfplumber
+        pdf_bytes.seek(0)  # Reset stream
+
+        import pdfplumber
+
+        with pdfplumber.open(pdf_bytes) as pdf:
+            tables_found = 0
+            table_sections = []
+
+            for _page_num, page in enumerate(pdf.pages):
+                page_tables = page.extract_tables()
+
+                for table in page_tables:
+                    if table:
+                        table_md = _convert_table_to_markdown_simple(table)
+                        table_sections.append(
+                            f"### Table {tables_found + 1}\n\n{table_md}"
+                        )
+                        tables_found += 1
+
+            # Combine MarkItDown content with extracted tables
+            content = markitdown_result["content"]
+
+            if table_sections:
+                content += "\n\n## Extracted Tables\n\n" + "\n\n".join(table_sections)
+
+            return {
+                "content": content,
+                "method": "hybrid",
+                "tables_extracted": tables_found,
+                "page_count": len(pdf.pages),
+            }
+
+    except Exception as e:
+        logger.error(f"Error with hybrid processing: {e}")
+        return _fallback_text_extraction(pdf_bytes)
+
+
+def _convert_table_to_markdown_simple(table: list[list[str | None]]) -> str:
+    """Convert a table (list of lists) to simple Markdown table format."""
+
+    if not table or not table[0]:
+        return ""
+
+    markdown_rows = []
+
+    # Process each row
+    for i, row in enumerate(table):
+        if row:  # Skip empty rows
+            # Clean cell content
+            cells = [str(cell).strip() if cell else "" for cell in row]
+
+            # Create markdown row
+            markdown_row = "| " + " | ".join(cells) + " |"
+            markdown_rows.append(markdown_row)
+
+            # Add separator after header row
+            if i == 0 and len(cells) > 0:
+                separator = (
+                    "| "
+                    + " | ".join(["-" * max(3, len(cell)) for cell in cells])
+                    + " |"
+                )
+                markdown_rows.append(separator)
+
+    return "\n".join(markdown_rows) if markdown_rows else ""
+
+
+def _clean_markdown_structure(content: str) -> str:
+    """Clean up and improve Markdown structure."""
+
+    import re
+
+    # Remove excessive whitespace
+    content = re.sub(r"\n{3,}", "\n\n", content)
+
+    # Ensure proper heading spacing
+    content = re.sub(r"(\n#+[^\n]*)\n([^\n#])", r"\1\n\n\2", content)
+
+    # Clean up table spacing
+    content = re.sub(r"(\|[^\n]*\|)\n([^\|\n-])", r"\1\n\n\2", content)
+
+    return content.strip()
+
+
+def _fallback_text_extraction(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Fallback to basic PDFMiner text extraction if advanced methods fail."""
+
+    try:
+        from pdfminer.high_level import extract_text
+
+        pdf_bytes.seek(0)
+        text = extract_text(pdf_bytes)
+
+        # Convert to basic Markdown
+        content = text.strip()
+
+        return {
+            "content": content,
+            "method": "fallback_pdfminer",
+            "tables_extracted": 0,
+            "page_count": 0,
+        }
+
+    except Exception as e:
+        logger.error(f"Even fallback extraction failed: {e}")
+        return {
+            "content": "Error: Could not extract PDF content",
+            "method": "error",
+            "tables_extracted": 0,
+            "page_count": 0,
         }

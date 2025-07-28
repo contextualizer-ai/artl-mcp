@@ -11,6 +11,7 @@ from artl_mcp.tools import (
     get_europepmc_full_text,
     get_europepmc_paper_by_id,
     get_europepmc_pdf,
+    get_europepmc_pdf_as_markdown,
     search_europepmc_papers,
     # Search tools
     search_pubmed_for_pmids,
@@ -29,7 +30,7 @@ def create_mcp():
         instructions="""
 Europe PMC Literature Discovery and ID Translation Tools
 
-This MCP server provides FIVE TOOLS for scientific literature discovery and
+This MCP server provides SIX TOOLS for scientific literature discovery and
 identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
 ## Tool Selection Guide
@@ -39,6 +40,7 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 **For ID TRANSLATION/LINKS** → Use `get_all_identifiers_from_europepmc`
 **For FULL TEXT CONTENT** → Use `get_europepmc_full_text`
 **For PDF DOWNLOAD** → Use `get_europepmc_pdf`
+**For PDF-TO-MARKDOWN CONVERSION** → Use `get_europepmc_pdf_as_markdown`
 
 ## Available Tools
 
@@ -65,7 +67,16 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 **5. get_europepmc_pdf** - Download PDF files from Europe PMC
 - **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
 - **OUTPUT**: PDF file download with metadata and path information
+- **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
+  (most successful with PMC papers)
 - Use this for: Getting the actual PDF file for papers available in Europe PMC
+
+**6. get_europepmc_pdf_as_markdown** - Convert Europe PMC PDF to Markdown in-memory
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: PDF converted to structured Markdown with tables preserved
+- **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
+  (most successful with PMC papers)
+- Use this for: Getting PDF content as LLM-friendly Markdown without disk I/O
 
 Key Features:
 - Automatic identifier detection and normalization
@@ -104,6 +115,10 @@ get_europepmc_full_text("PMC3737249", save_file=True)
 # Download PDF files
 get_europepmc_pdf("10.1038/nature12373")
 get_europepmc_pdf("PMC3737249", save_to="/path/to/save/location")
+
+# Convert PDF to Markdown in-memory
+get_europepmc_pdf_as_markdown("10.1038/nature12373")
+get_europepmc_pdf_as_markdown("PMC3737249", method="hybrid", save_file=True)
 ```
 
 All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubMed APIs.
@@ -165,6 +180,7 @@ All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubM
     mcp.tool(get_all_identifiers_from_europepmc)  # Get all IDs and links
     mcp.tool(get_europepmc_full_text)  # Get full text content as Markdown
     mcp.tool(get_europepmc_pdf)  # Download PDF files from Europe PMC
+    mcp.tool(get_europepmc_pdf_as_markdown)  # Convert PDF to Markdown in-memory
 
     # Other tools commented out to avoid NCBI API calls
     # mcp.tool(search_papers_by_keyword)
