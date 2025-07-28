@@ -1,4 +1,4 @@
-.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version
+.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version claude-demo clean-claude-demos
 
 # Default target - use test-coverage for comprehensive CI/release checks
 all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query test-version
@@ -157,3 +157,16 @@ cli-list:
 test-version:
 	@echo "🔢 Testing version flag..."
 	uv run artl-mcp --version
+
+# Claude CLI example using local MCP server
+local/claude-demo-rhizosphere.txt:
+	@echo "🤖 Claude CLI: Search Europe PMC for rhizosphere microbiome papers..."
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Search Europe PMC for rhizosphere microbiome papers" 2>&1 | tee $@
+
+# Clean up Claude demo output files
+clean-claude-demos:
+	rm -f local/claude-demo-*.txt
+
+# Run Claude demo with cleanup (wrapper target)
+claude-demo: clean-claude-demos local/claude-demo-rhizosphere.txt
+	@echo "✅ Claude demo completed! Check local/claude-demo-rhizosphere.txt for output"

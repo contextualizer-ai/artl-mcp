@@ -2314,7 +2314,7 @@ def search_europepmc_papers(
     Search Europe PMC for papers and return comprehensive paper information.
 
     This tool searches Europe PMC database using keywords and returns comprehensive
-    information including complete metadata, abstracts, and access information. 
+    information including complete metadata, abstracts, and access information.
     It ONLY uses Europe PMC - no PubMed or NCBI APIs are accessed.
 
     What it does:
@@ -2329,7 +2329,7 @@ def search_europepmc_papers(
         max_results: Number of papers to return (default: 10, max: 100)
         result_type: Level of detail to return - "lite" or "core"
             - "lite": Basic metadata, titles, authors, access flags (faster, smaller)
-            - "core": Full metadata including abstracts, keywords, affiliations, 
+            - "core": Full metadata including abstracts, keywords, affiliations,
                      MeSH terms, grants, full text URLs (richer, larger)
 
     Result Type Comparison:
@@ -2344,7 +2344,7 @@ def search_europepmc_papers(
         - Complete abstract text
         - Individual author details with affiliations
         - Keywords and MeSH terms
-        - Grant/funding information  
+        - Grant/funding information
         - Multiple full text URLs with access types
         - Journal details and publication status
         - ~64KB for 10 papers (8x larger)
@@ -2357,7 +2357,7 @@ def search_europepmc_papers(
             "papers": [                                   # Complete paper objects
                 {
                     "id": "40603217",                     # Europe PMC ID
-                    "source": "MED",                      # Source database  
+                    "source": "MED",                      # Source database
                     "pmid": "40603217",                   # PubMed ID
                     "pmcid": "PMC12241448",              # PMC ID (if available)
                     "doi": "10.1016/j.tplants.2025.06.001", # DOI
@@ -2371,7 +2371,7 @@ def search_europepmc_papers(
                     "hasPDF": "Y",                          # PDF available
                     "hasSuppl": "Y",                        # Supplementary materials
                     "pubType": "review; journal article",   # Publication type
-                    
+
                     # Additional fields in "core" mode:
                     "abstractText": "Research into...",     # Full abstract
                     "authorList": {...},                    # Detailed author info
@@ -2382,7 +2382,7 @@ def search_europepmc_papers(
                 }
             ],
             "pmids": ["40603217", "40635331"],           # Extracted PubMed IDs
-            "pmcids": ["PMC12241448"],                   # Extracted PMC IDs  
+            "pmcids": ["PMC12241448"],                   # Extracted PMC IDs
             "dois": ["10.1016/j.tplants.2025.06.001"],   # Extracted DOIs
             "total_count": 9832,                         # Total matches in Europe PMC
             "returned_count": 10,                        # Papers in this response
@@ -2402,7 +2402,9 @@ def search_europepmc_papers(
         'Y'
 
         # Rich search with core mode for detailed analysis
-        >>> result = search_europepmc_papers("CRISPR", max_results=5, result_type="core")
+        >>> result = search_europepmc_papers(
+        ...     "CRISPR", max_results=5, result_type="core"
+        ... )
         >>> result["papers"][0]["abstractText"]  # Full abstract text
         'CRISPR-Cas9 technology has revolutionized...'
         >>> result["papers"][0]["keywordList"]["keyword"]  # Keywords
