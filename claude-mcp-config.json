@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "artl-mcp": {
+      "command": "uv",
+      "args": ["run", "artl-mcp"],
+      "cwd": "."
+    }
+  }
+}

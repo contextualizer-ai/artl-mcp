@@ -7,47 +7,14 @@ from fastmcp import FastMCP
 
 from artl_mcp.client import run_client
 from artl_mcp.tools import (
-    clean_text,
-    convert_identifier_format,
-    # Enhanced identifier conversion tools
-    doi_to_pmcid,
-    doi_to_pmid,
-    # PDF download tools
-    download_pdf_from_doi,
-    download_pdf_from_url,
-    # PubMed utilities tools
-    extract_doi_from_url,
-    extract_pdf_text,
-    find_related_papers,
-    get_abstract_from_pubmed_id,
-    get_all_identifiers,
-    get_citation_network,
-    get_comprehensive_citation_info,
-    # DOIFetcher-based tools
-    get_doi_fetcher_metadata,
-    # Original tools
-    get_doi_metadata,
-    get_doi_text,
-    get_full_text_from_bioc,
-    get_full_text_from_doi,
-    get_full_text_info,
-    get_paper_citations,
-    # Citation and reference tools
-    get_paper_references,
-    get_pmcid_text,
-    get_pmid_from_pmcid,
-    get_pmid_text,
-    get_text_from_pdf_url,
-    get_unpaywall_info,
-    pmcid_to_doi,
-    pmid_to_doi,
-    pmid_to_pmcid,
-    search_keywords_for_ids,
+    get_all_identifiers_from_europepmc,
+    get_europepmc_full_text,
+    get_europepmc_paper_by_id,
+    get_europepmc_pdf,
+    get_europepmc_pdf_as_markdown,
+    search_europepmc_papers,
     # Search tools
-    search_papers_by_keyword,
     search_pubmed_for_pmids,
-    search_recent_papers,
-    validate_identifier,
 )
 
 try:
@@ -61,170 +28,163 @@ def create_mcp():
     mcp = FastMCP(
         "artl-mcp",
         instructions="""
-All Roads to Literature (ARtL) MCP provides comprehensive tools for retrieving
-scientific literature metadata, full text, abstracts, and citation networks via
-DOI, PMID, or PMCID.
+Europe PMC Literature Discovery and ID Translation Tools
 
-## 🗂️ COMPREHENSIVE FILE SAVING CAPABILITIES
+This MCP server provides SIX TOOLS for scientific literature discovery and
+identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
-**IMPORTANT**: Most tools support automatic file saving with two options:
-- **`save_file: true`** - Auto-saves to temp directory with generated filename
-- **`save_to: "path/file.ext"`** - Saves to your specified path (overrides save_file)
+## Tool Selection Guide
 
-**Supported file formats**: JSON (metadata), TXT (full text), PDF, XML, YAML, CSV
-**Cross-platform paths**: Works on Windows, macOS, and Linux
-**Environment configuration**:
-- `ARTL_OUTPUT_DIR` - Custom output directory
-- `ARTL_TEMP_DIR` - Custom temp directory
-- `ARTL_KEEP_TEMP_FILES` - Retention policy
+**For KEYWORD SEARCHES** → Use `search_europepmc_papers`
+**For FULL METADATA from identifier** → Use `get_europepmc_paper_by_id`
+**For ID TRANSLATION/LINKS** → Use `get_all_identifiers_from_europepmc`
+**For FULL TEXT CONTENT** → Use `get_europepmc_full_text`
+**For PDF DOWNLOAD** → Use `get_europepmc_pdf`
+**For PDF-TO-MARKDOWN CONVERSION** → Use `get_europepmc_pdf_as_markdown`
 
-## Supported Identifier Formats
-- **DOI**: Multiple formats supported
-  - Raw: 10.1038/nature12373
-  - CURIE: doi:10.1038/nature12373
-  - URLs: https://doi.org/10.1038/nature12373, http://dx.doi.org/...
-- **PMID**: Multiple formats supported
-  - Raw: 23851394
-  - Prefixed: PMID:23851394
-  - Colon-separated: pmid:23851394
-- **PMCID**: Multiple formats supported
-  - Full: PMC3737249
-  - Numeric: 3737249
-  - Prefixed: PMC:3737249
-- **Keywords**: Natural language search terms
+## Available Tools
 
-This server offers six main categories of functionality:
+**1. search_europepmc_papers** - Search Europe PMC for papers by keywords
+- **INPUT**: Keywords/search terms
+- **OUTPUT**: Multiple papers with metadata and identifiers
+- Use this for: Literature discovery, topic research, finding papers on subjects
 
-## 1. Literature Search and Discovery
-- **search_keywords_for_ids**: ⭐ **RECOMMENDED** - Simple keyword search
-  returning PMIDs, PMCIDs, and DOIs (auto-detects PUBMED_OFFLINE)
-- **search_papers_by_keyword** 📁: Search article metadata via keywords (CrossRef)
-- **search_recent_papers** 📁: Find recent publications for specific keywords or topics
-- **search_pubmed_for_pmids** 📁: Search PubMed for articles using keywords
-  (requires PubMed access)
+**2. get_europepmc_paper_by_id** - Get complete paper metadata from any identifier
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: Complete metadata including abstract, keywords, authors
+- Use this for: Getting full details about a specific paper you already have an ID for
 
-## 2. Metadata and Abstract Retrieval
-- **get_doi_metadata** 📁: Get comprehensive metadata for papers using DOI
-- **get_abstract_from_pubmed_id** 📁: Retrieve abstracts from PubMed using PMID
-- **get_doi_fetcher_metadata** 📁: Enhanced metadata retrieval with email
-  requirement
-- **get_unpaywall_info** 📁: Check open access availability via Unpaywall
+**3. get_all_identifiers_from_europepmc** - Get all available IDs and links for a paper
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: All available identifiers + direct URLs + access status
+- Use this for: ID translation (DOI→PMID), finding all access points, link generation
 
-## 3. Full Text Access and Processing
-- **get_full_text_from_doi** 📁: Retrieve full text content using DOI
-  (requires email)
-- **get_full_text_info** 📁: Get detailed full text availability information
-- **get_pmcid_text** 📁: Get full text from PubMed Central ID
-- **get_pmid_text** 📁: Get full text using PMID
-- **get_full_text_from_bioc** 📁: Retrieve full text in BioC format
-- **get_doi_text** 📁: Direct text retrieval using DOI
-- **clean_text** 📁: Clean and format extracted text content
+**4. get_europepmc_full_text** - Get LLM-friendly full text content in Markdown
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: Clean Markdown with preserved structure, tables, and figures
+- Use this for: Getting complete paper content for LLM analysis
 
-## 4. PDF Operations (Choose Based on Your Goal)
+**5. get_europepmc_pdf** - Download PDF files from Europe PMC
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: PDF file download with metadata and path information
+- **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
+  (most successful with PMC papers)
+- Use this for: Getting the actual PDF file for papers available in Europe PMC
 
-### PDF Download (No Text Extraction)
-- **download_pdf_from_url** 📁: Download PDF binary file from direct URL
-  (no email needed)
-- **download_pdf_from_doi** 📁: Find and download PDF via Unpaywall from DOI
-  (requires email)
+**6. get_europepmc_pdf_as_markdown** - Convert Europe PMC PDF to Markdown in-memory
+- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+- **OUTPUT**: PDF converted to structured Markdown with tables preserved
+- **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
+  (most successful with PMC papers)
+- Use this for: Getting PDF content as LLM-friendly Markdown without disk I/O
 
-### PDF Text Extraction
-- **extract_pdf_text** 📁: Extract text from PDF URL (no email needed)
-- **get_text_from_pdf_url** 📁: Extract text from PDF URL with enhanced
-  processing (requires email)
+Key Features:
+- Automatic identifier detection and normalization
+- Comprehensive Europe PMC metadata retrieval
+- Direct URL generation for all databases (PubMed, PMC, DOI, Europe PMC)
+- Access status checking (open access, PDF availability)
+- File saving capabilities for all functions
+- Exclusive Europe PMC usage - no NCBI API dependencies
 
-### PDF URL Discovery
-- **get_unpaywall_info** 📁: Find open access PDF URLs for any DOI
-  (requires email)
+Perfect for:
+- Literature discovery and analysis
+- Identifier translation and cross-referencing
+- Finding all access points for papers
+- Building comprehensive literature databases
+- Research requiring detailed paper metadata
 
-## 5. Identifier Conversion and Utilities
-- **extract_doi_from_url**: Extract DOI from various URL formats
-- **convert_identifier_format** 📁: Convert between ID formats (raw, CURIE, URL)
-- **doi_to_pmid**: Convert DOI to PMID
-- **doi_to_pmcid**: Convert DOI to PMCID
-- **pmid_to_doi**: Convert PMID to DOI
-- **pmid_to_pmcid**: Convert PMID to PMCID
-- **pmcid_to_doi**: Convert PMCID to DOI
-- **get_pmid_from_pmcid**: Get PMID from PMC ID
-- **get_all_identifiers** 📁: Get all available IDs for any identifier
-- **validate_identifier**: Validate identifier format
+Example usage:
+```
+# Search for papers
+search_europepmc_papers(
+    keywords="CRISPR gene editing", max_results=10, result_type="core"
+)
 
-## 6. Citation Networks and Related Papers
-- **get_paper_references** 📁: Get papers cited by a given paper
-- **get_paper_citations** 📁: Get papers that cite a given paper
-- **get_citation_network** 📁: Get comprehensive citation network from OpenAlex
-- **find_related_papers** 📁: Find papers related through citations
-- **get_comprehensive_citation_info** 📁: Get citation data from multiple sources
+# Get full metadata from any identifier
+get_europepmc_paper_by_id("10.1038/nature12373")
+get_europepmc_paper_by_id("23851394")  # PMID
+get_europepmc_paper_by_id("PMC3737249")  # PMCID
 
-**📁 = Supports file saving with `save_file` and `save_to` parameters**
+# Get all identifiers and links
+get_all_identifiers_from_europepmc("10.1038/nature12373")
 
-## Usage Notes
-- **Identifier Flexibility**: All tools accept multiple identifier formats and
-  auto-normalize
-- **Format Interconversion**: Use convert_identifier_format to convert between
-  DOI CURIEs (doi:10.1234/example), DOI URLs (https://doi.org/10.1234/example),
-  and raw formats (10.1234/example)
-- **Email Requirements**: Many tools require email addresses for API access
-  (CrossRef, Unpaywall)
-- **Format Consistency**: All tools return identifiers in standardized formats
-- **Error Handling**: Graceful handling of invalid identifiers and API failures
-- **Rate Limiting**: Proper headers and timeouts for respectful API usage
-- **Comprehensive Coverage**: Support for DOI, PMID, PMCID conversion in all
-  directions
+# Get full text content as Markdown
+get_europepmc_full_text("10.1038/nature12373")
+get_europepmc_full_text("PMC3737249", save_file=True)
+
+# Download PDF files
+get_europepmc_pdf("10.1038/nature12373")
+get_europepmc_pdf("PMC3737249", save_to="/path/to/save/location")
+
+# Convert PDF to Markdown in-memory
+get_europepmc_pdf_as_markdown("10.1038/nature12373")
+get_europepmc_pdf_as_markdown("PMC3737249", method="hybrid", save_file=True)
+```
+
+All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubMed APIs.
 
 """,
     )
 
-    # Register all tools
-    # Original tools
-    mcp.tool(get_doi_metadata)
-    mcp.tool(get_abstract_from_pubmed_id)
+    # Register only Europe PMC search tool
+    # All other tools commented out to avoid NCBI API calls
 
-    # DOIFetcher-based tools (require email)
-    mcp.tool(get_doi_fetcher_metadata)
-    mcp.tool(get_unpaywall_info)
-    mcp.tool(get_full_text_from_doi)
-    mcp.tool(get_full_text_info)
-    mcp.tool(get_text_from_pdf_url)
-    mcp.tool(clean_text)
+    # # Original tools
+    # mcp.tool(get_doi_metadata)
+    # mcp.tool(get_abstract_from_pubmed_id)
 
-    # PDF download tools
-    mcp.tool(download_pdf_from_doi)
-    mcp.tool(download_pdf_from_url)
+    # # DOIFetcher-based tools (require email)
+    # mcp.tool(get_doi_fetcher_metadata)
+    # mcp.tool(get_unpaywall_info)
+    # mcp.tool(get_full_text_from_doi)
+    # mcp.tool(get_full_text_info)
+    # mcp.tool(get_text_from_pdf_url)
+    # mcp.tool(clean_text)
 
-    # Standalone tools
-    mcp.tool(extract_pdf_text)
+    # # PDF download tools
+    # mcp.tool(download_pdf_from_doi)
+    # mcp.tool(download_pdf_from_url)
 
-    # PubMed utilities tools
-    mcp.tool(extract_doi_from_url)
-    mcp.tool(doi_to_pmid)
-    mcp.tool(pmid_to_doi)
-    mcp.tool(get_doi_text)
-    mcp.tool(get_pmid_from_pmcid)
-    mcp.tool(get_pmcid_text)
-    mcp.tool(get_pmid_text)
-    mcp.tool(get_full_text_from_bioc)
-    mcp.tool(search_pubmed_for_pmids)
+    # # Standalone tools
+    # mcp.tool(extract_pdf_text)
 
-    # Enhanced identifier conversion tools
-    mcp.tool(convert_identifier_format)
-    mcp.tool(doi_to_pmcid)
-    mcp.tool(pmid_to_pmcid)
-    mcp.tool(pmcid_to_doi)
-    mcp.tool(get_all_identifiers)
-    mcp.tool(validate_identifier)
+    # # PubMed utilities tools
+    # mcp.tool(extract_doi_from_url)
+    # mcp.tool(doi_to_pmid)
+    # mcp.tool(pmid_to_doi)
+    # mcp.tool(get_doi_text)
+    # mcp.tool(get_pmid_from_pmcid)
+    # mcp.tool(get_pmcid_text)
+    # mcp.tool(get_pmid_text)
+    # mcp.tool(get_full_text_from_bioc)
+    # mcp.tool(search_pubmed_for_pmids)
 
-    # Citation and reference tools
-    mcp.tool(get_paper_references)
-    mcp.tool(get_paper_citations)
-    mcp.tool(get_citation_network)
-    mcp.tool(find_related_papers)
-    mcp.tool(get_comprehensive_citation_info)
+    # # Enhanced identifier conversion tools
+    # mcp.tool(convert_identifier_format)
+    # mcp.tool(doi_to_pmcid)
+    # mcp.tool(pmid_to_pmcid)
+    # mcp.tool(pmcid_to_doi)
+    # mcp.tool(get_all_identifiers)
+    # mcp.tool(validate_identifier)
 
-    # Search tools
-    mcp.tool(search_keywords_for_ids)  # Primary keyword search tool
-    mcp.tool(search_papers_by_keyword)
-    mcp.tool(search_recent_papers)
+    # # Citation and reference tools
+    # mcp.tool(get_paper_references)
+    # mcp.tool(get_paper_citations)
+    # mcp.tool(get_citation_network)
+    # mcp.tool(find_related_papers)
+    # mcp.tool(get_comprehensive_citation_info)
+
+    # Europe PMC tools - Search and ID translation
+    mcp.tool(search_europepmc_papers)  # Europe PMC search tool
+    mcp.tool(get_europepmc_paper_by_id)  # Get full metadata from any ID
+    mcp.tool(get_all_identifiers_from_europepmc)  # Get all IDs and links
+    mcp.tool(get_europepmc_full_text)  # Get full text content as Markdown
+    mcp.tool(get_europepmc_pdf)  # Download PDF files from Europe PMC
+    mcp.tool(get_europepmc_pdf_as_markdown)  # Convert PDF to Markdown in-memory
+
+    # Other tools commented out to avoid NCBI API calls
+    # mcp.tool(search_papers_by_keyword)
+    # mcp.tool(search_recent_papers)
 
     return mcp
 

@@ -1,4 +1,4 @@
-.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version
+.PHONY: test test-coverage test-unit test-external-api clean install dev format lint all server doi-test-query upload-test upload release deptry mypy search-test-query cli-demo-search-papers cli-demo-search-recent test-version clean-claude-demos claude-demos-all
 
 # Default target - use test-coverage for comprehensive CI/release checks
 all: clean install dev test-coverage format lint mypy deptry build doi-test-query search-test-query test-version
@@ -157,3 +157,49 @@ cli-list:
 test-version:
 	@echo "🔢 Testing version flag..."
 	uv run artl-mcp --version
+
+# Claude CLI examples using local MCP server
+local/claude-demo-rhizosphere.txt:
+	@echo "🤖 Claude CLI: Search Europe PMC for rhizosphere microbiome papers"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Search Europe PMC for rhizosphere microbiome papers" 2>&1 | tee $@
+
+local/claude-demo-get-paper-by-id.txt:
+	@echo "🤖 Claude CLI: Get full paper metadata for DOI:10.1038/nature12352 using Europe PMC"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get full paper metadata for DOI 10.1038/nature12373 using Europe PMC" 2>&1 | tee $@
+
+local/claude-demo-get-all-identifiers.txt:
+	@echo "🤖 Claude CLI: Get all identifiers and links for PMID:23851394 using Europe PMC"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get all available identifiers and access links for PMID:23851394 using Europe PMC" 2>&1 | tee $@
+
+# File saving demonstration targets
+local/claude-demo-search-with-save.txt:
+	@echo "🤖 Claude CLI: Search Europe PMC for CRISPR papers and save results to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Search Europe PMC for 5 CRISPR papers using core mode and save the results to a file. Tell me the exact filename where the results were saved." 2>&1 | tee $@
+
+local/claude-demo-paper-metadata-save.txt:
+	@echo "🤖 Claude CLI: Get paper metadata for DOI and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get full paper metadata for DOI 10.1038/nature12373 from Europe PMC and save it to a file. Tell me the exact filename where the metadata was saved." 2>&1 | tee $@
+
+local/claude-demo-identifiers-save.txt:
+	@echo "🤖 Claude CLI: Get all identifiers for PMID and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get all identifiers and access links for PMID 23851394 from Europe PMC and save to a file. Tell me the exact filename where the identifiers were saved." 2>&1 | tee $@
+
+local/claude-demo-full-text.txt:
+	@echo "🤖 Claude CLI: Get full text content in Markdown format and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get the full text content for DOI 10.1371/journal.pone.0000217 from Europe PMC in Markdown format and save it to a file. Tell me exactly what sections were found and the filename where it was saved. Also show me the first few lines of the Markdown content." 2>&1 | tee $@
+
+local/claude-demo-pdf-download.txt:
+	@echo "🤖 Claude CLI: Download PDF from Europe PMC and save to file"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Download the PDF for DOI 10.1371/journal.pone.0000217 from Europe PMC and save it to a file. Tell me the exact filename where the PDF was saved and the file size." 2>&1 | tee $@
+
+local/claude-demo-pdf-to-markdown.txt:
+	@echo "🤖 Claude CLI: Convert Europe PMC PDF to Markdown using streaming processing"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Convert the PDF for DOI 10.1371/journal.pone.0000217 from Europe PMC to Markdown format using streaming processing and save it to a file. Tell me the exact filename where the Markdown was saved, the processing method used, and show me a preview of the first few sections." 2>&1 | tee $@
+
+# Clean up Claude demo output files
+clean-claude-demos:
+	rm -f local/claude-demo-*.txt
+
+# Run all Claude demos with cleanup (comprehensive meta-target)
+claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-download.txt local/claude-demo-pdf-to-markdown.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
+	@echo "✅ All Claude demos completed! Check local/claude-demo-*.txt for output"

@@ -19,7 +19,7 @@ from typing import Any, Literal
 import yaml
 
 # Type definitions
-FileFormat = Literal["json", "txt", "pdf", "xml", "yaml", "csv"]
+FileFormat = Literal["json", "txt", "pdf", "xml", "yaml", "csv", "md"]
 RetentionPolicy = Literal[
     "always_delete", "keep_on_error", "always_keep", "user_config"
 ]
@@ -241,6 +241,11 @@ class FileManager:
                                 "json",
                                 output_dir,
                             )
+
+            elif file_format == "md":
+                # For Markdown content
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(str(content))
 
             else:
                 raise FileManagerError(f"Unsupported file format: {file_format}")

@@ -1,4 +1,4 @@
-"""Command-line interface wrappers for all artl_mcp tools."""
+"""Command-line interface wrappers for artl_mcp tools."""
 
 import json
 from typing import Any
@@ -9,22 +9,30 @@ from artl_mcp._version import __version__
 from artl_mcp.tools import (
     clean_text,
     doi_to_pmid,
+    # PDF download tools
     extract_doi_from_url,
     extract_pdf_text,
     get_abstract_from_pubmed_id,
+    get_all_identifiers_from_europepmc,
     get_doi_fetcher_metadata,
+    # Original tools
     get_doi_metadata,
     get_doi_text,
+    get_europepmc_paper_by_id,
     get_full_text_from_bioc,
     get_full_text_from_doi,
     get_full_text_info,
+    # Citation and reference tools
     get_pmcid_text,
     get_pmid_from_pmcid,
     get_pmid_text,
     get_text_from_pdf_url,
     get_unpaywall_info,
     pmid_to_doi,
+    search_europepmc_papers,
+    # Search tools
     search_papers_by_keyword,
+    search_pubmed_for_pmids,
     search_recent_papers,
 )
 
@@ -44,87 +52,59 @@ def cli():
     pass
 
 
+# Core Europe PMC tools that work reliably
+@cli.command("search-europepmc-papers")
+@click.option("--keywords", required=True, help="Search terms/keywords")
+@click.option(
+    "--max-results", default=10, help="Maximum number of results (default 10, max 100)"
+)
+@click.option(
+    "--result-type",
+    default="lite",
+    type=click.Choice(["lite", "core"]),
+    help="Result detail level: lite (basic) or core (full metadata with abstracts)",
+)
+def search_europepmc_papers_cmd(
+    keywords: str, max_results: int, result_type: str
+) -> None:
+    """Search Europe PMC for papers and return identifiers, links, and access info."""
+    result = search_europepmc_papers(keywords, max_results, result_type)
+    output_result(result)
+
+
+@cli.command("get-europepmc-paper-by-id")
+@click.option("--identifier", required=True, help="Any identifier: DOI, PMID, or PMCID")
+def get_europepmc_paper_by_id_cmd(identifier: str) -> None:
+    """Get full Europe PMC metadata for any scientific identifier."""
+    result = get_europepmc_paper_by_id(identifier)
+    output_result(result)
+
+
+@cli.command("get-all-identifiers-from-europepmc")
+@click.option("--identifier", required=True, help="Any identifier: DOI, PMID, or PMCID")
+def get_all_identifiers_from_europepmc_cmd(identifier: str) -> None:
+    """Get all available identifiers and links for a paper from Europe PMC."""
+    result = get_all_identifiers_from_europepmc(identifier)
+    output_result(result)
+
+
+@cli.command("search-pubmed-for-pmids")
+@click.option("--query", required=True, help="Search terms/keywords")
+@click.option(
+    "--max-results", default=20, help="Maximum number of results (default 20)"
+)
+def search_pubmed_for_pmids_cmd(query: str, max_results: int) -> None:
+    """Search PubMed for articles using keywords and return PMIDs with metadata."""
+    result = search_pubmed_for_pmids(query, max_results)
+    output_result(result)
+
+
+# Basic DOI/metadata tools that work without complex dependencies
 @cli.command("get-doi-metadata")
 @click.option("--doi", required=True, help="Digital Object Identifier")
 def get_doi_metadata_cmd(doi: str) -> None:
     """Retrieve metadata for a scientific article using its DOI."""
     result = get_doi_metadata(doi)
-    output_result(result)
-
-
-@cli.command("get-abstract-from-pubmed-id")
-@click.option("--pmid", required=True, help="PubMed ID")
-def get_abstract_from_pubmed_id_cmd(pmid: str) -> None:
-    """Get abstract text from a PubMed ID."""
-    result = get_abstract_from_pubmed_id(pmid)
-    if result:
-        click.echo(result)
-    else:
-        click.echo("No abstract found", err=True)
-
-
-@cli.command("get-doi-fetcher-metadata")
-@click.option("--doi", required=True, help="Digital Object Identifier")
-@click.option("--email", required=True, help="Email address for API requests")
-def get_doi_fetcher_metadata_cmd(doi: str, email: str) -> None:
-    """Get metadata for a DOI using DOIFetcher."""
-    result = get_doi_fetcher_metadata(doi, email)
-    output_result(result)
-
-
-@cli.command("get-unpaywall-info")
-@click.option("--doi", required=True, help="Digital Object Identifier")
-@click.option("--email", required=True, help="Email address for API requests")
-@click.option(
-    "--strict/--no-strict", default=True, help="Use strict mode for Unpaywall queries"
-)
-def get_unpaywall_info_cmd(doi: str, email: str, strict: bool) -> None:
-    """Get Unpaywall information for a DOI to find open access versions."""
-    result = get_unpaywall_info(doi, email, strict)
-    output_result(result)
-
-
-@cli.command("get-full-text-from-doi")
-@click.option("--doi", required=True, help="Digital Object Identifier")
-@click.option("--email", required=True, help="Email address for API requests")
-def get_full_text_from_doi_cmd(doi: str, email: str) -> None:
-    """Get full text content from a DOI."""
-    result = get_full_text_from_doi(doi, email)
-    output_result(result)
-
-
-@cli.command("get-full-text-info")
-@click.option("--doi", required=True, help="Digital Object Identifier")
-@click.option("--email", required=True, help="Email address for API requests")
-def get_full_text_info_cmd(doi: str, email: str) -> None:
-    """Get full text information from a DOI."""
-    result = get_full_text_info(doi, email)
-    output_result(result)
-
-
-@cli.command("get-text-from-pdf-url")
-@click.option("--pdf-url", required=True, help="URL of the PDF to extract text from")
-@click.option("--email", required=True, help="Email address for API requests")
-def get_text_from_pdf_url_cmd(pdf_url: str, email: str) -> None:
-    """Extract text from a PDF URL using DOIFetcher."""
-    result = get_text_from_pdf_url(pdf_url, email)
-    output_result(result)
-
-
-@cli.command("extract-pdf-text")
-@click.option("--pdf-url", required=True, help="URL of the PDF to extract text from")
-def extract_pdf_text_cmd(pdf_url: str) -> None:
-    """Extract text from a PDF URL using the standalone pdf_fetcher."""
-    result = extract_pdf_text(pdf_url)
-    output_result(result)
-
-
-@cli.command("clean-text")
-@click.option("--text", required=True, help="Text to clean")
-@click.option("--email", required=True, help="Email address for API requests")
-def clean_text_cmd(text: str, email: str) -> None:
-    """Clean text using DOIFetcher's text cleaning functionality."""
-    result = clean_text(text, email)
     output_result(result)
 
 
@@ -136,6 +116,15 @@ def extract_doi_from_url_cmd(doi_url: str) -> None:
     output_result(result)
 
 
+@cli.command("extract-pdf-text")
+@click.option("--pdf-url", required=True, help="URL of the PDF to extract text from")
+def extract_pdf_text_cmd(pdf_url: str) -> None:
+    """Extract text from a PDF URL using the standalone pdf_fetcher."""
+    result = extract_pdf_text(pdf_url)
+    output_result(result)
+
+
+# Identifier conversion tools
 @cli.command("doi-to-pmid")
 @click.option("--doi", required=True, help="Digital Object Identifier")
 def doi_to_pmid_cmd(doi: str) -> None:
@@ -150,6 +139,18 @@ def pmid_to_doi_cmd(pmid: str) -> None:
     """Convert PubMed ID to DOI."""
     result = pmid_to_doi(pmid)
     output_result(result)
+
+
+# Text retrieval tools that work with offline mode
+@cli.command("get-abstract-from-pubmed-id")
+@click.option("--pmid", required=True, help="PubMed ID")
+def get_abstract_from_pubmed_id_cmd(pmid: str) -> None:
+    """Get abstract text from a PubMed ID."""
+    result = get_abstract_from_pubmed_id(pmid)
+    if result:
+        click.echo(result)
+    else:
+        click.echo("No abstract found", err=True)
 
 
 @cli.command("get-doi-text")
@@ -254,4 +255,62 @@ def search_recent_papers_cmd(
         max_results=max_results,
         paper_type=paper_type,
     )
+    output_result(result)
+
+
+# Tools that require email - keeping for advanced users who have email configured
+@cli.command("get-doi-fetcher-metadata")
+@click.option("--doi", required=True, help="Digital Object Identifier")
+@click.option("--email", required=True, help="Email address for API requests")
+def get_doi_fetcher_metadata_cmd(doi: str, email: str) -> None:
+    """Get metadata for a DOI using DOIFetcher."""
+    result = get_doi_fetcher_metadata(doi, email)
+    output_result(result)
+
+
+@cli.command("get-unpaywall-info")
+@click.option("--doi", required=True, help="Digital Object Identifier")
+@click.option("--email", required=True, help="Email address for API requests")
+@click.option(
+    "--strict/--no-strict", default=True, help="Use strict mode for Unpaywall queries"
+)
+def get_unpaywall_info_cmd(doi: str, email: str, strict: bool) -> None:
+    """Get Unpaywall information for a DOI to find open access versions."""
+    result = get_unpaywall_info(doi, email, strict)
+    output_result(result)
+
+
+@cli.command("get-full-text-from-doi")
+@click.option("--doi", required=True, help="Digital Object Identifier")
+@click.option("--email", required=True, help="Email address for API requests")
+def get_full_text_from_doi_cmd(doi: str, email: str) -> None:
+    """Get full text content from a DOI."""
+    result = get_full_text_from_doi(doi, email)
+    output_result(result)
+
+
+@cli.command("get-full-text-info")
+@click.option("--doi", required=True, help="Digital Object Identifier")
+@click.option("--email", required=True, help="Email address for API requests")
+def get_full_text_info_cmd(doi: str, email: str) -> None:
+    """Get full text information from a DOI."""
+    result = get_full_text_info(doi, email)
+    output_result(result)
+
+
+@cli.command("get-text-from-pdf-url")
+@click.option("--pdf-url", required=True, help="URL of the PDF to extract text from")
+@click.option("--email", required=True, help="Email address for API requests")
+def get_text_from_pdf_url_cmd(pdf_url: str, email: str) -> None:
+    """Extract text from a PDF URL using DOIFetcher."""
+    result = get_text_from_pdf_url(pdf_url, email)
+    output_result(result)
+
+
+@cli.command("clean-text")
+@click.option("--text", required=True, help="Text to clean")
+@click.option("--email", required=True, help="Email address for API requests")
+def clean_text_cmd(text: str, email: str) -> None:
+    """Clean text using DOIFetcher's text cleaning functionality."""
+    result = clean_text(text, email)
     output_result(result)

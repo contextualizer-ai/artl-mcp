@@ -34,14 +34,15 @@ class TestRunClient:
             "artl_mcp.client.Client", return_value=mock_client_class
         ) as mock_client_constructor:
             with patch("builtins.print") as mock_print:
-                await run_client("10.1038/nature12373", mock_mcp)
+                await run_client("CRISPR gene editing", mock_mcp)
 
                 # Verify Client was created with the MCP
                 mock_client_constructor.assert_called_once_with(mock_mcp)
 
                 # Verify call_tool was called correctly
                 mock_client.call_tool.assert_called_once_with(
-                    "get_doi_metadata", {"doi": "10.1038/nature12373"}
+                    "search_europepmc_papers",
+                    {"keywords": "CRISPR gene editing", "max_results": 5},
                 )
 
                 # Verify JSON was pretty printed

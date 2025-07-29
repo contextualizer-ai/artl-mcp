@@ -1,3 +1,4 @@
+import io
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -2307,90 +2308,165 @@ def _search_europepmc_flexible(
         return None
 
 
-def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, Any]:
+def search_europepmc_papers(
+    keywords: str,
+    max_results: int = 10,
+    result_type: str = "lite",
+    save_file: bool = False,
+    save_to: str | None = None,
+) -> dict[str, Any]:
     """
-    Search for scientific article IDs using keywords.
+    Search Europe PMC for papers and return comprehensive paper information.
 
-    This tool provides a simple interface for finding PMIDs, PMCIDs, and DOIs
-    from keyword searches. When PUBMED_OFFLINE=true, it uses Europe PMC as the
-    primary search engine. Otherwise, it may use PubMed when available.
+    This tool searches Europe PMC database using keywords and returns comprehensive
+    information including complete metadata, abstracts, and access information.
+    It ONLY uses Europe PMC - no PubMed or NCBI APIs are accessed.
 
-    Perfect for:
-    - Finding article IDs to use with other ARTL-MCP tools
-    - Discovering papers by topic, author, or keywords
-    - Getting availability information (open access, PDF links)
-    - Research literature discovery
+    What it does:
+    1. Searches Europe PMC database with your keywords
+    2. Returns complete paper metadata (not just IDs)
+    3. Provides direct links to papers, PDFs, and full text
+    4. Includes abstracts, keywords, author affiliations (in core mode)
+    5. Indicates full text and PDF availability
 
     Args:
-        keywords: Natural language search terms (e.g., "CRISPR gene editing",
-                 "climate change microbiome", "machine learning healthcare")
-        max_results: Maximum number of articles to return (default: 10, max: 100)
+        keywords: Search query using Europe PMC syntax. Supports:
+            Basic searches:
+            - Simple terms: "CRISPR", "machine learning", "cancer immunotherapy"
+            - Phrases: "rhizosphere microbiome", "gene editing"
+
+            Advanced syntax:
+            - Boolean operators: "CRISPR AND gene editing", "microbiome OR microbiota"
+            - Field searches: title:"CRISPR", author:"Smith", journal:"Nature"
+            - Wildcards: "bacteri*" (matches bacteria, bacterial, etc.)
+            - Negation: "CRISPR NOT review"
+            - Parentheses: "(CRISPR OR gene editing) AND therapy"
+
+            Specialized filters:
+            - Source: src:med (PubMed), src:pmc (PMC), src:ppr (preprints)
+            - Publication type: PUB_TYPE:"Review", PUB_TYPE:"Clinical Trial"
+            - Date ranges: first_pdate:[2020-01-01 TO 2024-12-31]
+            - Open access: OPEN_ACCESS:Y
+            - Language: LANG:eng
+
+            Examples:
+            - "title:microbiome AND src:pmc" - PMC papers with microbiome in title
+            - "author:smith AND first_pdate:[2020 TO 2024]" - Smith papers 2020-2024
+            - "CRISPR AND PUB_TYPE:Review AND OPEN_ACCESS:Y" - Open access reviews
+
+        max_results: Number of papers to return (default: 10, max: 100)
+        result_type: Level of detail to return - "lite" or "core"
+            - "lite": Basic metadata, titles, authors, access flags (faster, smaller)
+            - "core": Full metadata including abstracts, keywords, affiliations,
+                     MeSH terms, grants, full text URLs (richer, larger)
+
+    Result Type Comparison:
+        "lite" mode returns:
+        - Basic identifiers (PMID, PMCID, DOI)
+        - Title, author string, journal, publication year
+        - Access flags (isOpenAccess, hasPDF, inPMC)
+        - Publication type and basic metadata
+        - ~8KB for 10 papers
+
+        "core" mode additionally includes:
+        - Complete abstract text
+        - Individual author details with affiliations
+        - Keywords and MeSH terms
+        - Grant/funding information
+        - Multiple full text URLs with access types
+        - Journal details and publication status
+        - ~64KB for 10 papers (8x larger)
+
+        Neither mode includes citation lists - those require separate API calls.
 
     Returns:
-        Dictionary with separate lists for each ID type and metadata:
+        Dictionary with complete paper information:
         {
-            "pmids": ["32132456", "31234567", ...],      # PubMed IDs
-            "pmcids": ["PMC7049895", "PMC8123456", ...], # PMC IDs
-            "dois": ["10.1038/s41586-020-2012-7", ...],  # DOIs
-            "total_count": 7261,                         # Total matches in database
-            "returned_count": 10,                        # Results in this response
-            "source": "europepmc",                       # Data source used
-            "query": "original keywords"                 # Your search terms
+            "papers": [                                   # Complete paper objects
+                {
+                    "id": "40603217",                     # Europe PMC ID
+                    "source": "MED",                      # Source database
+                    "pmid": "40603217",                   # PubMed ID
+                    "pmcid": "PMC12241448",              # PMC ID (if available)
+                    "doi": "10.1016/j.tplants.2025.06.001", # DOI
+                    "title": "The chemical interaction...", # Full title
+                    "authorString": "Bouwmeester H, ...",    # Author string
+                    "journalTitle": "Trends Plant Sci",      # Journal name
+                    "pubYear": "2025",                       # Publication year
+                    "isOpenAccess": "Y",                     # Open access flag
+                    "inEPMC": "Y",                          # In Europe PMC
+                    "inPMC": "Y",                           # In PMC
+                    "hasPDF": "Y",                          # PDF available
+                    "hasSuppl": "Y",                        # Supplementary materials
+                    "pubType": "review; journal article",   # Publication type
+
+                    # Additional fields in "core" mode:
+                    "abstractText": "Research into...",     # Full abstract
+                    "authorList": {...},                    # Detailed author info
+                    "keywordList": {...},                   # Keywords
+                    "meshHeadingList": {...},              # MeSH terms
+                    "grantsList": {...},                   # Funding info
+                    "fullTextUrlList": {...},             # Full text URLs
+                }
+            ],
+            "pmids": ["40603217", "40635331"],           # Extracted PubMed IDs
+            "pmcids": ["PMC12241448"],                   # Extracted PMC IDs
+            "dois": ["10.1016/j.tplants.2025.06.001"],   # Extracted DOIs
+            "total_count": 9832,                         # Total matches in Europe PMC
+            "returned_count": 10,                        # Papers in this response
+            "result_type": "lite",                       # Mode used for this search
+            "source": "europepmc",                       # Always Europe PMC
+            "query": "rhizosphere microbiome"            # Your search terms
         }
 
     Examples:
-        >>> result = search_keywords_for_ids("rhizosphere microbiome")
-        >>> result["pmids"][:3]
-        ['40603217', '40459209', '40482721']
-        >>> result["total_count"]
-        9832
-        >>> len(result["dois"])
+        # Basic search with lite mode (default)
+        >>> result = search_europepmc_papers("rhizosphere microbiome")
+        >>> len(result["papers"])  # Number of papers returned
         10
+        >>> result["papers"][0]["title"]  # Paper title
+        'The chemical interaction between plants and the rhizosphere microbiome.'
+        >>> result["papers"][0]["isOpenAccess"]  # Check access
+        'Y'
 
-        >>> result = search_keywords_for_ids("CRISPR", max_results=5)
-        >>> result["returned_count"]
-        5
+        # Rich search with core mode for detailed analysis
+        >>> result = search_europepmc_papers(
+        ...     "CRISPR", max_results=5, result_type="core"
+        ... )
+        >>> result["papers"][0]["abstractText"]  # Full abstract text
+        'CRISPR-Cas9 technology has revolutionized...'
+        >>> result["papers"][0]["keywordList"]["keyword"]  # Keywords
+        ['CRISPR', 'Gene editing', 'Cas9']
 
-    Related Tools:
-        - get_abstract_from_pubmed_id(): Get abstracts using PMIDs from this search
-        - get_doi_metadata(): Get full metadata using DOIs from this search
-        - get_full_text_from_doi(): Get full text using DOIs from this search
-        - download_pdf_from_doi(): Download PDFs using DOIs from this search
+        # Advanced query examples
+        >>> result = search_europepmc_papers('title:"machine learning" AND src:pmc')
+        >>> result = search_europepmc_papers(
+        ...     'author:"Smith" AND first_pdate:[2020 TO 2024]'
+        ... )
+        >>> result = search_europepmc_papers(
+        ...     'CRISPR AND PUB_TYPE:"Review" AND OPEN_ACCESS:Y'
+        ... )
 
-    Note:
-        Uses Europe PMC when PUBMED_OFFLINE=true (recommended for reliability).
-        Includes synonym expansion for comprehensive results.
-        Results include availability flags for immediate access assessment.
+        # Filter by access type
+        >>> open_access = [p for p in result["papers"] if p["isOpenAccess"] == "Y"]
+        >>> with_pdfs = [p for p in result["papers"] if p["hasPDF"] == "Y"]
+
+    Perfect for:
+    - Literature discovery and analysis
+    - Finding papers with specific access requirements (open access, PDFs)
+    - Getting abstracts and keywords for content analysis
+    - Building citation databases and literature reviews
+    - Accessing papers through multiple URL types
+    - Research planning with author and affiliation information
     """
     try:
-        # Check if we should use alternative sources
-        should_use_alternatives = should_use_alternative_sources()
-
-        if not should_use_alternatives:
-            # Try PubMed first, fall back to Europe PMC if it fails
-            try:
-                pubmed_result = search_pubmed_for_pmids(keywords, max_results)
-                if pubmed_result and pubmed_result.get("pmids"):
-                    # Convert PubMed result to our format
-                    return {
-                        "pmids": pubmed_result["pmids"],
-                        "pmcids": [],  # PubMed search doesn't return PMCIDs directly
-                        "dois": [],  # PubMed search doesn't return DOIs directly
-                        "total_count": pubmed_result["total_count"],
-                        "returned_count": pubmed_result["returned_count"],
-                        "source": "pubmed",
-                        "query": keywords,
-                    }
-            except Exception as e:
-                logger.warning(f"PubMed search failed, falling back to Europe PMC: {e}")
-
-        # Use Europe PMC (primary or fallback)
+        # Use Europe PMC exclusively - no PubMed fallback
         europepmc_result = _search_europepmc_flexible(
             query=keywords,
             page_size=max_results,
             synonym=True,
             sort="RELEVANCE",
-            result_type="core",
+            result_type=result_type,
             auto_paginate=False,
             max_results=max_results,
         )
@@ -2400,55 +2476,1644 @@ def search_keywords_for_ids(keywords: str, max_results: int = 10) -> dict[str, A
                 "pmids": [],
                 "pmcids": [],
                 "dois": [],
+                "papers": [],
                 "total_count": 0,
                 "returned_count": 0,
+                "result_type": result_type,
                 "source": "europepmc",
                 "query": keywords,
                 "error": "Search failed",
             }
 
-        # Extract IDs from Europe PMC results
+        # Extract comprehensive information from Europe PMC results
         results = europepmc_result.get("resultList", {}).get("result", [])
 
         pmids = []
         pmcids = []
         dois = []
+        papers = []
 
         for paper in results:
-            # Extract PMID
+            # Extract basic identifiers
             pmid = paper.get("pmid")
+            pmcid = paper.get("pmcid")
+            doi = paper.get("doi")
+
+            # Start with the complete paper object from Europe PMC
+            paper_info = dict(paper)  # Copy all fields from Europe PMC response
+
+            # Collect identifiers for summary lists
             if pmid:
                 pmids.append(pmid)
-
-            # Extract PMCID
-            pmcid = paper.get("pmcid")
             if pmcid:
                 pmcids.append(pmcid)
-
-            # Extract DOI
-            doi = paper.get("doi")
             if doi:
                 dois.append(doi)
 
-        return {
+            papers.append(paper_info)
+
+        search_results = {
             "pmids": pmids,
             "pmcids": pmcids,
             "dois": dois,
+            "papers": papers,
             "total_count": europepmc_result.get("hitCount", 0),
             "returned_count": len(results),
+            "result_type": result_type,
             "source": "europepmc",
             "query": keywords,
         }
 
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                saved_path = file_manager.handle_file_save(
+                    content=search_results,
+                    base_name="europepmc_search",
+                    identifier=keywords.replace(" ", "_").replace(":", "_"),
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC search results saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save Europe PMC search results: {e}")
+
+        # Add save path info if file was saved
+        if saved_path:
+            search_results["saved_to"] = str(saved_path)
+
+        return search_results
+
     except Exception as e:
-        logger.error(f"Error in search_keywords_for_ids for query '{keywords}': {e}")
+        logger.error(f"Error in search_europepmc_papers for query '{keywords}': {e}")
         return {
             "pmids": [],
             "pmcids": [],
             "dois": [],
+            "papers": [],
             "total_count": 0,
             "returned_count": 0,
+            "result_type": result_type,
             "source": "error",
             "query": keywords,
             "error": str(e),
+        }
+
+
+def get_europepmc_paper_by_id(
+    identifier: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
+    """Get full Europe PMC metadata for any scientific identifier.
+
+    Automatically detects identifier type (DOI, PMID, PMCID) and retrieves complete
+    paper metadata from Europe PMC using core mode for maximum detail.
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save metadata to temp directory with
+            auto-generated filename
+        save_to: Specific path to save metadata (overrides save_file if provided)
+
+    Returns:
+        Dictionary with complete Europe PMC paper metadata including:
+        - All identifiers (PMID, PMCID, DOI, Europe PMC ID)
+        - Complete metadata (title, authors, journal, abstract, keywords)
+        - Full text availability and access information
+        - Publication details and citation data
+        - File save information if requested
+
+        Returns None if no paper found or identifier invalid.
+
+    Examples:
+        # Using DOI
+        >>> paper = get_europepmc_paper_by_id("10.1038/nature12373")
+        >>> paper["title"]
+        'CRISPR-Cas systems: RNA-mediated adaptive immunity in bacteria and archaea'
+        >>> paper["abstractText"][:50]
+        'Clustered regularly interspaced short palindromic...'
+
+        # Using PMID
+        >>> paper = get_europepmc_paper_by_id("23851394")
+        >>> paper["authorList"]["author"][0]["fullName"]
+        'Sorek R'
+
+        # Save to file
+        >>> result = get_europepmc_paper_by_id("PMC3737249", save_file=True)
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_paper_PMC3737249.json'
+
+    Perfect for:
+    - Getting complete paper information from any identifier type
+    - Research analysis requiring full metadata and abstracts
+    - Converting between identifier types while getting full data
+    - Building comprehensive literature databases
+    """
+    try:
+        # Use IdentifierUtils to detect and normalize the identifier
+        id_info = IdentifierUtils.normalize_identifier(identifier)
+        id_type = id_info["type"]
+        normalized_id = id_info["value"]
+
+        logger.info(f"Detected identifier type: {id_type} for input: {identifier}")
+
+        # Construct appropriate Europe PMC query based on identifier type
+        if id_type == "doi":
+            # DOI queries in Europe PMC
+            query = f'doi:"{normalized_id}"'
+        elif id_type == "pmid":
+            # PMID queries need special handling - search as external ID in MED source
+            query = f"ext_id:{normalized_id} AND src:med"
+        elif id_type == "pmcid":
+            # PMCID queries can use the PMC ID directly
+            pmc_number = (
+                normalized_id.replace("PMC", "")
+                if normalized_id.startswith("PMC")
+                else normalized_id
+            )
+            query = f"pmcid:PMC{pmc_number}"
+        else:
+            logger.warning(f"Unsupported identifier type: {id_type}")
+            return None
+
+        logger.info(f"Using Europe PMC query: {query}")
+
+        # Search Europe PMC using core mode for full metadata
+        result = _search_europepmc_flexible(
+            query=query,
+            page_size=1,  # We only want one result
+            synonym=False,  # Don't expand for exact ID matches
+            sort="RELEVANCE",
+            result_type="core",  # Use core for full metadata including abstracts
+            auto_paginate=False,
+            max_results=1,
+        )
+
+        if not result or not result.get("resultList", {}).get("result"):
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        papers = result["resultList"]["result"]
+        if not papers:
+            return None
+
+        # Get the first (and should be only) paper
+        paper_data = papers[0]
+
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                # Create clean identifier for filename
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=paper_data,
+                    base_name="europepmc_paper",
+                    identifier=clean_id,
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC paper metadata saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save paper metadata: {e}")
+
+        # Add metadata about the search
+        paper_data["_search_info"] = {
+            "input_identifier": identifier,
+            "detected_type": id_type,
+            "normalized_identifier": normalized_id,
+            "query_used": query,
+            "source": "europepmc",
+            "result_type": "core",
+        }
+
+        # Add save info if file was saved
+        if saved_path:
+            paper_data["saved_to"] = str(saved_path)
+
+        return paper_data
+
+    except Exception as e:
+        logger.error(
+            f"Error getting Europe PMC paper for identifier '{identifier}': {e}"
+        )
+        return None
+
+
+def get_all_identifiers_from_europepmc(
+    identifier: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
+    """Get all available identifiers and links for a paper from Europe PMC.
+
+    **BEST FOR**: Identifier translation, cross-referencing, finding all access points
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: All available IDs + direct URLs + access status for that ONE paper
+
+    This is the OPTIMAL tool when you have ONE paper identifier and need:
+    - All other identifiers for the same paper (PMID ↔ DOI ↔ PMCID translation)
+    - Direct access URLs (PubMed, PMC, DOI, Europe PMC links)
+    - Access status (open access, PDF availability, etc.)
+
+    Use this instead of search when you have a specific paper identifier.
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save identifiers to temp directory with
+            auto-generated filename
+        save_to: Specific path to save identifiers (overrides save_file if provided)
+
+    Returns:
+        Dictionary with all available identifiers and access information:
+        {
+            "identifiers": {
+                "pmid": "23851394",           # PubMed ID
+                "pmcid": "PMC3737249",        # PMC ID
+                "doi": "10.1038/nature12373", # DOI
+                "europepmc_id": "23851394",   # Europe PMC internal ID
+                "source": "MED"               # Source database
+            },
+            "urls": {
+                "pubmed": "https://pubmed.ncbi.nlm.nih.gov/23851394",
+                "pmc": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3737249/",
+                "doi": "https://doi.org/10.1038/nature12373",
+                "europepmc": "https://europepmc.org/article/MED/23851394",
+                "full_text_urls": [...]       # Additional full text URLs if available
+            },
+            "access": {
+                "is_open_access": True,
+                "has_pdf": True,
+                "in_pmc": True,
+                "in_europepmc": True,
+                "has_full_text": True,
+                "has_supplementary": False
+            },
+            "basic_info": {
+                "title": "Paper title...",
+                "journal": "Nature",
+                "year": "2013",
+                "authors": "Author list..."
+            }
+        }
+
+        Returns None if no paper found or identifier invalid.
+
+    Examples:
+        # Get all IDs and links for a DOI
+        >>> result = get_all_identifiers_from_europepmc("10.1038/nature12373")
+        >>> result["identifiers"]["pmid"]
+        '23851394'
+        >>> result["urls"]["pmc"]
+        'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3737249/'
+        >>> result["access"]["is_open_access"]
+        True
+
+        # Get identifiers from PMID
+        >>> result = get_all_identifiers_from_europepmc("23851394")
+        >>> result["identifiers"]["doi"]
+        '10.1038/nature12373'
+
+        # Save results to file
+        >>> result = get_all_identifiers_from_europepmc("PMC3737249", save_file=True)
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_identifiers_PMC3737249.json'
+
+    Perfect for:
+    - ID translation and cross-referencing
+    - Finding all access points for a paper
+    - Checking open access availability
+    - Building comprehensive paper databases with all identifiers
+    - Creating direct links to papers in multiple databases
+    """
+    try:
+        # Use IdentifierUtils to detect and normalize the identifier
+        id_info = IdentifierUtils.normalize_identifier(identifier)
+        id_type = id_info["type"]
+        normalized_id = id_info["value"]
+
+        logger.info(f"Detected identifier type: {id_type} for input: {identifier}")
+
+        # Construct appropriate Europe PMC query based on identifier type
+        if id_type == "doi":
+            query = f'doi:"{normalized_id}"'
+        elif id_type == "pmid":
+            query = f"ext_id:{normalized_id} AND src:med"
+        elif id_type == "pmcid":
+            pmc_number = (
+                normalized_id.replace("PMC", "")
+                if normalized_id.startswith("PMC")
+                else normalized_id
+            )
+            query = f"pmcid:PMC{pmc_number}"
+        else:
+            logger.warning(f"Unsupported identifier type: {id_type}")
+            return None
+
+        logger.info(f"Using Europe PMC query: {query}")
+
+        # Search Europe PMC using lite mode (sufficient for identifier extraction)
+        result = _search_europepmc_flexible(
+            query=query,
+            page_size=1,
+            synonym=False,
+            sort="RELEVANCE",
+            result_type="lite",  # Lite mode has all the identifiers we need
+            auto_paginate=False,
+            max_results=1,
+        )
+
+        if not result or not result.get("resultList", {}).get("result"):
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        papers = result["resultList"]["result"]
+        if not papers:
+            return None
+
+        paper = papers[0]
+
+        # Extract all available identifiers
+        identifiers = {
+            "pmid": paper.get("pmid"),
+            "pmcid": paper.get("pmcid"),
+            "doi": paper.get("doi"),
+            "europepmc_id": paper.get("id"),
+            "source": paper.get("source"),
+        }
+
+        # Remove None values
+        identifiers = {k: v for k, v in identifiers.items() if v is not None}
+
+        # Build URLs for all available identifiers
+        urls: dict[str, str | list[dict[str, Any]]] = {}
+
+        if identifiers.get("pmid"):
+            urls["pubmed"] = f"https://pubmed.ncbi.nlm.nih.gov/{identifiers['pmid']}"
+
+        if identifiers.get("pmcid"):
+            urls["pmc"] = (
+                f"https://www.ncbi.nlm.nih.gov/pmc/articles/{identifiers['pmcid']}/"
+            )
+
+        if identifiers.get("doi"):
+            urls["doi"] = f"https://doi.org/{identifiers['doi']}"
+
+        if identifiers.get("europepmc_id") and identifiers.get("source"):
+            urls["europepmc"] = (
+                f"https://europepmc.org/article/{identifiers['source']}/{identifiers['europepmc_id']}"
+            )
+
+        # Extract full text URLs if available in core mode data
+        full_text_urls = []
+        if "fullTextUrlList" in paper and paper["fullTextUrlList"]:
+            for url_entry in paper["fullTextUrlList"].get("fullTextUrl", []):
+                full_text_urls.append(
+                    {
+                        "url": url_entry.get("url"),
+                        "availability": url_entry.get("availability"),
+                        "document_style": url_entry.get("documentStyle"),
+                        "site": url_entry.get("site"),
+                    }
+                )
+
+        if full_text_urls:
+            urls["full_text_urls"] = full_text_urls
+
+        # Extract access information
+        access = {
+            "is_open_access": paper.get("isOpenAccess") == "Y",
+            "has_pdf": paper.get("hasPDF") == "Y",
+            "in_pmc": paper.get("inPMC") == "Y",
+            "in_europepmc": paper.get("inEPMC") == "Y",
+            "has_full_text": bool(full_text_urls) or paper.get("inEPMC") == "Y",
+            "has_supplementary": paper.get("hasSuppl") == "Y",
+        }
+
+        # Extract basic paper information
+        basic_info = {
+            "title": paper.get("title"),
+            "journal": paper.get("journalTitle"),
+            "year": paper.get("pubYear"),
+            "authors": paper.get("authorString"),
+            "publication_type": paper.get("pubType"),
+        }
+
+        # Remove None values from basic_info
+        basic_info = {k: v for k, v in basic_info.items() if v is not None}
+
+        # Compile final result
+        result_data: dict[str, Any] = {
+            "identifiers": identifiers,
+            "urls": urls,
+            "access": access,
+            "basic_info": basic_info,
+            "_search_info": {
+                "input_identifier": identifier,
+                "detected_type": id_type,
+                "normalized_identifier": normalized_id,
+                "query_used": query,
+                "source": "europepmc",
+            },
+        }
+
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=result_data,
+                    base_name="europepmc_identifiers",
+                    identifier=clean_id,
+                    file_format="json",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC identifiers saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save identifiers: {e}")
+
+        # Add save info if file was saved
+        if saved_path:
+            result_data["saved_to"] = str(saved_path)
+
+        return result_data
+
+    except Exception as e:
+        logger.error(
+            f"Error getting identifiers from Europe PMC for '{identifier}': {e}"
+        )
+        return None
+
+
+def get_europepmc_full_text(
+    identifier: str, save_file: bool = False, save_to: str | None = None
+) -> dict[str, Any] | None:
+    """Get LLM-friendly full text content from Europe PMC in Markdown format.
+
+    Retrieves full text XML from Europe PMC and converts it to clean, structured
+    Markdown optimized for LLM consumption. Handles tables, figures, equations,
+    and section structure while applying content limits to prevent token overflow.
+
+    **BEST FOR**: Getting complete paper content for LLM analysis
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: Clean Markdown with preserved structure, tables, and figures
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save full text to temp directory with
+            auto-generated filename
+        save_to: Specific path to save full text (overrides save_file if provided)
+
+    Returns:
+        Dictionary with clean Markdown content and metadata:
+        {
+            "content": "# Title\n\n## Abstract\n...",  # LLM-ready Markdown
+            "sections": {                               # Structured sections
+                "abstract": "...",
+                "introduction": "...",
+                "methods": "...",
+                "results": "...",
+                "discussion": "...",
+                "references": "..."
+            },
+            "metadata": {                               # Paper metadata
+                "title": "...",
+                "authors": "...",
+                "journal": "...",
+                "year": "..."
+            },
+            "source_info": {                           # Technical details
+                "xml_source": "europe_pmc",
+                "conversion_method": "jats_to_markdown",
+                "original_format": "xml"
+            },
+            "saved_to": "/path/to/file",               # If saved
+            "truncated": bool,                         # If content was truncated
+            "content_length": 45000                    # Character count
+        }
+
+        Returns None if no full text found or identifier invalid.
+
+    Examples:
+        # Get full text as Markdown
+        >>> result = get_europepmc_full_text("10.1038/nature12373")
+        >>> result["content"][:100]
+        '# CRISPR-Cas systems: RNA-mediated adaptive immunity\\n\\n## Abstract\\n...'
+        >>> result["sections"]["abstract"]
+        'Clustered regularly interspaced short palindromic...'
+
+        # Save to file
+        >>> result = get_europepmc_full_text("PMC3737249", save_file=True)
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_fulltext_PMC3737249.md'
+
+        # Check if content was truncated
+        >>> if result["truncated"]:
+        ...     print(f"Full content saved to: {result['saved_to']}")
+
+    Perfect for:
+    - LLM analysis of complete scientific papers
+    - Converting papers to readable Markdown format
+    - Extracting structured content (methods, results, etc.)
+    - Research requiring full paper content with preserved formatting
+    """
+    try:
+        # First, get paper metadata to find the Europe PMC ID
+        paper_data = get_europepmc_paper_by_id(identifier)
+        if not paper_data:
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        # Extract PMCID for full text XML endpoint
+        # (only PMC articles have full text XML)
+        pmcid = paper_data.get("pmcid")
+
+        if not pmcid:
+            logger.info(
+                f"No PMCID found for {identifier} - "
+                f"full text XML only available for PMC articles"
+            )
+            return None
+
+        # Construct Europe PMC full text XML URL using PMCID
+        xml_url = (
+            f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/fullTextXML"
+        )
+
+        logger.info(f"Fetching full text XML from: {xml_url}")
+
+        # Set headers for Europe PMC API
+        headers = {
+            "Accept": "application/xml",
+            "User-Agent": "ARTL-MCP/1.0 (https://github.com/contextualizer-ai/artl-mcp)",
+        }
+
+        # Fetch XML content
+        response = requests.get(xml_url, headers=headers, timeout=30)
+
+        if response.status_code == 404:
+            logger.info(
+                f"No full text XML available for {identifier} (PMCID: {pmcid}) - "
+                f"Europe PMC returned 404"
+            )
+            return None
+
+        response.raise_for_status()
+        xml_content = response.text
+
+        if not xml_content.strip():
+            logger.warning(f"Empty XML response for {identifier}")
+            return None
+
+        # Convert XML to Markdown using lxml
+        markdown_content, sections = _convert_jats_xml_to_markdown(xml_content)
+
+        if not markdown_content:
+            logger.warning(f"Failed to convert XML to Markdown for {identifier}")
+            return None
+
+        # Extract basic metadata from paper_data
+        metadata = {
+            "title": paper_data.get("title", ""),
+            "authors": paper_data.get("authorString", ""),
+            "journal": paper_data.get("journalTitle", ""),
+            "year": paper_data.get("pubYear", ""),
+            "doi": paper_data.get("doi", ""),
+            "pmid": paper_data.get("pmid", ""),
+            "pmcid": paper_data.get("pmcid", ""),
+        }
+
+        # Remove None values from metadata
+        metadata = {k: v for k, v in metadata.items() if v}
+
+        # Source information
+        source_info = {
+            "xml_source": "europe_pmc",
+            "conversion_method": "jats_to_markdown",
+            "original_format": "xml",
+            "xml_url": xml_url,
+            "europepmc_id": pmcid,
+            "source_database": "PMC",
+        }
+
+        # Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=markdown_content,
+                    base_name="europepmc_fulltext",
+                    identifier=clean_id,
+                    file_format="md",  # Save as Markdown
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"Europe PMC full text saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save full text: {e}")
+
+        # Apply content size limits for return to LLM
+        limited_content, was_truncated = _apply_content_limits(
+            markdown_content, str(saved_path) if saved_path else None
+        )
+
+        result_data = {
+            "content": limited_content,
+            "sections": sections,
+            "metadata": metadata,
+            "source_info": source_info,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+            "content_length": len(markdown_content),
+        }
+
+        return result_data
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching full text XML for {identifier}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error getting Europe PMC full text for '{identifier}': {e}")
+        return None
+
+
+def _convert_jats_xml_to_markdown(xml_content: str) -> tuple[str, dict[str, str]]:
+    """Convert JATS XML to clean Markdown format.
+
+    Parses scientific article XML (JATS format) and converts to LLM-friendly
+    Markdown with preserved structure, tables, and figures.
+
+    Args:
+        xml_content: Raw XML content from Europe PMC
+
+    Returns:
+        Tuple of (markdown_content, sections_dict)
+        - markdown_content: Complete article as Markdown string
+        - sections_dict: Dictionary of individual sections
+    """
+    import re
+
+    from lxml import etree
+
+    try:
+        # Parse XML with lxml
+        root = etree.fromstring(xml_content.encode("utf-8"))
+
+        markdown_parts = []
+        sections = {}
+
+        # Extract article title
+        title_elem = root.find(".//article-title")
+        if title_elem is not None:
+            title = _get_text_content(title_elem)
+            markdown_parts.append(f"# {title}\n")
+            sections["title"] = title
+
+        # Extract authors
+        authors = []
+        for contrib in root.findall(".//contrib[@contrib-type='author']"):
+            given_names = contrib.find(".//given-names")
+            surname = contrib.find(".//surname")
+            if given_names is not None and surname is not None:
+                full_name = (
+                    f"{_get_text_content(given_names)} {_get_text_content(surname)}"
+                )
+                authors.append(full_name)
+
+        if authors:
+            authors_str = ", ".join(authors)
+            markdown_parts.append(f"**Authors:** {authors_str}\n")
+            sections["authors"] = authors_str
+
+        # Extract abstract
+        abstract_elem = root.find(".//abstract")
+        if abstract_elem is not None:
+            abstract_md = _convert_element_to_markdown(abstract_elem, level=2)
+            if abstract_md.strip():
+                markdown_parts.append(f"## Abstract\n\n{abstract_md}\n")
+                sections["abstract"] = _get_text_content(abstract_elem)
+
+        # Extract body sections
+        body_elem = root.find(".//body")
+        if body_elem is not None:
+            for sec in body_elem.findall(".//sec"):
+                section_md = _convert_section_to_markdown(sec, level=2)
+                if section_md.strip():
+                    markdown_parts.append(f"{section_md}\n")
+
+                    # Try to identify section type
+                    title_elem = sec.find(".//title")
+                    if title_elem is not None:
+                        title = _get_text_content(title_elem).lower()
+                        # Map common section titles
+                        if "introduction" in title:
+                            sections["introduction"] = _get_text_content(sec)
+                        elif "method" in title or "material" in title:
+                            sections["methods"] = _get_text_content(sec)
+                        elif "result" in title:
+                            sections["results"] = _get_text_content(sec)
+                        elif "discussion" in title or "conclusion" in title:
+                            sections["discussion"] = _get_text_content(sec)
+
+        # Extract references
+        ref_list = root.find(".//ref-list")
+        if ref_list is not None:
+            refs_md = _convert_references_to_markdown(ref_list)
+            if refs_md.strip():
+                markdown_parts.append(f"## References\n\n{refs_md}\n")
+                sections["references"] = _get_text_content(ref_list)
+
+        # Combine all parts
+        full_markdown = "\n".join(markdown_parts)
+
+        # Clean up extra whitespace
+        full_markdown = re.sub(r"\n{3,}", "\n\n", full_markdown)
+
+        return full_markdown, sections
+
+    except etree.XMLSyntaxError as e:
+        logger.error(f"XML parsing error: {e}")
+        return "", {}
+    except Exception as e:
+        logger.error(f"Error converting XML to Markdown: {e}")
+        return "", {}
+
+
+def _convert_element_to_markdown(elem, level: int = 1) -> str:
+    """Convert an XML element to Markdown format."""
+    if elem is None:
+        return ""
+
+    markdown_parts = []
+
+    # Handle different element types
+    tag = elem.tag
+
+    if tag == "p":
+        # Paragraph
+        text = _get_text_content(elem)
+        if text.strip():
+            markdown_parts.append(f"{text}\n")
+
+    elif tag == "title":
+        # Section title
+        text = _get_text_content(elem)
+        if text.strip():
+            heading = "#" * level
+            markdown_parts.append(f"{heading} {text}\n")
+
+    elif tag == "table-wrap":
+        # Table
+        table_md = _convert_table_to_markdown(elem)
+        if table_md:
+            markdown_parts.append(f"{table_md}\n")
+
+    elif tag == "fig":
+        # Figure
+        fig_md = _convert_figure_to_markdown(elem)
+        if fig_md:
+            markdown_parts.append(f"{fig_md}\n")
+
+    elif tag in ["list", "list-item"]:
+        # Lists
+        list_md = _convert_list_to_markdown(elem)
+        if list_md:
+            markdown_parts.append(f"{list_md}\n")
+
+    else:
+        # Process child elements
+        for child in elem:
+            child_md = _convert_element_to_markdown(child, level)
+            if child_md:
+                markdown_parts.append(child_md)
+
+    return "".join(markdown_parts)
+
+
+def _convert_section_to_markdown(sec_elem, level: int = 2) -> str:
+    """Convert a section element to Markdown."""
+    markdown_parts = []
+
+    # Section title
+    title_elem = sec_elem.find(".//title")
+    if title_elem is not None:
+        title = _get_text_content(title_elem)
+        if title.strip():
+            heading = "#" * level
+            markdown_parts.append(f"{heading} {title}\n\n")
+
+    # Section content
+    for child in sec_elem:
+        if child.tag != "title":  # Skip title, already processed
+            if child.tag == "sec":
+                # Nested section
+                nested_md = _convert_section_to_markdown(child, level + 1)
+                if nested_md:
+                    markdown_parts.append(nested_md)
+            elif child.tag == "p":
+                # Paragraph
+                text = _get_text_content(child)
+                if text.strip():
+                    markdown_parts.append(f"{text}\n\n")
+            elif child.tag == "table-wrap":
+                # Table
+                table_md = _convert_table_to_markdown(child)
+                if table_md:
+                    markdown_parts.append(f"{table_md}\n\n")
+            elif child.tag == "fig":
+                # Figure
+                fig_md = _convert_figure_to_markdown(child)
+                if fig_md:
+                    markdown_parts.append(f"{fig_md}\n\n")
+
+    return "".join(markdown_parts)
+
+
+def _convert_table_to_markdown(table_elem) -> str:
+    """Convert a table element to Markdown table format."""
+    try:
+        table = table_elem.find(".//table")
+        if table is None:
+            return ""
+
+        markdown_rows = []
+
+        # Process table rows
+        rows = table.findall(".//tr")
+        if not rows:
+            return ""
+
+        for i, row in enumerate(rows):
+            cells = row.findall(".//td") + row.findall(".//th")
+            if cells:
+                cell_texts = [_get_text_content(cell).strip() for cell in cells]
+                markdown_row = "| " + " | ".join(cell_texts) + " |"
+                markdown_rows.append(markdown_row)
+
+                # Add header separator after first row
+                if i == 0:
+                    separator = (
+                        "| "
+                        + " | ".join(["-" * max(3, len(text)) for text in cell_texts])
+                        + " |"
+                    )
+                    markdown_rows.append(separator)
+
+        if markdown_rows:
+            # Add table caption if available
+            caption_elem = table_elem.find(".//caption")
+            if caption_elem is not None:
+                caption = _get_text_content(caption_elem)
+                if caption.strip():
+                    return f"**Table:** {caption}\n\n" + "\n".join(markdown_rows)
+
+            return "\n".join(markdown_rows)
+
+        return ""
+
+    except Exception as e:
+        logger.warning(f"Error converting table to Markdown: {e}")
+        return ""
+
+
+def _convert_figure_to_markdown(fig_elem) -> str:
+    """Convert a figure element to Markdown format."""
+    try:
+        # Get figure caption
+        caption_elem = fig_elem.find(".//caption")
+        if caption_elem is not None:
+            caption = _get_text_content(caption_elem)
+            if caption.strip():
+                return f"![Figure: {caption}](figure_description)"
+
+        # Fallback to figure label
+        label_elem = fig_elem.find(".//label")
+        if label_elem is not None:
+            label = _get_text_content(label_elem)
+            if label.strip():
+                return f"![{label}](figure_description)"
+
+        return "![Figure](figure_description)"
+
+    except Exception as e:
+        logger.warning(f"Error converting figure to Markdown: {e}")
+        return ""
+
+
+def _convert_list_to_markdown(list_elem) -> str:
+    """Convert a list element to Markdown format."""
+    try:
+        items = []
+        for item in list_elem.findall(".//list-item"):
+            text = _get_text_content(item)
+            if text.strip():
+                items.append(f"- {text}")
+
+        return "\n".join(items) if items else ""
+
+    except Exception as e:
+        logger.warning(f"Error converting list to Markdown: {e}")
+        return ""
+
+
+def _convert_references_to_markdown(ref_list_elem) -> str:
+    """Convert references to Markdown format."""
+    try:
+        refs = []
+        for ref in ref_list_elem.findall(".//ref"):
+            # Try to get citation text
+            citation = ref.find(".//mixed-citation") or ref.find(".//citation")
+            if citation is not None:
+                ref_text = _get_text_content(citation)
+                if ref_text.strip():
+                    refs.append(f"- {ref_text}")
+
+        return "\n".join(refs) if refs else ""
+
+    except Exception as e:
+        logger.warning(f"Error converting references to Markdown: {e}")
+        return ""
+
+
+def _get_text_content(elem) -> str:
+    """Extract clean text content from an XML element."""
+    if elem is None:
+        return ""
+
+    # Get all text including from child elements
+    text_parts = []
+
+    # Add element's direct text
+    if elem.text:
+        text_parts.append(elem.text)
+
+    # Recursively add text from child elements
+    for child in elem:
+        child_text = _get_text_content(child)
+        if child_text:
+            text_parts.append(child_text)
+
+        # Add tail text after child element
+        if child.tail:
+            text_parts.append(child.tail)
+
+    # Join and clean up
+    full_text = "".join(text_parts)
+
+    # Clean up whitespace
+    import re
+
+    full_text = re.sub(r"\s+", " ", full_text)
+
+    return full_text.strip()
+
+
+def get_europepmc_pdf(
+    identifier: str, save_to: str | None = None, filename: str | None = None
+) -> dict[str, Any] | None:
+    """Download PDF from Europe PMC for any scientific identifier.
+
+    Searches Europe PMC for the paper, finds available PDF URLs from the paper's
+    full text URL list, and downloads the PDF file directly. Works with DOI, PMID,
+    or PMCID identifiers.
+
+    **BEST FOR**: Downloading PDF files from Europe PMC
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: Downloaded PDF file with metadata about the download
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_to: Specific path to save PDF (overrides filename if provided)
+        filename: Custom filename for the PDF (will add .pdf extension if missing)
+
+    Returns:
+        Dictionary with download results and file info:
+        {
+            "saved_to": "/path/to/file.pdf",        # Path where PDF was saved
+            "file_size_bytes": 1048576,             # Size of downloaded PDF
+            "success": True,                        # Download success status
+            "pdf_url": "https://...",               # URL used for download
+            "identifier": "10.1038/nature12373",   # Input identifier
+            "paper_info": {                         # Basic paper metadata
+                "title": "...",
+                "authors": "...",
+                "journal": "...",
+                "year": "..."
+            }
+        }
+
+        Returns None if no PDF found or identifier invalid.
+
+    Examples:
+        # Download PDF for a DOI
+        >>> result = get_europepmc_pdf("10.1038/nature12373")
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_pdf_10_1038_nature12373.pdf'
+        >>> result["success"]
+        True
+
+        # Download with custom filename
+        >>> result = get_europepmc_pdf("PMC3737249", filename="my_paper.pdf")
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/my_paper.pdf'
+
+        # Download to specific path
+        >>> result = get_europepmc_pdf(
+        ...     "23851394", save_to="/path/to/paper.pdf"
+        ... )
+
+    Perfect for:
+    - Downloading open access PDFs from Europe PMC
+    - Getting PDF files for papers found through Europe PMC search
+    - Building PDF archives from scientific literature
+    - Accessing full-text papers in PDF format
+    """
+    try:
+        # First, get paper metadata from Europe PMC
+        paper_data = get_europepmc_paper_by_id(identifier)
+        if not paper_data:
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        # Extract basic paper information for metadata
+        paper_info = {
+            "title": paper_data.get("title", ""),
+            "authors": paper_data.get("authorString", ""),
+            "journal": paper_data.get("journalTitle", ""),
+            "year": paper_data.get("pubYear", ""),
+            "doi": paper_data.get("doi", ""),
+            "pmid": paper_data.get("pmid", ""),
+            "pmcid": paper_data.get("pmcid", ""),
+        }
+
+        # Remove None values from paper_info
+        paper_info = {k: v for k, v in paper_info.items() if v}
+
+        # Look for PDF URLs in the full text URL list
+        pdf_url = None
+        full_text_urls = []
+
+        if "fullTextUrlList" in paper_data and paper_data["fullTextUrlList"]:
+            for url_entry in paper_data["fullTextUrlList"].get("fullTextUrl", []):
+                url = url_entry.get("url", "")
+                availability = url_entry.get("availability", "")
+                document_style = url_entry.get("documentStyle", "")
+                site = url_entry.get("site", "")
+
+                full_text_urls.append(
+                    {
+                        "url": url,
+                        "availability": availability,
+                        "document_style": document_style,
+                        "site": site,
+                    }
+                )
+
+                # Look for PDF URLs - prioritize different types
+                if url and (
+                    url.lower().endswith(".pdf") or "pdf" in document_style.lower()
+                ):
+                    if not pdf_url:  # Take the first PDF found
+                        pdf_url = url
+                    # Prefer Open Access PDFs
+                    elif availability.lower() == "open access":
+                        pdf_url = url
+
+        # If no direct PDF found, check if paper has PMC full text access
+        if not pdf_url and paper_data.get("inPMC") == "Y" and paper_data.get("pmcid"):
+            # Try Europe PMC's PDF endpoint (if it exists)
+            pmcid = paper_data.get("pmcid")
+            potential_pdf_url = (
+                f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/pdf"
+            )
+
+            # Test if the PDF endpoint exists
+            try:
+                test_response = requests.head(potential_pdf_url, timeout=10)
+                if test_response.status_code == 200:
+                    pdf_url = potential_pdf_url
+            except requests.exceptions.RequestException:
+                pass  # PDF endpoint doesn't exist or isn't accessible
+
+        if not pdf_url:
+            logger.info(f"No PDF URL found for {identifier} in Europe PMC")
+            return {
+                "saved_to": None,
+                "file_size_bytes": 0,
+                "success": False,
+                "pdf_url": None,
+                "identifier": identifier,
+                "paper_info": paper_info,
+                "error": "No PDF URL found in Europe PMC data",
+                "available_urls": full_text_urls,
+            }
+
+        logger.info(f"Found PDF URL for {identifier}: {pdf_url}")
+
+        # Generate filename if not provided
+        if not filename and not save_to:
+            clean_id = str(identifier).replace("/", "_").replace(":", "_")
+            filename = f"europepmc_pdf_{clean_id}.pdf"
+
+        # Download the PDF using existing functionality
+        download_result = download_pdf_from_url(pdf_url, save_to, filename)
+
+        # Enhance the result with Europe PMC specific information
+        if download_result:
+            # Create enhanced result with proper typing
+            enhanced_result: dict[str, Any] = dict(download_result)
+            enhanced_result["identifier"] = identifier
+            enhanced_result["paper_info"] = paper_info
+            enhanced_result["available_urls"] = full_text_urls
+            enhanced_result["source"] = "europe_pmc"
+            return enhanced_result
+
+        return download_result
+
+    except Exception as e:
+        logger.error(f"Error getting PDF from Europe PMC for '{identifier}': {e}")
+        return {
+            "saved_to": None,
+            "file_size_bytes": 0,
+            "success": False,
+            "pdf_url": None,
+            "identifier": identifier,
+            "paper_info": {},
+            "error": f"Unexpected error: {e}",
+        }
+
+
+def get_europepmc_pdf_as_markdown(
+    identifier: str,
+    save_file: bool = False,
+    save_to: str | None = None,
+    extract_tables: bool = True,
+    processing_method: str = "auto",
+) -> dict[str, Any] | None:
+    """Download PDF from Europe PMC and convert to LLM-friendly Markdown in memory.
+
+    Streams PDF content directly from Europe PMC, converts to structured Markdown
+    using advanced PDF processing libraries (MarkItDown + pdfplumber), with no
+    temporary disk files. Optimized for academic papers with tables and structure.
+
+    **BEST FOR**: Getting PDF content as structured Markdown for LLM analysis
+    **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
+    **OUTPUT**: Clean Markdown content with preserved structure, tables, and metadata
+
+    Args:
+        identifier: Any scientific identifier - DOI, PMID, or PMCID in any format:
+            - DOI: "10.1038/nature12373", "doi:10.1038/nature12373"
+            - PMID: "23851394", "PMID:23851394", "pmid:23851394"
+            - PMCID: "PMC3737249", "3737249", "PMC:3737249"
+        save_file: Whether to save Markdown to temp directory with
+            auto-generated filename
+        save_to: Specific path to save Markdown (overrides save_file if provided)
+        extract_tables: Whether to use table-aware processing for better
+            structured data extraction
+        processing_method: Method to use - "auto", "markitdown", "pdfplumber",
+            or "hybrid"
+
+    Returns:
+        Dictionary with Markdown content and metadata:
+        {
+            "content": "# Title\n\n## Abstract\n...",  # LLM-ready Markdown
+            "format": "markdown",
+            "processing": {
+                "method": "hybrid_in_memory",          # Processing approach used
+                "tables_extracted": 3,               # Number of tables found
+                "in_memory": True,                    # No disk I/O performed
+                "processing_time": 2.45              # Seconds taken
+            },
+            "paper_info": {                          # Basic paper metadata
+                "title": "...",
+                "authors": "...",
+                "journal": "...",
+                "year": "..."
+            },
+            "pdf_info": {
+                "pdf_url": "https://...",            # PDF source URL
+                "file_size_bytes": 1048576,          # PDF size in memory
+                "page_count": 12                     # Number of pages processed
+            },
+            "saved_to": "/path/to/file.md",          # If saved to file
+            "truncated": bool,                       # If content was truncated
+            "content_length": 45000                  # Character count
+        }
+
+        Returns None if no PDF found or identifier invalid.
+
+    Examples:
+        # Quick Markdown conversion
+        >>> result = get_europepmc_pdf_as_markdown("10.1038/nature12373")
+        >>> result["content"][:100]
+        '# CRISPR-Cas systems: RNA-mediated adaptive immunity\\n\\n## Abstract\\n...'
+        >>> result["processing"]["tables_extracted"]
+        3
+
+        # Table-focused processing for data-heavy papers
+        >>> result = get_europepmc_pdf_as_markdown(
+        ...     "PMC3737249", extract_tables=True, processing_method="pdfplumber"
+        ... )
+        >>> result["processing"]["method"]
+        'pdfplumber_in_memory'
+
+        # Save Markdown to file
+        >>> result = get_europepmc_pdf_as_markdown(
+        ...     "23851394", save_file=True
+        ... )
+        >>> result["saved_to"]
+        '/Users/.../Documents/artl-mcp/europepmc_pdf_markdown_23851394.md'
+
+    Perfect for:
+    - LLM analysis of complete scientific papers in structured format
+    - Extracting tables and data from academic PDFs
+    - Converting PDFs to readable Markdown without disk I/O
+    - Research workflows requiring structured paper content
+    - High-throughput PDF processing with memory efficiency
+    """
+    import time
+
+    try:
+        start_time = time.time()
+
+        # Step 1: Get PDF URL from Europe PMC (reuse existing logic)
+        paper_data = get_europepmc_paper_by_id(identifier)
+        if not paper_data:
+            logger.warning(f"No paper found in Europe PMC for identifier: {identifier}")
+            return None
+
+        # Extract basic paper information for metadata
+        paper_info = {
+            "title": paper_data.get("title", ""),
+            "authors": paper_data.get("authorString", ""),
+            "journal": paper_data.get("journalTitle", ""),
+            "year": paper_data.get("pubYear", ""),
+            "doi": paper_data.get("doi", ""),
+            "pmid": paper_data.get("pmid", ""),
+            "pmcid": paper_data.get("pmcid", ""),
+        }
+        paper_info = {k: v for k, v in paper_info.items() if v}
+
+        # Step 2: Find PDF URL using existing logic from get_europepmc_pdf
+        pdf_url = None
+        full_text_urls = []
+
+        if "fullTextUrlList" in paper_data and paper_data["fullTextUrlList"]:
+            for url_entry in paper_data["fullTextUrlList"].get("fullTextUrl", []):
+                url = url_entry.get("url", "")
+                availability = url_entry.get("availability", "")
+                document_style = url_entry.get("documentStyle", "")
+
+                full_text_urls.append(url_entry)
+
+                # Look for PDF URLs - prioritize different types
+                if url and (
+                    url.lower().endswith(".pdf") or "pdf" in document_style.lower()
+                ):
+                    if not pdf_url:  # Take the first PDF found
+                        pdf_url = url
+                    # Prefer Open Access PDFs
+                    elif availability.lower() == "open access":
+                        pdf_url = url
+
+        # Fallback: try Europe PMC PDF endpoint
+        if not pdf_url and paper_data.get("inPMC") == "Y" and paper_data.get("pmcid"):
+            pmcid = paper_data.get("pmcid")
+            potential_pdf_url = (
+                f"https://www.ebi.ac.uk/europepmc/webservices/rest/{pmcid}/pdf"
+            )
+            try:
+                test_response = requests.head(potential_pdf_url, timeout=10)
+                if test_response.status_code == 200:
+                    pdf_url = potential_pdf_url
+            except requests.exceptions.RequestException:
+                pass
+
+        if not pdf_url:
+            logger.info(f"No PDF URL found for {identifier} in Europe PMC")
+            return None
+
+        logger.info(f"Found PDF URL for {identifier}: {pdf_url}")
+
+        # Step 3: Download PDF to memory (streaming)
+        response = requests.get(pdf_url, timeout=60)
+        response.raise_for_status()
+
+        pdf_size = len(response.content)
+        pdf_bytes = io.BytesIO(response.content)
+
+        # Step 4: Process PDF in memory using the selected method
+        processing_result = _process_pdf_in_memory(
+            pdf_bytes, processing_method, extract_tables
+        )
+
+        processing_time = time.time() - start_time
+
+        # Step 5: Save to file if requested
+        saved_path = None
+        if save_file or save_to:
+            try:
+                clean_id = str(identifier).replace("/", "_").replace(":", "_")
+                saved_path = file_manager.handle_file_save(
+                    content=processing_result["content"],
+                    base_name="europepmc_pdf_markdown",
+                    identifier=clean_id,
+                    file_format="md",
+                    save_file=save_file,
+                    save_to=save_to,
+                    use_temp_dir=False,
+                )
+                if saved_path:
+                    logger.info(f"PDF Markdown saved to: {saved_path}")
+            except Exception as e:
+                logger.warning(f"Failed to save PDF Markdown: {e}")
+
+        # Step 6: Apply content limits for LLM response
+        limited_content, was_truncated = _apply_content_limits(
+            processing_result["content"], str(saved_path) if saved_path else None
+        )
+
+        # Step 7: Compile comprehensive result
+        return {
+            "content": limited_content,
+            "format": "markdown",
+            "processing": {
+                "method": f"{processing_result['method']}_in_memory",
+                "tables_extracted": processing_result.get("tables_extracted", 0),
+                "in_memory": True,
+                "processing_time": round(processing_time, 2),
+            },
+            "paper_info": paper_info,
+            "pdf_info": {
+                "pdf_url": pdf_url,
+                "file_size_bytes": pdf_size,
+                "page_count": processing_result.get("page_count", 0),
+            },
+            "identifier": identifier,
+            "saved_to": str(saved_path) if saved_path else None,
+            "truncated": was_truncated,
+            "content_length": len(processing_result["content"]),
+            "source": "europe_pmc_pdf_streaming",
+        }
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error downloading PDF for {identifier}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error processing PDF as Markdown for '{identifier}': {e}")
+        return None
+
+
+def _process_pdf_in_memory(
+    pdf_bytes: io.BytesIO, method: str, extract_tables: bool
+) -> dict[str, Any]:
+    """Process PDF bytes in memory using the specified method.
+
+    Args:
+        pdf_bytes: PDF content as BytesIO object
+        method: Processing method - "auto", "markitdown", "pdfplumber", or "hybrid"
+        extract_tables: Whether to focus on table extraction
+
+    Returns:
+        Dictionary with processed content and metadata
+    """
+
+    # Determine the best method
+    if method == "auto":
+        method = "hybrid" if extract_tables else "markitdown"
+
+    if method == "markitdown":
+        return _process_with_markitdown(pdf_bytes)
+    elif method == "pdfplumber":
+        return _process_with_pdfplumber(pdf_bytes)
+    elif method == "hybrid":
+        return _process_with_hybrid(pdf_bytes)
+    else:
+        # Fallback to markitdown
+        return _process_with_markitdown(pdf_bytes)
+
+
+def _process_with_markitdown(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Process PDF using MarkItDown for fast, structured Markdown conversion."""
+
+    try:
+        from markitdown import MarkItDown
+
+        # Reset stream position
+        pdf_bytes.seek(0)
+
+        md = MarkItDown()
+        result = md.convert(pdf_bytes)
+
+        return {
+            "content": result.text_content,
+            "method": "markitdown",
+            "tables_extracted": 0,  # MarkItDown doesn't provide table count
+            "page_count": 0,  # MarkItDown doesn't provide page count
+        }
+
+    except Exception as e:
+        logger.error(f"Error with MarkItDown processing: {e}")
+        # Fallback to basic text extraction
+        return _fallback_text_extraction(pdf_bytes)
+
+
+def _process_with_pdfplumber(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Process PDF using pdfplumber for excellent table extraction."""
+
+    try:
+        import pdfplumber
+
+        # Reset stream position
+        pdf_bytes.seek(0)
+
+        with pdfplumber.open(pdf_bytes) as pdf:
+            markdown_parts = []
+            tables_found = 0
+
+            for page_num, page in enumerate(pdf.pages):
+                # Extract text
+                page_text = page.extract_text() or ""
+
+                # Extract tables
+                page_tables = page.extract_tables()
+
+                if page_tables:
+                    for table in page_tables:
+                        if table:  # Ensure table is not None/empty
+                            table_md = _convert_table_to_markdown_simple(table)
+                            # Insert table into text flow
+                            page_text += f"\n\n{table_md}\n\n"
+                            tables_found += 1
+
+                if page_text.strip():
+                    # Add page header if multi-page
+                    if len(pdf.pages) > 1:
+                        markdown_parts.append(f"## Page {page_num + 1}\n\n{page_text}")
+                    else:
+                        markdown_parts.append(page_text)
+
+            content = "\n\n".join(markdown_parts)
+
+            # Basic structure cleanup
+            content = _clean_markdown_structure(content)
+
+            return {
+                "content": content,
+                "method": "pdfplumber",
+                "tables_extracted": tables_found,
+                "page_count": len(pdf.pages),
+            }
+
+    except Exception as e:
+        logger.error(f"Error with pdfplumber processing: {e}")
+        return _fallback_text_extraction(pdf_bytes)
+
+
+def _process_with_hybrid(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """Hybrid processing: try MarkItDown first, enhance with pdfplumber tables."""
+
+    try:
+        # First, try MarkItDown for structure
+        markitdown_result = _process_with_markitdown(pdf_bytes)
+
+        # Then extract tables separately with pdfplumber
+        pdf_bytes.seek(0)  # Reset stream
+
+        import pdfplumber
+
+        with pdfplumber.open(pdf_bytes) as pdf:
+            tables_found = 0
+            table_sections = []
+
+            for _page_num, page in enumerate(pdf.pages):
+                page_tables = page.extract_tables()
+
+                for table in page_tables:
+                    if table:
+                        table_md = _convert_table_to_markdown_simple(table)
+                        table_sections.append(
+                            f"### Table {tables_found + 1}\n\n{table_md}"
+                        )
+                        tables_found += 1
+
+            # Combine MarkItDown content with extracted tables
+            content = markitdown_result["content"]
+
+            if table_sections:
+                content += "\n\n## Extracted Tables\n\n" + "\n\n".join(table_sections)
+
+            return {
+                "content": content,
+                "method": "hybrid",
+                "tables_extracted": tables_found,
+                "page_count": len(pdf.pages),
+            }
+
+    except Exception as e:
+        logger.error(f"Error with hybrid processing: {e}")
+        return _fallback_text_extraction(pdf_bytes)
+
+
+def _convert_table_to_markdown_simple(table: list[list[str | None]]) -> str:
+    """Convert a table (list of lists) to simple Markdown table format."""
+
+    if not table or not table[0]:
+        return ""
+
+    markdown_rows = []
+
+    # Process each row
+    for i, row in enumerate(table):
+        if row:  # Skip empty rows
+            # Clean cell content
+            cells = [str(cell).strip() if cell else "" for cell in row]
+
+            # Create markdown row
+            markdown_row = "| " + " | ".join(cells) + " |"
+            markdown_rows.append(markdown_row)
+
+            # Add separator after header row
+            if i == 0 and len(cells) > 0:
+                separator = (
+                    "| "
+                    + " | ".join(["-" * max(3, len(cell)) for cell in cells])
+                    + " |"
+                )
+                markdown_rows.append(separator)
+
+    return "\n".join(markdown_rows) if markdown_rows else ""
+
+
+def _clean_markdown_structure(content: str) -> str:
+    """Clean up and improve Markdown structure."""
+
+    import re
+
+    # Remove excessive whitespace
+    content = re.sub(r"\n{3,}", "\n\n", content)
+
+    # Ensure proper heading spacing
+    content = re.sub(r"(\n#+[^\n]*)\n([^\n#])", r"\1\n\n\2", content)
+
+    # Clean up table spacing
+    content = re.sub(r"(\|[^\n]*\|)\n([^\|\n-])", r"\1\n\n\2", content)
+
+    return content.strip()
+
+
+def _fallback_text_extraction(pdf_bytes: io.BytesIO) -> dict[str, Any]:
+    """
+    Fallback to basic PDFMiner text extraction if advanced methods fail.
+
+    Parameters:
+        pdf_bytes (io.BytesIO): A BytesIO object containing the PDF file to
+            extract text from.
+    """
+    try:
+        from pdfminer.high_level import extract_text
+
+        pdf_bytes.seek(0)
+        text = extract_text(pdf_bytes)
+
+        # Convert to basic Markdown
+        content = text.strip()
+
+        return {
+            "content": content,
+            "method": "fallback_pdfminer",
+            "tables_extracted": 0,
+            "page_count": 0,
+        }
+
+    except Exception as e:
+        logger.error(f"Even fallback extraction failed: {e}")
+        return {
+            "content": "Error: Could not extract PDF content",
+            "method": "error",
+            "tables_extracted": 0,
+            "page_count": 0,
         }

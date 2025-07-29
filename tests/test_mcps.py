@@ -7,17 +7,18 @@ from artl_mcp.main import create_mcp
 @pytest.mark.external_api
 @pytest.mark.slow
 @pytest.mark.asyncio
-async def test_get_doi_metadata_contains_neuroblastoma():
+async def test_search_europepmc_papers_contains_content():
     # Create MCP server instance
     mcp = create_mcp()
 
     # Use in-memory testing with FastMCP Client
     async with Client(mcp) as client:
-        # Call the DOI metadata tool through MCP protocol
+        # Call the Europe PMC search tool through MCP protocol
         result = await client.call_tool(
-            "get_doi_metadata", {"doi": "10.1038/nature12373"}
+            "search_europepmc_papers", {"keywords": "neuroblastoma", "max_results": 5}
         )
 
-        # Extract text from TextContent object and check for expected keyword
+        # Extract text from TextContent object and validate structured response
         result_text = result.text if hasattr(result, "text") else str(result)
-        assert "neuroblastoma" in result_text.lower()
+        # search_europepmc_papers should return structured data with pmids
+        assert "pmids" in result_text.lower()
