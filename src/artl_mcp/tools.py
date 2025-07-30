@@ -19,6 +19,27 @@ from artl_mcp.utils.file_manager import FileFormat, file_manager
 from artl_mcp.utils.identifier_utils import IdentifierError, IdentifierUtils, IDType
 from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
 
+# Optional PDF processing dependencies - moved from try/except blocks
+try:
+    from markitdown import MarkItDown
+except ImportError:
+    MarkItDown = None  # type: ignore[misc,assignment]
+
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None  # type: ignore[assignment]
+
+try:
+    from pdfminer.high_level import extract_text
+except ImportError:
+    extract_text = None  # type: ignore[assignment]
+
+# Feature availability flags
+HAS_MARKITDOWN = MarkItDown is not None
+HAS_PDFPLUMBER = pdfplumber is not None
+HAS_PDFMINER = extract_text is not None
+
 logger = logging.getLogger(__name__)
 
 
@@ -169,9 +190,9 @@ def get_doi_metadata(
         print(f"Error retrieving metadata for DOI {doi}: {e}")
         return None
     except Exception as e:
+        print(f"Unexpected error retrieving metadata for DOI {doi}: {e}")
         import traceback
 
-        print(f"Unexpected error retrieving metadata for DOI {doi}: {e}")
         traceback.print_exc()
         raise
 
@@ -3928,9 +3949,11 @@ def _process_pdf_in_memory(
 def _process_with_markitdown(pdf_bytes: io.BytesIO) -> dict[str, Any]:
     """Process PDF using MarkItDown for fast, structured Markdown conversion."""
 
-    try:
-        from markitdown import MarkItDown
+    if not HAS_MARKITDOWN:
+        logger.error("MarkItDown library not available")
+        return _fallback_text_extraction(pdf_bytes)
 
+    try:
         # Reset stream position
         pdf_bytes.seek(0)
 
@@ -3953,9 +3976,11 @@ def _process_with_markitdown(pdf_bytes: io.BytesIO) -> dict[str, Any]:
 def _process_with_pdfplumber(pdf_bytes: io.BytesIO) -> dict[str, Any]:
     """Process PDF using pdfplumber for excellent table extraction."""
 
-    try:
-        import pdfplumber
+    if not HAS_PDFPLUMBER:
+        logger.error("pdfplumber library not available")
+        return _fallback_text_extraction(pdf_bytes)
 
+    try:
         # Reset stream position
         pdf_bytes.seek(0)
 
@@ -4005,14 +4030,18 @@ def _process_with_pdfplumber(pdf_bytes: io.BytesIO) -> dict[str, Any]:
 def _process_with_hybrid(pdf_bytes: io.BytesIO) -> dict[str, Any]:
     """Hybrid processing: try MarkItDown first, enhance with pdfplumber tables."""
 
+    if not HAS_PDFPLUMBER:
+        logger.warning(
+            "pdfplumber not available for hybrid processing, using MarkItDown only"
+        )
+        return _process_with_markitdown(pdf_bytes)
+
     try:
         # First, try MarkItDown for structure
         markitdown_result = _process_with_markitdown(pdf_bytes)
 
         # Then extract tables separately with pdfplumber
         pdf_bytes.seek(0)  # Reset stream
-
-        import pdfplumber
 
         with pdfplumber.open(pdf_bytes) as pdf:
             tables_found = 0
@@ -4079,7 +4108,6 @@ def _convert_table_to_markdown_simple(table: list[list[str | None]]) -> str:
 
 def _clean_markdown_structure(content: str) -> str:
     """Clean up and improve Markdown structure."""
-
     import re
 
     # Remove excessive whitespace
@@ -4103,9 +4131,15 @@ def _fallback_text_extraction(pdf_bytes: io.BytesIO) -> dict[str, Any]:
             extract text from.
     """
     try:
-        from pdfminer.high_level import extract_text
-
         pdf_bytes.seek(0)
+        if extract_text is None:
+            logger.error("PDFMiner's extract_text function is not available.")
+            return {
+                "content": "Error: PDFMiner is not available for text extraction",
+                "method": "error",
+                "tables_extracted": 0,
+                "page_count": 0,
+            }
         text = extract_text(pdf_bytes)
 
         # Convert to basic Markdown
