@@ -22,44 +22,61 @@ from artl_mcp.utils.pdf_fetcher import extract_text_from_pdf
 logger = logging.getLogger(__name__)
 
 
-def _apply_content_limits(
-    content: str, saved_path: str | None = None, max_size: int = 100 * 1024
+def _apply_content_windowing(
+    content: str,
+    saved_path: str | None = None,
+    offset: int = 0,
+    limit: int | None = None,
 ) -> tuple[str, bool]:
-    """Apply content size limits for LLM responses.
+    """Apply optional content windowing for large texts.
 
     Args:
         content: Original content
         saved_path: Path where full content is saved (for messaging)
-        max_size: Maximum content size in characters
+        offset: Starting character position (0-based)
+        limit: Maximum number of characters to return (None = no limit)
 
     Returns:
-        Tuple of (limited_content, was_truncated)
+        Tuple of (windowed_content, was_windowed)
     """
     content_length = len(content)
 
-    if content_length > max_size:
-        truncate_point = max_size - 200
+    # Handle offset
+    if offset > 0:
+        if offset >= content_length:
+            return "", True
+        content = content[offset:]
+        was_windowed = True
+        windowing_msg_parts = [f"Starting from character {offset:,}"]
+    else:
+        was_windowed = False
+        windowing_msg_parts = []
+
+    # Handle limit
+    if limit is not None and limit > 0:
+        if len(content) > limit:
+            content = content[:limit]
+            was_windowed = True
+            end_pos = offset + limit
+            windowing_msg_parts.append(
+                f"showing {limit:,} characters (ends at {end_pos:,})"
+            )
+
+    # Add windowing message if content was windowed
+    if was_windowed and windowing_msg_parts:
         file_msg = (
             f"Full content saved to: {saved_path}"
             if saved_path
             else "file not saved - use save_file=True or save_to=path"
         )
-        truncation_msg = (
-            f"\n\n[CONTENT TRUNCATED - Showing first {truncate_point:,} "
-            f"of {content_length:,} characters. {file_msg}]"
+        windowing_msg = (
+            f"\n\n[CONTENT WINDOWED - {', '.join(windowing_msg_parts)} "
+            f"of {content_length:,} total characters. {file_msg}]"
         )
-        limited_content = content[:truncate_point] + truncation_msg
-        logger.info(
-            f"Large content ({content_length:,} chars) truncated for LLM response"
-        )
-        return limited_content, True
-    elif content_length > 50 * 1024:  # 50KB warning threshold
-        logger.warning(
-            f"Large content ({content_length:,} characters) may approach token limits"
-        )
-        return content, False
-    else:
-        return content, False
+        content = content + windowing_msg
+        logger.info(f"Large content ({content_length:,} chars) windowed for response")
+
+    return content, was_windowed
 
 
 def _auto_generate_filename(
@@ -391,7 +408,7 @@ def get_abstract_from_pubmed_id(
         return {
             "content": "",
             "saved_to": None,
-            "truncated": False,
+            "windowed": False,
         }
 
     saved_path = None
@@ -412,15 +429,15 @@ def get_abstract_from_pubmed_id(
         except Exception as e:
             logger.warning(f"Failed to save abstract file: {e}")
 
-    # Apply content size limits for return to LLM (abstracts can be large)
-    limited_content, was_truncated = _apply_content_limits(
+    # Apply content windowing for return to LLM if requested
+    limited_content, was_truncated = _apply_content_windowing(
         abstract_from_pubmed, str(saved_path) if saved_path else None
     )
 
     return {
         "content": limited_content,
         "saved_to": str(saved_path) if saved_path else None,
-        "truncated": was_truncated,
+        "windowed": was_truncated,
     }
 
 
@@ -618,9 +635,9 @@ def get_full_text_from_doi(
             if saved_path:
                 logger.info(f"Full text saved to: {saved_path}")
 
-        # Apply content size limits for return to LLM
+        # Apply content windowing for return to LLM if requested
         if full_text:
-            limited_content, was_truncated = _apply_content_limits(
+            limited_content, was_truncated = _apply_content_windowing(
                 full_text, str(saved_path) if saved_path else None
             )
         else:
@@ -629,7 +646,7 @@ def get_full_text_from_doi(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error retrieving full text for DOI {doi}: {e}")
@@ -773,7 +790,7 @@ def get_text_from_pdf_url(
 
         # Apply content size limits for return to LLM
         if extracted_text:
-            limited_content, was_truncated = _apply_content_limits(
+            limited_content, was_truncated = _apply_content_windowing(
                 extracted_text, str(saved_path) if saved_path else None
             )
         else:
@@ -782,7 +799,7 @@ def get_text_from_pdf_url(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
@@ -794,7 +811,6 @@ def extract_pdf_text(
     save_file: bool = False,
     save_to: str | None = None,
     stream_large_files: bool = True,
-    max_content_size: int = 100 * 1024,  # 100KB default
 ) -> dict[str, str | int | bool | None] | None:
     """
     Extract text from a PDF URL using the standalone pdf_fetcher.
@@ -805,8 +821,6 @@ def extract_pdf_text(
             auto-generated filename
         save_to: Specific path to save extracted text (overrides save_file if provided)
         stream_large_files: If True, attempt to stream large PDFs directly to disk
-        max_content_size: Maximum size (in characters) to return in 'content'.
-                         Larger content is truncated with instructions.
 
     Returns:
         Dictionary with extraction results and file info, or None if failed.
@@ -857,39 +871,17 @@ def extract_pdf_text(
             if saved_path:
                 logger.info(f"PDF text saved to: {saved_path}")
 
-        # Apply content size limits for return to LLM
-        return_content = result
-        if content_length > max_content_size:
-            was_truncated = True
-            truncate_point = max_content_size - 200  # Leave room for truncation message
-
-            save_msg = (
-                f"{saved_path}"
-                if saved_path
-                else "file not saved - use save_file=True or save_to=path"
-            )
-            truncation_msg = (
-                f"\n\n[CONTENT TRUNCATED - Showing first {truncate_point:,} "
-                f"of {content_length:,} characters. Full content saved to: {save_msg}]"
-            )
-            return_content = result[:truncate_point] + truncation_msg
-
-            logger.info(
-                f"Large PDF content ({content_length:,} chars) "
-                f"truncated for LLM response"
-            )
-        elif content_length > 50 * 1024:  # 50KB warning threshold
-            logger.warning(
-                f"Large content ({content_length:,} characters) "
-                f"may approach token limits"
-            )
+        # Apply content windowing for return to LLM if requested
+        return_content, was_truncated = _apply_content_windowing(
+            result, str(saved_path) if saved_path else None
+        )
 
         return {
             "content": return_content,
             "saved_to": str(saved_path) if saved_path else None,
             "content_length": content_length,
             "streamed": was_streamed,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
@@ -955,7 +947,7 @@ def clean_text(
 
         # Apply content size limits for return to LLM
         if cleaned_text:
-            limited_content, was_truncated = _apply_content_limits(
+            limited_content, was_truncated = _apply_content_windowing(
                 cleaned_text, str(saved_path) if saved_path else None
             )
         else:
@@ -964,16 +956,16 @@ def clean_text(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error cleaning text: {e}")
         # Return original text in structured format on error
-        limited_content, was_truncated = _apply_content_limits(text, None)
+        limited_content, was_truncated = _apply_content_windowing(text, None)
         return {
             "content": limited_content,
             "saved_to": None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
 
 
@@ -1080,14 +1072,14 @@ def get_doi_text(
                 logger.info(f"Full text saved to: {saved_path}")
 
         # Apply content size limits for return to LLM
-        limited_content, was_truncated = _apply_content_limits(
+        limited_content, was_truncated = _apply_content_windowing(
             full_text, str(saved_path) if saved_path else None
         )
 
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error getting text for DOI {doi}: {e}")
@@ -1160,14 +1152,14 @@ def get_pmcid_text(
                 logger.info(f"PMC text saved to: {saved_path}")
 
         # Apply content size limits for return to LLM
-        limited_content, was_truncated = _apply_content_limits(
+        limited_content, was_truncated = _apply_content_windowing(
             full_text, str(saved_path) if saved_path else None
         )
 
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error getting text for PMCID {pmcid}: {e}")
@@ -1223,14 +1215,14 @@ def get_pmid_text(
                 logger.info(f"PMID text saved to: {saved_path}")
 
         # Apply content size limits for return to LLM
-        limited_content, was_truncated = _apply_content_limits(
+        limited_content, was_truncated = _apply_content_windowing(
             full_text, str(saved_path) if saved_path else None
         )
 
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error getting text for PMID {pmid}: {e}")
@@ -1285,15 +1277,9 @@ def get_full_text_from_bioc(
             if saved_path:
                 logger.info(f"BioC text saved to: {saved_path}")
 
-        # Apply content size limits for return to LLM
-        limited_content, was_truncated = _apply_content_limits(
-            bioc_text, str(saved_path) if saved_path else None
-        )
-
         return {
-            "content": limited_content,
+            "content": bioc_text,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
         }
     except Exception as e:
         print(f"Error getting BioC text for PMID {pmid}: {e}")
@@ -2960,7 +2946,11 @@ def get_all_identifiers_from_europepmc(
 
 
 def get_europepmc_full_text(
-    identifier: str, save_file: bool = False, save_to: str | None = None
+    identifier: str,
+    save_file: bool = False,
+    save_to: str | None = None,
+    offset: int = 0,
+    limit: int | None = None,
 ) -> dict[str, Any] | None:
     """Get LLM-friendly full text content from Europe PMC in Markdown format.
 
@@ -2980,6 +2970,13 @@ def get_europepmc_full_text(
         save_file: Whether to save full text to temp directory with
             auto-generated filename
         save_to: Specific path to save full text (overrides save_file if provided)
+        offset: Starting character position for content windowing (0-based, default: 0).
+            Allows viewing specific portions of large documents.
+            Use with limit for pagination.
+        limit: Maximum number of characters to return (None = no limit, default: None).
+            When combined with offset, enables windowing through large content.
+            Full content is always saved to file
+            when save_file=True or save_to is provided.
 
     Returns:
         Dictionary with clean Markdown content and metadata:
@@ -3005,7 +3002,7 @@ def get_europepmc_full_text(
                 "original_format": "xml"
             },
             "saved_to": "/path/to/file",               # If saved
-            "truncated": bool,                         # If content was truncated
+            "windowed": bool,                          # If content was windowed
             "content_length": 45000                    # Character count
         }
 
@@ -3025,7 +3022,7 @@ def get_europepmc_full_text(
         '/Users/.../Documents/artl-mcp/europepmc_fulltext_PMC3737249.md'
 
         # Check if content was truncated
-        >>> if result["truncated"]:
+        >>> if result["windowed"]:
         ...     print(f"Full content saved to: {result['saved_to']}")
 
     Perfect for:
@@ -3132,19 +3129,19 @@ def get_europepmc_full_text(
             except Exception as e:
                 logger.warning(f"Failed to save full text: {e}")
 
-        # Apply content size limits for return to LLM
-        limited_content, was_truncated = _apply_content_limits(
-            markdown_content, str(saved_path) if saved_path else None
+        # Apply content windowing for return to LLM if requested
+        windowed_content, was_windowed = _apply_content_windowing(
+            markdown_content, str(saved_path) if saved_path else None, offset, limit
         )
 
         result_data = {
-            "content": limited_content,
+            "content": windowed_content,
             "sections": sections,
             "metadata": metadata,
             "source_info": source_info,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
             "content_length": len(markdown_content),
+            "windowed": was_windowed,
         }
 
         return result_data
@@ -3672,6 +3669,8 @@ def get_europepmc_pdf_as_markdown(
     save_to: str | None = None,
     extract_tables: bool = True,
     processing_method: str = "auto",
+    offset: int = 0,
+    limit: int | None = None,
 ) -> dict[str, Any] | None:
     """Download PDF from Europe PMC and convert to LLM-friendly Markdown in memory.
 
@@ -3695,6 +3694,13 @@ def get_europepmc_pdf_as_markdown(
             structured data extraction
         processing_method: Method to use - "auto", "markitdown", "pdfplumber",
             or "hybrid"
+        offset: Starting character position for content windowing (0-based, default: 0).
+            Allows viewing specific portions of large documents.
+            Use with limit for pagination.
+        limit: Maximum number of characters to return (None = no limit, default: None).
+            When combined with offset, enables windowing through large content.
+            Full content is always saved to file when save_file=True
+            or save_to is provided.
 
     Returns:
         Dictionary with Markdown content and metadata:
@@ -3719,7 +3725,7 @@ def get_europepmc_pdf_as_markdown(
                 "page_count": 12                     # Number of pages processed
             },
             "saved_to": "/path/to/file.md",          # If saved to file
-            "truncated": bool,                       # If content was truncated
+            "windowed": bool,                        # If content was windowed
             "content_length": 45000                  # Character count
         }
 
@@ -3851,14 +3857,17 @@ def get_europepmc_pdf_as_markdown(
             except Exception as e:
                 logger.warning(f"Failed to save PDF Markdown: {e}")
 
-        # Step 6: Apply content limits for LLM response
-        limited_content, was_truncated = _apply_content_limits(
-            processing_result["content"], str(saved_path) if saved_path else None
+        # Step 6: Apply content windowing if requested
+        windowed_content, was_windowed = _apply_content_windowing(
+            processing_result["content"],
+            str(saved_path) if saved_path else None,
+            offset,
+            limit,
         )
 
         # Step 7: Compile comprehensive result
         return {
-            "content": limited_content,
+            "content": windowed_content,
             "format": "markdown",
             "processing": {
                 "method": f"{processing_result['method']}_in_memory",
@@ -3874,8 +3883,8 @@ def get_europepmc_pdf_as_markdown(
             },
             "identifier": identifier,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
             "content_length": len(processing_result["content"]),
+            "windowed": was_windowed,
             "source": "europe_pmc_pdf_streaming",
         }
 

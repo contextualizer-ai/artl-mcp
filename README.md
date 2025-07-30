@@ -52,37 +52,34 @@ uvx artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-result
 - Related paper discovery through citation networks
 
 ### 💾 **File Management**
-- **Save path reporting** - tools tell you exactly where files were saved
-- **Content size management** - large content (>100KB) automatically truncated for LLM responses
+- **MCP Mode**: Returns data directly without file saving (optimal for AI assistants)
+- **CLI Mode**: Full file saving with path reporting and content management
+- **Content size management** - large content automatically handled appropriately
 - **Memory-efficient streaming** for large files (PDFs, datasets)  
-- **Backward compatible** - existing code continues to work
 - **Cross-platform filename sanitization**
-- **Multiple output formats** (JSON, TXT, CSV, PDF)
-- **Configurable directories** and temp file management
+- **Multiple output formats** (JSON, TXT, CSV, PDF) in CLI mode
+- **Configurable directories** and temp file management in CLI mode
 
 ## Available MCP Tools
 
 When running as an MCP server, you get access to 32 tools organized into categories:
 
-### 🔄 **Enhanced Return Values**
+### 🔄 **MCP vs CLI Mode Differences**
 
-All file-saving tools now return **structured data** with save path information:
+**MCP Mode** (AI assistants): Returns data directly without file saving:
+```json
+{
+  "data": { /* tool-specific content */ },
+  "mcp_mode": true,
+  "note": "Data returned directly - use CLI for file saving"
+}
+```
 
+**CLI Mode** (command line): Full file saving with path reporting:
 ```json
 {
   "data": { /* tool-specific content */ },
   "saved_to": "/path/to/saved/file.json"
-}
-```
-
-**Text-based tools** include content size management:
-
-```json
-{
-  "content": "Full or truncated content...",
-  "saved_to": "/path/to/saved/file.txt",
-  "truncated": false,
-  "content_length": 45678
 }
 ```
 
@@ -155,13 +152,15 @@ export ARTL_EMAIL_ADDR="researcher@university.edu"
 
 See [USERS.md](USERS.md#email-configuration-for-literature-access) for comprehensive configuration instructions.
 
-### File Output
-Configure where files are saved:
+### File Output (CLI Mode Only)
+Configure where files are saved when using CLI commands:
 ```bash
 export ARTL_OUTPUT_DIR="~/Papers"           # Default: ~/Documents/artl-mcp
 export ARTL_TEMP_DIR="/tmp/my-artl-temp"    # Default: system temp + artl-mcp
 export ARTL_KEEP_TEMP_FILES=true            # Default: false
 ```
+
+**Note**: MCP mode returns data directly without file saving.
 
 ## Supported Identifier Formats
 
