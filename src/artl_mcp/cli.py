@@ -276,7 +276,7 @@ def get_doi_fetcher_metadata_cmd(doi: str, email: str) -> None:
 )
 def get_unpaywall_info_cmd(doi: str, email: str, strict: bool) -> None:
     """Get Unpaywall information for a DOI to find open access versions."""
-    result = get_unpaywall_info(doi, email, strict)
+    result = get_unpaywall_info(doi=doi, email=email, use_strict_mode=strict)
     output_result(result)
 
 

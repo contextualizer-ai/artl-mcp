@@ -531,7 +531,7 @@ def get_doi_fetcher_metadata(
 def get_unpaywall_info(
     doi: str,
     email: str,
-    strict: bool = True,
+    use_strict_mode: bool = True,
     save_file: bool = False,
     save_to: str | None = None,
 ) -> dict[str, Any] | None:
@@ -544,7 +544,7 @@ def get_unpaywall_info(
     Args:
         doi: The Digital Object Identifier of the article.
         email: Email address for API requests (required - ask user if not provided).
-        strict: Whether to use strict mode for Unpaywall queries.
+        use_strict_mode: Whether to use strict mode for Unpaywall queries.
         save_file: Whether to save Unpaywall info to temp directory with
             auto-generated filename
         save_to: Specific path to save Unpaywall info (overrides save_file if provided)
@@ -567,7 +567,7 @@ def get_unpaywall_info(
         em = get_email_manager()
         validated_email = em.validate_for_api("unpaywall", email)
         dfr = DOIFetcher(email=validated_email)
-        unpaywall_info = dfr.get_unpaywall_info(doi, strict=strict)
+        unpaywall_info = dfr.get_unpaywall_info(doi, strict=use_strict_mode)
 
         # Save to file if requested
         saved_path = None
@@ -2110,7 +2110,7 @@ def download_pdf_from_doi(
     """
     try:
         # First get Unpaywall info to find PDF URL
-        unpaywall_info = get_unpaywall_info(doi, email, strict=False)
+        unpaywall_info = get_unpaywall_info(doi, email, use_strict_mode=False)
 
         if not unpaywall_info:
             return {

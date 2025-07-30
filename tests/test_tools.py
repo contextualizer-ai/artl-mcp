@@ -71,7 +71,7 @@ def test_get_abstract_from_pubmed_id():
 def test_get_unpaywall_info():
     """Test Unpaywall information retrieval."""
     test_email = get_test_email()
-    result = get_unpaywall_info(DOI_VALUE, test_email, strict=True)
+    result = get_unpaywall_info(DOI_VALUE, test_email, use_strict_mode=True)
     # Unpaywall may not have all DOIs, so we test more flexibly
     if result is not None:
         assert isinstance(result, dict)
@@ -155,7 +155,7 @@ def test_get_unpaywall_info_invalid_doi():
 def test_get_unpaywall_info_strict_false():
     """Test Unpaywall with strict=False."""
     test_email = get_test_email()
-    result = get_unpaywall_info(DOI_VALUE, test_email, strict=False)
+    result = get_unpaywall_info(DOI_VALUE, test_email, use_strict_mode=False)
     # Unpaywall may not have all DOIs, test more flexibly
     if result is not None:
         assert isinstance(result, dict)

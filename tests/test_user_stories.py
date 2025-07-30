@@ -439,7 +439,7 @@ class TestCrossFormatWorkflows:
 
         if metadata and pmid:
             abstract = get_abstract_from_pubmed_id(pmid)
-            unpaywall_info = get_unpaywall_info(doi, email, strict=True)
+            unpaywall_info = get_unpaywall_info(doi, email, use_strict_mode=True)
 
             # Then: They should have comprehensive paper information
             # CrossRef API returns nested structure
