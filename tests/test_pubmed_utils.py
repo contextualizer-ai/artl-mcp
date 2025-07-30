@@ -271,6 +271,7 @@ def test_functions_handle_none_values():
     except (TypeError, AttributeError):
         pass  # Acceptable to raise error for None input
 
+
 # Supplementary Material retrieval tests
 @pytest.mark.external_api
 @pytest.mark.slow
@@ -285,6 +286,7 @@ def test_get_supplementary_material_from_pmc_none():
     assert not len(result) == 0
     assert result.startswith("No Supplementary Material is available.")
 
+
 # Supplementary Material retrieval tests
 @pytest.mark.external_api
 @pytest.mark.slow
@@ -298,6 +300,7 @@ def test_get_supplementary_material_from_pmc_all():
     assert result is not None
     assert not len(result) == 0
     assert not result.startswith("No Supplementary Material is available.")
+
 
 # Supplementary Material retrieval tests
 @pytest.mark.external_api

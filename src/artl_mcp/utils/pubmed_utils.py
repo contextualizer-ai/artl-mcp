@@ -1,9 +1,9 @@
+import html
+import json
 import logging
 import re
 
 import requests
-import json
-import html
 from bs4 import BeautifulSoup
 
 from artl_mcp.utils.conversion_utils import IdentifierConverter
@@ -340,6 +340,7 @@ def get_abstract_from_pubmed(pmid: str) -> str:
 
     return f"{title}\n\n{abstract}\n\nPMID:{pmid}"
 
+
 def list_pmcid_supplemental_material(pmcid: str | int) -> str:
     """Lists the Supplemental Material available for a PubMed Central article.
 
@@ -363,7 +364,10 @@ def list_pmcid_supplemental_material(pmcid: str | int) -> str:
     try:
         normalized_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")
     except IdentifierError as e:
-        logger.warning(f"Invalid PubMed Central ID for Supplemental Material listing: {pmcid} - {e}")
+        logger.warning(
+            f"Invalid PubMed Central ID for Supplemental Material listing: "
+            f"{pmcid} - {e}"
+        )
         return f"Error: Invalid PubMed Central ID format: {pmcid}"
 
     try:
@@ -385,6 +389,7 @@ def list_pmcid_supplemental_material(pmcid: str | int) -> str:
         return "{}"
 
     return text
+
 
 def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> str:
     """Gets Supplemental Material for a PubMed Central Open Access article.
@@ -410,7 +415,10 @@ def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> s
     try:
         normalized_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")
     except IdentifierError as e:
-        logger.warning(f"Invalid PubMed Central ID for Supplemental Material retrieval: {pmcid} - {e}")
+        logger.warning(
+            f"Invalid PubMed Central ID for Supplemental Material retrieval: "
+            f"{pmcid} - {e}"
+        )
         return f"Error: Invalid PubMed Central ID format: {pmcid}"
 
     if idx is not None and idx <= 0:
@@ -432,7 +440,11 @@ def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> s
 
     text = response.text
 
-    if text is None or len(text) == 0 or text.startswith("[Error] : No result can be found."):
+    if (
+        text is None
+        or len(text) == 0
+        or text.startswith("[Error] : No result can be found.")
+    ):
         text = "No Supplementary Material is available."
 
     if text.startswith("["):
