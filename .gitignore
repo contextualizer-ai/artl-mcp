@@ -198,3 +198,4 @@ cython_debug/
 .cursorindexingignoresrc/artl_mcp/_version.py
 
 src/artl_mcp/_version.py
+.claude
