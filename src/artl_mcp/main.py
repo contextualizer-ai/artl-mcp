@@ -7,12 +7,24 @@ from fastmcp import FastMCP
 
 from artl_mcp.client import run_client
 from artl_mcp.tools import (
-    get_all_identifiers_from_europepmc,
-    get_europepmc_full_text,
-    get_europepmc_paper_by_id,
-    get_europepmc_pdf,
-    get_europepmc_pdf_as_markdown,
-    search_europepmc_papers,
+    get_all_identifiers_from_europepmc as _get_all_identifiers_from_europepmc,
+)
+from artl_mcp.tools import (
+    get_europepmc_full_text as _get_europepmc_full_text,
+)
+from artl_mcp.tools import (
+    get_europepmc_paper_by_id as _get_europepmc_paper_by_id,
+)
+from artl_mcp.tools import (
+    get_europepmc_pdf as _get_europepmc_pdf,
+)
+from artl_mcp.tools import (
+    get_europepmc_pdf_as_markdown as _get_europepmc_pdf_as_markdown,
+)
+from artl_mcp.tools import (
+    search_europepmc_papers as _search_europepmc_papers,
+)
+from artl_mcp.tools import (
     # Search tools
     search_pubmed_for_pmids,
 )
@@ -21,6 +33,87 @@ try:
     __version__ = metadata.version("artl-mcp")
 except metadata.PackageNotFoundError:
     __version__ = "unknown"
+
+
+# MCP wrapper functions that disable file saving
+def search_europepmc_papers(
+    keywords: str, max_results: int = 10, result_type: str = "lite"
+):
+    """MCP wrapper - Search Europe PMC without file saving."""
+    return _search_europepmc_papers(
+        keywords=keywords,
+        max_results=max_results,
+        result_type=result_type,
+        save_file=False,
+        save_to=None,
+    )
+
+
+def get_europepmc_paper_by_id(identifier: str):
+    """MCP wrapper - Get Europe PMC paper metadata without file saving."""
+    return _get_europepmc_paper_by_id(
+        identifier=identifier,
+        save_file=False,
+        save_to=None,
+    )
+
+
+def get_all_identifiers_from_europepmc(identifier: str):
+    """MCP wrapper - Get all identifiers without file saving."""
+    return _get_all_identifiers_from_europepmc(
+        identifier=identifier,
+        save_file=False,
+        save_to=None,
+    )
+
+
+def get_europepmc_full_text(identifier: str, offset: int = 0, limit: int | None = None):
+    """MCP wrapper - Get full text without file saving."""
+    return _get_europepmc_full_text(
+        identifier=identifier,
+        save_file=False,
+        save_to=None,
+        offset=offset,
+        limit=limit,
+    )
+
+
+def get_europepmc_pdf(identifier: str):
+    """MCP wrapper - Get PDF info without downloading/saving."""
+    # For MCP, we get the PDF info but don't actually download
+    result = _get_europepmc_pdf(
+        identifier=identifier,
+        save_to=None,
+        filename=None,
+    )
+
+    # Remove any file paths from the result since we're not saving
+    if result and "saved_to" in result:
+        result["saved_to"] = None
+        # Add a note that this is MCP mode
+        result["mcp_mode"] = True
+        result["note"] = "PDF not downloaded in MCP mode - use CLI for file saving"
+
+    return result
+
+
+def get_europepmc_pdf_as_markdown(
+    identifier: str,
+    extract_tables: bool = True,
+    processing_method: str = "auto",
+    offset: int = 0,
+    limit: int | None = None,
+):
+    """MCP wrapper - Convert PDF to Markdown without file saving."""
+    return _get_europepmc_pdf_as_markdown(
+        identifier=identifier,
+        save_file=False,
+        save_to=None,
+        extract_tables=extract_tables,
+        processing_method=processing_method,
+        offset=offset,
+        limit=limit,
+    )
 
 
 def create_mcp():
@@ -64,12 +157,12 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 - **OUTPUT**: Clean Markdown with preserved structure, tables, and figures
 - Use this for: Getting complete paper content for LLM analysis
 
-**5. get_europepmc_pdf** - Download PDF files from Europe PMC
+**5. get_europepmc_pdf** - Get PDF metadata from Europe PMC (MCP mode without download)
 - **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
-- **OUTPUT**: PDF file download with metadata and path information
+- **OUTPUT**: PDF availability info and metadata (no file download in MCP mode)
 - **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
   (most successful with PMC papers)
-- Use this for: Getting the actual PDF file for papers available in Europe PMC
+- Use this for: Checking PDF availability and getting metadata (without download)
 
 **6. get_europepmc_pdf_as_markdown** - Convert Europe PMC PDF to Markdown in-memory
 - **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
@@ -83,7 +176,7 @@ Key Features:
 - Comprehensive Europe PMC metadata retrieval
 - Direct URL generation for all databases (PubMed, PMC, DOI, Europe PMC)
 - Access status checking (open access, PDF availability)
-- File saving capabilities for all functions
+- MCP mode: Returns data without file saving (use CLI for file operations)
 - Exclusive Europe PMC usage - no NCBI API dependencies
 
 Perfect for:
@@ -108,17 +201,17 @@ get_europepmc_paper_by_id("PMC3737249")  # PMCID
 # Get all identifiers and links
 get_all_identifiers_from_europepmc("10.1038/nature12373")
 
-# Get full text content as Markdown
+# Get full text content as Markdown (MCP mode - no file saving)
 get_europepmc_full_text("10.1038/nature12373")
-get_europepmc_full_text("PMC3737249", save_file=True)
+get_europepmc_full_text("PMC3737249")
 
-# Download PDF files
+# Get PDF metadata (MCP mode - no file download)
 get_europepmc_pdf("10.1038/nature12373")
-get_europepmc_pdf("PMC3737249", save_to="/path/to/save/location")
+get_europepmc_pdf("PMC3737249")
 
-# Convert PDF to Markdown in-memory
+# Convert PDF to Markdown in-memory (MCP mode - no file saving)
 get_europepmc_pdf_as_markdown("10.1038/nature12373")
-get_europepmc_pdf_as_markdown("PMC3737249", method="hybrid", save_file=True)
+get_europepmc_pdf_as_markdown("PMC3737249", processing_method="auto")
 ```
 
 All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubMed APIs.
