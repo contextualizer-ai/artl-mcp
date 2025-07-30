@@ -16,9 +16,6 @@ from artl_mcp.tools import (
     get_europepmc_paper_by_id as _get_europepmc_paper_by_id,
 )
 from artl_mcp.tools import (
-    get_europepmc_pdf as _get_europepmc_pdf,
-)
-from artl_mcp.tools import (
     get_europepmc_pdf_as_markdown as _get_europepmc_pdf_as_markdown,
 )
 from artl_mcp.tools import (
@@ -100,26 +97,6 @@ def get_europepmc_full_text(identifier: str, offset: int = 0, limit: int | None 
     )
 
 
-def get_europepmc_pdf(identifier: str):
-    """MCP wrapper - Get PDF info without downloading/saving."""
-    # For MCP, we get the PDF info but don't actually download
-    result = _get_europepmc_pdf(
-        identifier=identifier,
-        save_to=None,
-        filename=None,
-    )
-
-    # Remove any file paths from the result since we're not saving
-    if result and "saved_to" in result:
-        result = result.copy()  # Create a shallow copy before modifying
-        result["saved_to"] = None
-        # Add a note that this is MCP mode
-        result["mcp_mode"] = True
-        result["note"] = "PDF not downloaded in MCP mode - use CLI for file saving"
-
-    return result
-
-
 def get_europepmc_pdf_as_markdown(
     identifier: str,
     extract_tables: bool = True,
@@ -146,7 +123,7 @@ def create_mcp():
         instructions="""
 Europe PMC Literature Discovery and ID Translation Tools
 
-This MCP server provides SIX TOOLS for scientific literature discovery and
+This MCP server provides FIVE TOOLS for scientific literature discovery and
 identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
 ## Tool Selection Guide
@@ -155,7 +132,6 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 **For FULL METADATA from identifier** → Use `get_europepmc_paper_by_id`
 **For ID TRANSLATION/LINKS** → Use `get_all_identifiers_from_europepmc`
 **For FULL TEXT CONTENT** → Use `get_europepmc_full_text`
-**For PDF DOWNLOAD** → Use `get_europepmc_pdf`
 **For PDF-TO-MARKDOWN CONVERSION** → Use `get_europepmc_pdf_as_markdown`
 
 ## Available Tools
@@ -180,14 +156,7 @@ identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are acc
 - **OUTPUT**: Clean Markdown with preserved structure, tables, and figures
 - Use this for: Getting complete paper content for LLM analysis
 
-**5. get_europepmc_pdf** - Get PDF metadata from Europe PMC (MCP mode without download)
-- **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
-- **OUTPUT**: PDF availability info and metadata (no file download in MCP mode)
-- **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
-  (most successful with PMC papers)
-- Use this for: Checking PDF availability and getting metadata (without download)
-
-**6. get_europepmc_pdf_as_markdown** - Convert Europe PMC PDF to Markdown in-memory
+**5. get_europepmc_pdf_as_markdown** - Convert Europe PMC PDF to Markdown in-memory
 - **INPUT**: ONE specific identifier (DOI, PMID, or PMCID)
 - **OUTPUT**: PDF converted to structured Markdown with tables preserved
 - **PDF AVAILABILITY**: Only works if paper has PDFs available in Europe PMC
@@ -227,10 +196,6 @@ get_all_identifiers_from_europepmc("10.1038/nature12373")
 # Get full text content as Markdown (MCP mode - no file saving)
 get_europepmc_full_text("10.1038/nature12373")
 get_europepmc_full_text("PMC3737249")
-
-# Get PDF metadata (MCP mode - no file download)
-get_europepmc_pdf("10.1038/nature12373")
-get_europepmc_pdf("PMC3737249")
 
 # Convert PDF to Markdown in-memory (MCP mode - no file saving)
 get_europepmc_pdf_as_markdown("10.1038/nature12373")
@@ -303,7 +268,6 @@ get_pmc_supplemental_material("PMC:7294781", 1)
     mcp.tool(get_europepmc_paper_by_id)  # Get full metadata from any ID
     mcp.tool(get_all_identifiers_from_europepmc)  # Get all IDs and links
     mcp.tool(get_europepmc_full_text)  # Get full text content as Markdown
-    mcp.tool(get_europepmc_pdf)  # Download PDF files from Europe PMC
     mcp.tool(get_europepmc_pdf_as_markdown)  # Convert PDF to Markdown in-memory
 
     # Other tools commented out to avoid NCBI API calls
