@@ -293,7 +293,7 @@ class TestUnpaywallCommands:
 
         assert result.exit_code == 0
         mock_get_unpaywall_info.assert_called_once_with(
-            "10.1038/nature12373", test_email, True
+            doi="10.1038/nature12373", email=test_email, use_strict_mode=True
         )
         output = json.loads(result.output.strip())
         assert output["is_oa"] is True
@@ -312,7 +312,7 @@ class TestUnpaywallCommands:
 
         assert result.exit_code == 0
         mock_get_unpaywall_info.assert_called_once_with(
-            "10.1038/nature12373", test_email, True
+            doi="10.1038/nature12373", email=test_email, use_strict_mode=True
         )
 
 
