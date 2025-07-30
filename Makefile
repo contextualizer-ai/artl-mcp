@@ -14,12 +14,12 @@ install:
 # Run tests with pytest (fast, for development)
 test:
 	@echo "🧪 Running tests with pytest..."
-	uv run pytest tests/ -v
+	uv run pytest tests/ -v --durations=0
 
 # Run tests with coverage using pytest (comprehensive, for CI/releases)
 test-coverage:
 	@echo "🧪 Running pytest with coverage reporting..."
-	uv run pytest --cov=artl_mcp --cov-report=html --cov-report=term tests/
+	uv run pytest --cov=artl_mcp --cov-report=html --cov-report=term --durations=0 tests/
 
 # Run only unit tests (skip external API calls) using pytest
 test-unit:
@@ -102,10 +102,6 @@ cli-demo-pmid-to-doi:
 cli-demo-pmcid-to-pmid:
 	artl-cli get-pmid-from-pmcid --pmcid "PMC9087108"
 
-#cli-demo-pmcid-text:
-#	# Warning: Error fetching Unpaywall data: 422 Client Error: UNPROCESSABLE ENTITY for url: https://api.unpaywall.org/v2/10.21873/invivo.12834?email=pubmed_utils@example.com
-#	artl-cli get-pmcid-text --pmcid "PMC9087108"
-
 # Text extraction tools (no email required)
 cli-demo-doi-text:
 	artl-cli get-doi-text --doi "10.1099/ijsem.0.005153"
@@ -115,9 +111,6 @@ cli-demo-pmid-text:
 
 cli-demo-bioc-text:
 	artl-cli get-full-text-from-bioc --pmid "35545607"
-
-#cli-demo-pdf-extract:
-#	artl-cli extract-pdf-text --pdf-url "https://www.example.com/sample.pdf"
 
 # URL utilities
 cli-demo-extract-doi:
@@ -196,10 +189,14 @@ local/claude-demo-pdf-to-markdown.txt:
 	@echo "🤖 Claude CLI: Convert Europe PMC PDF to Markdown using streaming processing"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Convert the PDF for DOI 10.1371/journal.pone.0000217 from Europe PMC to Markdown format using streaming processing and save it to a file. Tell me the exact filename where the Markdown was saved, the processing method used, and show me a preview of the first few sections." 2>&1 | tee $@
 
+local/claude-demo-windowing-offset-limit.txt:
+	@echo "🤖 Claude CLI: Demonstrate content windowing with offset and limit parameters"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get the full text for DOI 10.1371/journal.pone.0000217 from Europe PMC, but use windowing to show only characters 1000-2000 (offset=1000, limit=1000). Also save the full content to a file and tell me how the windowing feature works." 2>&1 | tee $@
+
 # Clean up Claude demo output files
 clean-claude-demos:
 	rm -f local/claude-demo-*.txt
 
 # Run all Claude demos with cleanup (comprehensive meta-target)
-claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-download.txt local/claude-demo-pdf-to-markdown.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
+claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-download.txt local/claude-demo-pdf-to-markdown.txt local/claude-demo-windowing-offset-limit.txt local/claude-demo-search-with-save.txt local/claude-demo-paper-metadata-save.txt local/claude-demo-identifiers-save.txt
 	@echo "✅ All Claude demos completed! Check local/claude-demo-*.txt for output"
