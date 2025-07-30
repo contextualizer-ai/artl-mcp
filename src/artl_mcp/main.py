@@ -123,7 +123,7 @@ def create_mcp():
         instructions="""
 Europe PMC Literature Discovery and ID Translation Tools
 
-This MCP server provides FIVE TOOLS for scientific literature discovery and
+This MCP server provides SIX TOOLS for scientific literature discovery and
 identifier translation using Europe PMC exclusively. No NCBI/PubMed APIs are accessed.
 
 ## Tool Selection Guide
