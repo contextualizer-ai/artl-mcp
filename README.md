@@ -1,6 +1,6 @@
 # ARTL-MCP: All Roads to Literature
 
-An MCP (Model Context Protocol) server and CLI toolkit for comprehensive scientific literature retrieval and analysis using PMIDs, DOIs, PMCIDs, and keyword searches.
+An MCP (Model Context Protocol) server for comprehensive scientific literature retrieval and analysis using PMIDs, DOIs, PMCIDs, and keyword searches.
 
 ## Quick Start
 
@@ -19,13 +19,6 @@ Add this to your Claude Desktop MCP configuration:
 }
 ```
 
-### Standalone CLI
-
-```bash
-# Install and use CLI commands
-uvx artl-cli get-doi-metadata --doi "10.1038/nature12373"
-uvx artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-results 5
-```
 
 ## Core Features
 
@@ -53,35 +46,14 @@ uvx artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-result
 
 ### 💾 **File Management**
 - **MCP Mode**: Returns data directly without file saving (optimal for AI assistants)
-- **CLI Mode**: Full file saving with path reporting and content management
 - **Content size management** - large content automatically handled appropriately
 - **Memory-efficient streaming** for large files (PDFs, datasets)  
 - **Cross-platform filename sanitization**
-- **Multiple output formats** (JSON, TXT, CSV, PDF) in CLI mode
-- **Configurable directories** and temp file management in CLI mode
 
 ## Available MCP Tools
 
 When running as an MCP server, you get access to 32 tools organized into categories:
 
-### 🔄 **MCP vs CLI Mode Differences**
-
-**MCP Mode** (AI assistants): Returns data directly without file saving:
-```json
-{
-  "data": { /* tool-specific content */ },
-  "mcp_mode": true,
-  "note": "Data returned directly - use CLI for file saving"
-}
-```
-
-**CLI Mode** (command line): Full file saving with path reporting:
-```json
-{
-  "data": { /* tool-specific content */ },
-  "saved_to": "/path/to/saved/file.json"
-}
-```
 
 ### Literature Search
 - `search_papers_by_keyword` - Advanced keyword search with filtering
@@ -111,29 +83,6 @@ When running as an MCP server, you get access to 32 tools organized into categor
 - `get_citation_network` - Comprehensive citation data
 - `find_related_papers` - Citation-based recommendations
 
-## CLI Commands
-
-The `artl-cli` command provides access to all functionality:
-
-```bash
-# Metadata retrieval
-artl-cli get-doi-metadata --doi "10.1038/nature12373"
-artl-cli get-abstract-from-pubmed-id --pmid "23851394"
-
-# Literature search
-artl-cli search-papers-by-keyword --query "machine learning" --max-results 10
-artl-cli search-recent-papers --query "COVID-19" --years-back 2
-
-# Full text (requires email for some sources)
-artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "user@institution.edu"
-
-# Identifier conversion
-artl-cli doi-to-pmid --doi "10.1038/nature12373"
-artl-cli get-all-identifiers --identifier "PMC3737249"
-
-# Citation analysis  
-artl-cli get-paper-citations --doi "10.1038/nature12373"
-```
 
 ## Configuration
 
@@ -152,15 +101,6 @@ export ARTL_EMAIL_ADDR="researcher@university.edu"
 
 See [USERS.md](USERS.md#email-configuration-for-literature-access) for comprehensive configuration instructions.
 
-### File Output (CLI Mode Only)
-Configure where files are saved when using CLI commands:
-```bash
-export ARTL_OUTPUT_DIR="~/Papers"           # Default: ~/Documents/artl-mcp
-export ARTL_TEMP_DIR="/tmp/my-artl-temp"    # Default: system temp + artl-mcp
-export ARTL_KEEP_TEMP_FILES=true            # Default: false
-```
-
-**Note**: MCP mode returns data directly without file saving.
 
 ## Supported Identifier Formats
 
