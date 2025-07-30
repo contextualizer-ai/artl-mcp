@@ -944,8 +944,8 @@ CI=true  # Skips some flaky external API tests
 # Interactive development
 uv run python -c "from artl_mcp.tools import *; print(get_doi_metadata('10.1038/nature12373'))"
 
-# Test specific functionality
-uv run artl-cli get-doi-metadata --doi "10.1038/nature12373"
+# Test specific functionality via MCP server
+uv run artl-mcp --doi-query "10.1038/nature12373"
 
 # Debug MCP server
 uv run artl-mcp --doi-query "10.1038/nature12373"

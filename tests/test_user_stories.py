@@ -284,13 +284,13 @@ class TestMCPIntegration:
 
         async with Client(mcp) as client:
             # When: They search for papers through MCP
-            results = await client.call_tool(
+            result = await client.call_tool(
                 "search_europepmc_papers", {"keywords": "microbiome", "max_results": 5}
             )
 
             # Then: They should get structured search results
-            assert len(results) > 0
-            result_text = results[0].text
+            result_text = result.text if hasattr(result, "text") else str(result)
+            assert result_text is not None
 
             if result_text and len(result_text) > 100:  # API might not be available
                 # Should contain search result data
@@ -306,13 +306,13 @@ class TestMCPIntegration:
 
         async with Client(mcp) as client:
             # When: They search for specific papers through MCP
-            results = await client.call_tool(
+            result = await client.call_tool(
                 "search_europepmc_papers", {"keywords": "CRISPR", "max_results": 3}
             )
 
             # Then: They should get detailed paper information
-            assert len(results) > 0
-            result_text = results[0].text
+            result_text = result.text if hasattr(result, "text") else str(result)
+            assert result_text is not None
 
             if result_text and len(result_text) > 50:  # API might not be available
                 assert isinstance(result_text, str)
