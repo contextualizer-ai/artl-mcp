@@ -170,9 +170,6 @@ local/claude-demo-full-text.txt:
 	@echo "🤖 Claude CLI: Get full text content"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get the full text for DOI 10.1371/journal.pone.0000217" 2>&1 | tee $@
 
-local/claude-demo-pdf-to-markdown.txt:
-	@echo "🤖 Claude CLI: Convert PDF to Markdown"
-	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Convert the PDF for DOI 10.1371/journal.pone.0000217 to Markdown" 2>&1 | tee $@
 
 local/claude-demo-windowing.txt:
 	@echo "🤖 Claude CLI: Get partial text using windowing"
