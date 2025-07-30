@@ -1,5 +1,7 @@
 # Paper Identifiers in Repository
 
+**Legend**: meta=metadata, abstract=PubMed abstract, PMC full-text=full XML text, PDF=open access PDF, citations=reference/citation networks
+
 ## Primary Test Papers
 ```
 DOI:10.1038/nature12373 (meta, abstract, PMC full-text, PDF, citations)
@@ -49,5 +51,3 @@ DOI:10.1038/nmeth818 (meta, abstract, citations)
 DOI:10.1021/jp073938o (meta, abstract, citations)
 DOI:10.1158/0008-5472.CAN-11-3536 (meta, abstract, citations)
 ```
-
-**Legend**: meta=metadata, abstract=PubMed abstract, PMC full-text=full XML text, PDF=open access PDF, citations=reference/citation networks
