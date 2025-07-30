@@ -4132,6 +4132,14 @@ def _fallback_text_extraction(pdf_bytes: io.BytesIO) -> dict[str, Any]:
     """
     try:
         pdf_bytes.seek(0)
+        if extract_text is None:
+            logger.error("PDFMiner's extract_text function is not available.")
+            return {
+                "content": "Error: PDFMiner is not available for text extraction",
+                "method": "error",
+                "tables_extracted": 0,
+                "page_count": 0,
+            }
         text = extract_text(pdf_bytes)
 
         # Convert to basic Markdown
