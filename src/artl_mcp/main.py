@@ -25,7 +25,6 @@ from artl_mcp.tools import (
     search_europepmc_papers as _search_europepmc_papers,
 )
 from artl_mcp.tools import (
-    # Search tools
     search_pubmed_for_pmids,
 )
 
@@ -39,7 +38,29 @@ except metadata.PackageNotFoundError:
 def search_europepmc_papers(
     keywords: str, max_results: int = 10, result_type: str = "lite"
 ):
-    """MCP wrapper - Search Europe PMC without file saving."""
+    """
+    Search Europe PMC for papers without saving results to a file.
+
+    This function wraps the `_search_europepmc_papers` function and disables
+    file saving. It retrieves metadata about papers matching the given keywords.
+
+    Args:
+        keywords (str): The search query string containing keywords to look for.
+        max_results (int, optional): The maximum number of results to return.
+            Defaults to 10.
+        result_type (str, optional): The type of results to retrieve.
+            Options include "lite" (basic metadata)
+            and "core" (detailed metadata). Defaults to "lite".
+
+    Returns:
+        list[dict]: A list of dictionaries, where each dictionary contains metadata
+        about a paper matching the search query.
+
+    Example:
+        >>> results = search_europepmc_papers("machine learning", max_results=5)
+        >>> for paper in results:
+        ...     print(paper["title"])
+    """
     return _search_europepmc_papers(
         keywords=keywords,
         max_results=max_results,
@@ -89,6 +110,7 @@ def get_europepmc_pdf(identifier: str):
 
     # Remove any file paths from the result since we're not saving
     if result and "saved_to" in result:
+        result = result.copy()  # Create a shallow copy before modifying
         result["saved_to"] = None
         # Add a note that this is MCP mode
         result["mcp_mode"] = True
