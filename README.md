@@ -81,7 +81,7 @@ All file-saving tools now return **structured data** with save path information:
 {
   "content": "Full or truncated content...",
   "saved_to": "/path/to/saved/file.txt",
-  "truncated": false,
+  "windowed": false,
   "content_length": 45678
 }
 ```

@@ -113,6 +113,9 @@ ignore = []
 "tests/test_pdf_fetcher.py" = [
     "W291",  # Allow trailing whitespace in PDF fixture content
 ]
+"tests/test_windowing.py" = [
+    "W293",  # Allow whitespace in blank lines in multiline strings
+]
 
 [tool.ruff.format]
 quote-style = "double"

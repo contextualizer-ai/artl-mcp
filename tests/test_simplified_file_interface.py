@@ -240,7 +240,7 @@ class TestMemoryEfficiencyFeatures:
                 assert file_path.read_bytes() == b"chunk1chunk2chunk3"
 
     def test_large_content_warning(self):
-        """Test that large content generates appropriate warnings and truncation."""
+        """Test that large content is preserved without truncation by default."""
         from unittest.mock import patch
 
         from artl_mcp.tools import extract_pdf_text
@@ -258,38 +258,35 @@ class TestMemoryEfficiencyFeatures:
 
                 assert result is not None
                 assert result["content_length"] == 150 * 1024
-                assert result["truncated"] is True
-                assert "[CONTENT TRUNCATED" in result["content"]
-                assert len(result["content"]) < 150 * 1024  # Should be truncated
-                # Should have logged truncation info
+                # With new windowing system, content is NOT windowed by default
+                assert result["windowed"] is False
+                # Content should be preserved in full
+                assert len(result["content"]) == 150 * 1024
+                # Should have logged file save info
                 mock_logger.info.assert_called()
 
     def test_content_size_limits(self):
-        """Test content size limits with different thresholds."""
-        from unittest.mock import patch
+        """Test that content windowing works with offset and limit parameters."""
 
-        from artl_mcp.tools import extract_pdf_text
+        from artl_mcp.tools import _apply_content_windowing
 
-        # Test small content (no truncation)
+        # Test small content (no windowing)
         small_text = "Small content"
-        with patch("artl_mcp.tools.extract_text_from_pdf") as mock_extract:
-            mock_extract.return_value = small_text
-            result = extract_pdf_text("https://example.com/small.pdf")
+        result_content, was_windowed = _apply_content_windowing(small_text)
+        assert result_content == small_text
+        assert was_windowed is False
 
-            assert result["content"] == small_text
-            assert result["truncated"] is False
-
-        # Test large content with custom limit
+        # Test content windowing with offset and limit
         large_text = "A" * 2000
-        with patch("artl_mcp.tools.extract_text_from_pdf") as mock_extract:
-            mock_extract.return_value = large_text
-            result = extract_pdf_text(
-                "https://example.com/large.pdf", max_content_size=1000
-            )
+        result_content, was_windowed = _apply_content_windowing(
+            large_text, offset=100, limit=500
+        )
 
-            assert result["content_length"] == 2000
-            assert result["truncated"] is True
-            assert len(result["content"]) < 2000
+        assert was_windowed is True
+        # Extract content part before windowing message
+        content_part = result_content.split("\n\n[CONTENT WINDOWED")[0]
+        assert len(content_part) == 500
+        assert content_part == large_text[100:600]
 
 
 class TestComprehensiveFunctionUpdates:
@@ -383,8 +380,8 @@ class TestComprehensiveFunctionUpdates:
                 assert result["saved_to"] == str(save_path)
                 assert save_path.exists()
 
-    def test_text_functions_with_content_limits(self):
-        """Test that text functions apply content limits consistently."""
+    def test_text_functions_return_full_content(self):
+        """Test that text functions return full content without truncation."""
         from unittest.mock import patch
 
         from artl_mcp.tools import get_abstract_from_pubmed_id, get_full_text_from_bioc
@@ -402,9 +399,9 @@ class TestComprehensiveFunctionUpdates:
             assert result is not None
             assert "content" in result
             assert "saved_to" in result
-            assert len(result["content"]) < len(large_text)  # Should be truncated
+            assert result["content"] == large_text  # Should return full content
 
-        # Test get_full_text_from_bioc with content limits
+        # Test get_full_text_from_bioc returns full content
         with patch("artl_mcp.utils.pubmed_utils.get_full_text_from_bioc") as mock_bioc:
             mock_bioc.return_value = large_text
 
@@ -412,9 +409,9 @@ class TestComprehensiveFunctionUpdates:
             assert result is not None
             assert "content" in result
             assert "saved_to" in result
-            assert "truncated" in result
-            assert result["truncated"] is True
-            assert len(result["content"]) < len(large_text)
+            # With windowing system,
+            #   content is returned in full without windowing by default
+            assert result["content"] == large_text
 
     def test_backward_compatibility_warnings(self):
         """Test that functions still work for basic use cases."""

@@ -324,9 +324,9 @@ class TestFileWritingInTools:
                     assert "content" in result
                     # Compare file content with the content field from structured return
                     # Note: File contains full content, result["content"] might be
-                    # truncated
+                    # windowed
                     assert file_content == result["content"] or result.get(
-                        "truncated", False
+                        "windowed", False
                     )
 
     @pytest.mark.external_api
@@ -352,9 +352,9 @@ class TestFileWritingInTools:
                     assert "content" in result
                     # Compare file content with the content field from structured return
                     # Note: File contains full content, result["content"] might be
-                    # truncated
+                    # windowed
                     assert file_content == result["content"] or result.get(
-                        "truncated", False
+                        "windowed", False
                     )
 
     @pytest.mark.external_api
@@ -400,9 +400,9 @@ class TestFileWritingInTools:
                     assert "content" in result
                     # Compare file content with the content field from structured return
                     # Note: File contains full content, result["content"] might be
-                    # truncated
+                    # windowed
                     assert file_content == result["content"] or result.get(
-                        "truncated", False
+                        "windowed", False
                     )
 
 
