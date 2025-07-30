@@ -147,18 +147,13 @@ class TestContentWindowing:
     def test_windowing_preserves_content_structure(self):
         """Test that windowing preserves the structure of the content."""
         content = (
-            """# Title
-        
-        This is a paragraph with some content.
-        
-        ## Section 1
-        More content here.
-        
-        ## Section 2
-        Even more content here.
-        """
-            * 10
-        )  # Make it large enough to trigger windowing
+            "# Title\n\n"
+            "This is a paragraph with some content.\n\n"
+            "## Section 1\n"
+            "More content here.\n\n"
+            "## Section 2\n"
+            "Even more content here.\n"
+        ) * 10  # Make it large enough to trigger windowing
 
         offset = 100
         limit = 200

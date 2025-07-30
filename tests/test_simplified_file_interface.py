@@ -258,8 +258,8 @@ class TestMemoryEfficiencyFeatures:
 
                 assert result is not None
                 assert result["content_length"] == 150 * 1024
-                # With new windowing system, content is NOT truncated by default
-                assert result["truncated"] is False
+                # With new windowing system, content is NOT windowed by default
+                assert result["windowed"] is False
                 # Content should be preserved in full
                 assert len(result["content"]) == 150 * 1024
                 # Should have logged file save info
@@ -409,7 +409,8 @@ class TestComprehensiveFunctionUpdates:
             assert result is not None
             assert "content" in result
             assert "saved_to" in result
-            # No truncated field should be present since we removed truncation
+            # With windowing system,
+            #   content is returned in full without windowing by default
             assert result["content"] == large_text
 
     def test_backward_compatibility_warnings(self):

@@ -408,7 +408,7 @@ def get_abstract_from_pubmed_id(
         return {
             "content": "",
             "saved_to": None,
-            "truncated": False,
+            "windowed": False,
         }
 
     saved_path = None
@@ -437,7 +437,7 @@ def get_abstract_from_pubmed_id(
     return {
         "content": limited_content,
         "saved_to": str(saved_path) if saved_path else None,
-        "truncated": was_truncated,
+        "windowed": was_truncated,
     }
 
 
@@ -646,7 +646,7 @@ def get_full_text_from_doi(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error retrieving full text for DOI {doi}: {e}")
@@ -799,7 +799,7 @@ def get_text_from_pdf_url(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
@@ -881,7 +881,7 @@ def extract_pdf_text(
             "saved_to": str(saved_path) if saved_path else None,
             "content_length": content_length,
             "streamed": was_streamed,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error extracting text from PDF URL {pdf_url}: {e}")
@@ -956,7 +956,7 @@ def clean_text(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error cleaning text: {e}")
@@ -965,7 +965,7 @@ def clean_text(
         return {
             "content": limited_content,
             "saved_to": None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
 
 
@@ -1079,7 +1079,7 @@ def get_doi_text(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error getting text for DOI {doi}: {e}")
@@ -1159,7 +1159,7 @@ def get_pmcid_text(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error getting text for PMCID {pmcid}: {e}")
@@ -1222,7 +1222,7 @@ def get_pmid_text(
         return {
             "content": limited_content,
             "saved_to": str(saved_path) if saved_path else None,
-            "truncated": was_truncated,
+            "windowed": was_truncated,
         }
     except Exception as e:
         print(f"Error getting text for PMID {pmid}: {e}")
@@ -3002,7 +3002,7 @@ def get_europepmc_full_text(
                 "original_format": "xml"
             },
             "saved_to": "/path/to/file",               # If saved
-            "truncated": bool,                         # If content was truncated
+            "windowed": bool,                          # If content was windowed
             "content_length": 45000                    # Character count
         }
 
@@ -3022,7 +3022,7 @@ def get_europepmc_full_text(
         '/Users/.../Documents/artl-mcp/europepmc_fulltext_PMC3737249.md'
 
         # Check if content was truncated
-        >>> if result["truncated"]:
+        >>> if result["windowed"]:
         ...     print(f"Full content saved to: {result['saved_to']}")
 
     Perfect for:
@@ -3141,7 +3141,7 @@ def get_europepmc_full_text(
             "source_info": source_info,
             "saved_to": str(saved_path) if saved_path else None,
             "content_length": len(markdown_content),
-            "truncated": was_windowed,
+            "windowed": was_windowed,
         }
 
         return result_data
@@ -3725,7 +3725,7 @@ def get_europepmc_pdf_as_markdown(
                 "page_count": 12                     # Number of pages processed
             },
             "saved_to": "/path/to/file.md",          # If saved to file
-            "truncated": bool,                       # If content was truncated
+            "windowed": bool,                        # If content was windowed
             "content_length": 45000                  # Character count
         }
 
@@ -3884,7 +3884,7 @@ def get_europepmc_pdf_as_markdown(
             "identifier": identifier,
             "saved_to": str(saved_path) if saved_path else None,
             "content_length": len(processing_result["content"]),
-            "truncated": was_windowed,
+            "windowed": was_windowed,
             "source": "europe_pmc_pdf_streaming",
         }
 

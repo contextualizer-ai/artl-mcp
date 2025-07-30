@@ -60,7 +60,7 @@ def test_get_abstract_from_pubmed_id():
     assert isinstance(result, dict)
     assert "content" in result
     assert "saved_to" in result
-    assert "truncated" in result
+    assert "windowed" in result
     assert isinstance(result["content"], str)
     # Any string result is valid - function should handle unavailable abstracts
     assert len(result["content"]) >= 0  # Could be empty string if no abstract available
@@ -91,7 +91,7 @@ def test_get_full_text_from_doi():
         assert isinstance(result, dict)
         assert "content" in result
         assert "saved_to" in result
-        assert "truncated" in result
+        assert "windowed" in result
         assert isinstance(result["content"], str)
         assert len(result["content"]) > 100  # Should have substantial content
         # Test for expected content that should be in the full text
@@ -122,7 +122,7 @@ def test_clean_text():
     assert isinstance(result, dict)
     assert "content" in result
     assert "saved_to" in result
-    assert "truncated" in result
+    assert "windowed" in result
     assert result["content"] == expected_output
 
 
@@ -178,7 +178,7 @@ def test_clean_text_various_inputs():
         assert isinstance(result, dict)
         assert "content" in result
         assert "saved_to" in result
-        assert "truncated" in result
+        assert "windowed" in result
         assert isinstance(result["content"], str)
 
 
@@ -413,7 +413,7 @@ def test_get_abstract_from_pubmed_id_invalid_input():
             assert isinstance(result, dict)
             assert "content" in result
             assert "saved_to" in result
-            assert "truncated" in result
+            assert "windowed" in result
             assert isinstance(result["content"], str)
         # The function gracefully handles invalid inputs
 
@@ -433,7 +433,7 @@ def test_clean_text_edge_cases():
         assert isinstance(result, dict)
         assert "content" in result
         assert "saved_to" in result
-        assert "truncated" in result
+        assert "windowed" in result
         assert isinstance(result["content"], str)
 
     # Test None input separately - this actually returns None
