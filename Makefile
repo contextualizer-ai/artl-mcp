@@ -178,10 +178,14 @@ local/claude-demo-windowing.txt:
 	@echo "🤖 Claude CLI: Get partial text using windowing"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get characters 1000-3000 from the full text of DOI 10.1371/journal.pone.0000217" 2>&1 | tee $@
 
+local/claude-demo-supplementary-material.txt:
+	@echo "🤖 Claude CLI: Get supplementary material from PMC"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get supplementary material for PMC7294781 file index 1" 2>&1 | tee $@
+
 # Clean up Claude demo output files
 clean-claude-demos:
 	rm -f local/claude-demo-*.txt
 
 # Run all Claude demos with cleanup (comprehensive meta-target)
-claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-to-markdown.txt local/claude-demo-windowing.txt
+claude-demos-all: clean-claude-demos local/claude-demo-rhizosphere.txt local/claude-demo-get-paper-by-id.txt local/claude-demo-get-all-identifiers.txt local/claude-demo-full-text.txt local/claude-demo-pdf-to-markdown.txt local/claude-demo-windowing.txt local/claude-demo-supplementary-material.txt
 	@echo "✅ All Claude demos completed! Check local/claude-demo-*.txt for output"

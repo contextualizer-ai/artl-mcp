@@ -270,3 +270,48 @@ def test_functions_handle_none_values():
         assert aupu.extract_doi_from_url(None) is None
     except (TypeError, AttributeError):
         pass  # Acceptable to raise error for None input
+
+
+# Supplementary Material retrieval tests
+@pytest.mark.external_api
+@pytest.mark.slow
+@skip_if_ncbi_offline
+def test_get_supplementary_material_from_pmc_none():
+    """Test Supplementary Material retrieval."""
+    # Use a PubMed Central ID known to not have Supplementary Material.
+    test_pmcid = "PMC1790863"
+    result = aupu.get_pmc_supplemental_material(test_pmcid)
+
+    assert result is not None
+    assert not len(result) == 0
+    assert result.startswith("No Supplementary Material is available.")
+
+
+# Supplementary Material retrieval tests
+@pytest.mark.external_api
+@pytest.mark.slow
+@skip_if_ncbi_offline
+def test_get_supplementary_material_from_pmc_all():
+    """Test Supplementary Material retrieval."""
+    # Use a PubMed Central ID known to have Supplementary Material.
+    test_pmcid = "PMC7294781"
+    result = aupu.get_pmc_supplemental_material(test_pmcid)
+
+    assert result is not None
+    assert not len(result) == 0
+    assert not result.startswith("No Supplementary Material is available.")
+
+
+# Supplementary Material retrieval tests
+@pytest.mark.external_api
+@pytest.mark.slow
+@skip_if_ncbi_offline
+def test_get_supplementary_material_from_pmc_one():
+    """Test Supplementary Material retrieval."""
+    # Use a PubMed Central ID known to have Supplementary Material.
+    test_pmcid = "PMC7294781"
+    result = aupu.get_pmc_supplemental_material(test_pmcid, 1)
+
+    assert result is not None
+    assert not len(result) == 0
+    assert not result.startswith("No Supplementary Material is available.")

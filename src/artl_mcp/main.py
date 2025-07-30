@@ -27,6 +27,7 @@ from artl_mcp.tools import (
 from artl_mcp.tools import (
     search_pubmed_for_pmids,
 )
+from artl_mcp.utils.pubmed_utils import get_pmc_supplemental_material
 
 try:
     __version__ = metadata.version("artl-mcp")
@@ -236,7 +237,15 @@ get_europepmc_pdf_as_markdown("10.1038/nature12373")
 get_europepmc_pdf_as_markdown("PMC3737249", processing_method="auto")
 ```
 
-All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubMed APIs.
+The above tools exclusively use Europe PMC and will never attempt to contact
+NCBI/PubMed APIs.
+
+The following tools rely on an NCBI API:
+
+# Retrieve Supplemental Material as text from a PubMed Central Open Access
+# article via it's PubMed Central ID:
+get_pmc_supplemental_material("PMC7294781", 1)
+get_pmc_supplemental_material("PMC:7294781", 1)
 
 """,
     )
@@ -300,6 +309,9 @@ All tools exclusively use Europe PMC and will never attempt to contact NCBI/PubM
     # Other tools commented out to avoid NCBI API calls
     # mcp.tool(search_papers_by_keyword)
     # mcp.tool(search_recent_papers)
+    # The PubMed Central Supplemental Material API supports retrieval as text
+    # (more immediately useful than Europe PMC which uses binary files).
+    mcp.tool(get_pmc_supplemental_material)
 
     return mcp
 
