@@ -2110,7 +2110,7 @@ def download_pdf_from_doi(
     """
     try:
         # First get Unpaywall info to find PDF URL
-        unpaywall_info = get_unpaywall_info(doi, email, strict=False)
+        unpaywall_info = get_unpaywall_info(doi, email, use_strict_mode=False)
 
         if not unpaywall_info:
             return {
