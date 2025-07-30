@@ -391,7 +391,9 @@ def list_pmcid_supplemental_material(pmcid: str | int) -> str:
     return text
 
 
-def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> str:
+def get_pmc_supplemental_material(
+    pmcid: str | int, idx: int | None = None, offset: int = 0, limit: int | None = None
+) -> str:
     """Gets Supplemental Material for a PubMed Central Open Access article.
 
     Supports multiple PubMed Central ID in the following input formats:
@@ -402,14 +404,16 @@ def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> s
     Args:
         pmcid: PubMed Central ID in any supported format
         idx: The file index to retrieve
+        offset: Character offset to start from (default: 0)
+        limit: Maximum number of characters to return (default: None for all)
 
     Returns:
-        A Supplemental Material file.
+        A Supplemental Material file content, optionally windowed.
 
     Examples:
         >>> get_pmc_supplemental_material("PMC12345678", 1)
         'Supplementary Material...'
-        >>> get_pmc_supplemental_material("PMC:12345678", 1)
+        >>> get_pmc_supplemental_material("PMC:12345678", 1, offset=100, limit=500)
         'Supplementary Material...'
     """
     try:
@@ -459,5 +463,12 @@ def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> s
         ]
         texts = [html.unescape(t) for t in texts]
         text = "\n".join(texts)
+
+    # Apply sliding window if requested
+    if offset > 0 or limit is not None:
+        if offset >= len(text):
+            return ""
+        end_pos = offset + limit if limit is not None else len(text)
+        text = text[offset:end_pos]
 
     return text
