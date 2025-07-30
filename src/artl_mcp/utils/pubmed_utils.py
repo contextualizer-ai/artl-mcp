@@ -2,6 +2,8 @@ import logging
 import re
 
 import requests
+import json
+import html
 from bs4 import BeautifulSoup
 
 from artl_mcp.utils.conversion_utils import IdentifierConverter
@@ -14,6 +16,7 @@ logger = logging.getLogger(__name__)
 BIOC_URL = "https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_xml/{pmid}/ascii"
 PUBMED_EUTILS_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id={pmid}&retmode=xml"
 EFETCH_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmid}&retmode=xml"
+SUPPMAT_JSON_URL = "https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/supplmat.cgi/BioC_JSON/{pmcid}/{idx}"
 
 DOI_PATTERN = r"/(10\.\d{4,9}/[\w\-.]+)"
 
@@ -336,3 +339,113 @@ def get_abstract_from_pubmed(pmid: str) -> str:
     abstract = re.sub(r" +", " ", abstract).strip()  # Collapse multiple spaces
 
     return f"{title}\n\n{abstract}\n\nPMID:{pmid}"
+
+def list_pmcid_supplemental_material(pmcid: str | int) -> str:
+    """Lists the Supplemental Material available for a PubMed Central article.
+
+    Supports multiple PubMed Central ID in the following input formats:
+    - Prefixed: PMC12345678
+    - Numeric: 12345678
+    - Prefixed with colon: PMC:12345678
+
+    Args:
+        pmcid: PubMed Central ID in any supported format
+
+    Returns:
+        A list of available Supplemental Material.
+
+    Examples:
+        >>> list_pmcid_supplemental_material("11")
+        'Identification of adenylate cyclase-coupled beta-adrenergic receptors...'
+        >>> list_pmcid_supplemental_material("PMID:11")
+        'Identification of adenylate cyclase-coupled beta-adrenergic receptors...'
+    """
+    try:
+        normalized_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")
+    except IdentifierError as e:
+        logger.warning(f"Invalid PubMed Central ID for Supplemental Material listing: {pmcid} - {e}")
+        return f"Error: Invalid PubMed Central ID format: {pmcid}"
+
+    try:
+        url = SUPPMAT_JSON_URL.format(pmcid=normalized_pmcid, idx="list")
+        response = requests.get(url)
+        if response.status_code != 200:
+            return "Error: Unable to list Supplemental Material."
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.HTTPError,
+        ConnectionError,
+    ) as e:
+        return f"Error: Network error while retrieving results: {e}"
+
+    text = response.text
+
+    if text.startswith("[Error] : No result can be found."):
+        return "{}"
+
+    return text
+
+def get_pmc_supplemental_material(pmcid: str | int, idx: int | None = None) -> str:
+    """Gets Supplemental Material for a PubMed Central Open Access article.
+
+    Supports multiple PubMed Central ID in the following input formats:
+    - Prefixed: PMC12345678
+    - Numeric: 12345678
+    - Prefixed with colon: PMC:12345678
+
+    Args:
+        pmcid: PubMed Central ID in any supported format
+        idx: The file index to retrieve
+
+    Returns:
+        A Supplemental Material file.
+
+    Examples:
+        >>> get_pmc_supplemental_material("PMC12345678", 1)
+        'Supplementary Material...'
+        >>> get_pmc_supplemental_material("PMC:12345678", 1)
+        'Supplementary Material...'
+    """
+    try:
+        normalized_pmcid = IdentifierUtils.normalize_pmcid(pmcid, "raw")
+    except IdentifierError as e:
+        logger.warning(f"Invalid PubMed Central ID for Supplemental Material retrieval: {pmcid} - {e}")
+        return f"Error: Invalid PubMed Central ID format: {pmcid}"
+
+    if idx is not None and idx <= 0:
+        return "Error: File index must be positive integer or None."
+
+    try:
+        idx_or_all = idx if idx is not None else "all"
+        url = SUPPMAT_JSON_URL.format(pmcid=normalized_pmcid, idx=idx_or_all)
+        response = requests.get(url)
+        if response.status_code != 200:
+            return "Error: Unable to retrieve file."
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.HTTPError,
+        ConnectionError,
+    ) as e:
+        return f"Error: Network error while retrieving results: {e}"
+
+    text = response.text
+
+    if text is None or len(text) == 0 or text.startswith("[Error] : No result can be found."):
+        text = "No Supplementary Material is available."
+
+    if text.startswith("["):
+        json_obj = json.loads(text)
+        # Extract all "text" fields inside "passages" of each "document"
+        texts = [
+            passage["text"]
+            for entry in json_obj
+            for document in entry.get("documents", [])
+            for passage in document.get("passages", [])
+            if "text" in passage
+        ]
+        texts = [html.unescape(t) for t in texts]
+        text = "\n".join(texts)
+
+    return text
