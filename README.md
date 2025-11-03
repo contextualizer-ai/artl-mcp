@@ -177,9 +177,18 @@ All tools automatically detect and normalize identifier formats.
 ## Development Setup
 
 ```bash
+# Clone and install
 git clone https://github.com/contextualizer-ai/artl-mcp.git
 cd artl-mcp
 uv sync --group dev
+
+# Run CLI commands during development
+uv run artl-cli --help
+uv run artl-cli get-doi-metadata --doi "10.1038/nature12373"
+uv run artl-cli search-papers-by-keyword --query "CRISPR" --max-results 5
+
+# Run the MCP server locally
+uv run artl-mcp
 
 # Run tests
 make test                    # Fast development tests
@@ -190,6 +199,10 @@ make lint                   # Ruff linting
 make format                 # Black formatting
 make mypy                   # Type checking
 ```
+
+**Development vs. Production Usage:**
+- **Developers** (local repo): Use `uv run artl-cli` after `uv sync`
+- **End users** (no local install): Use `uvx --from artl-mcp artl-cli`
 
 ## Documentation
 
