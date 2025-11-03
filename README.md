@@ -37,7 +37,11 @@ uvx --from artl-mcp artl-cli search-papers-by-keyword --query "CRISPR gene editi
 ### 📄 **Metadata & Content Retrieval**
 - DOI/PMID/PMCID metadata extraction
 - Abstract retrieval from PubMed
-- Full-text access via multiple sources (PMC, Unpaywall, BioC)
+- Full-text access via multiple sources:
+  - **PMC** (PubMed Central) - MCP + CLI
+  - **Unpaywall** - MCP + CLI
+  - **Europe PMC** - MCP + CLI
+  - **BioC XML format** - CLI only
 - PDF text extraction and processing
 
 ### 🔗 **Identifier Management**
@@ -62,7 +66,7 @@ uvx --from artl-mcp artl-cli search-papers-by-keyword --query "CRISPR gene editi
 
 ## Available MCP Tools
 
-When running as an MCP server, you get access to 32 tools organized into categories:
+When running as an MCP server, you get access to 7 core tools. **Note:** Many tools are currently disabled pending testing and stabilization (see Issues #210, #212).
 
 ### 🔄 **MCP vs CLI Mode Differences**
 
@@ -83,33 +87,25 @@ When running as an MCP server, you get access to 32 tools organized into categor
 }
 ```
 
-### Literature Search
-- `search_papers_by_keyword` - Advanced keyword search with filtering
-- `search_recent_papers` - Find recent publications  
-- `search_pubmed_for_pmids` - PubMed search returning PMIDs
+### Currently Active MCP Tools (7):
 
-### Metadata & Abstracts
-- `get_doi_metadata` - Comprehensive DOI metadata
-- `get_abstract_from_pubmed_id` - PubMed abstracts
-- `get_doi_fetcher_metadata` - Enhanced metadata (requires email)
-- `get_unpaywall_info` - Open access availability
+1. **`search_europepmc_papers`** - Search Europe PMC database for papers
+2. **`get_europepmc_paper_by_id`** - Get full metadata from Europe PMC by ID
+3. **`get_all_identifiers_from_europepmc`** - Universal ID translation via Europe PMC
+4. **`get_europepmc_full_text`** - Retrieve full text from Europe PMC
+5. **`get_europepmc_pdf_as_markdown`** - Convert Europe PMC PDFs to Markdown
+6. **`get_pmc_supplemental_material`** - Get supplementary materials from PMC
+7. **`search_pubmed_for_pmids`** - Search PubMed and return PMIDs
 
-### Full Text Access
-- `get_full_text_from_doi` - Multi-source full text (requires email)
-- `extract_pdf_text` - PDF text extraction
-- `get_pmcid_text` - PMC full text
-- `get_full_text_from_bioc` - BioC format text
+### Disabled/Unavailable MCP Tools (see issues):
 
-### Identifier Conversion
-- `get_all_identifiers` - Get all IDs for any identifier
-- `doi_to_pmid`, `pmid_to_doi` - Individual conversions
-- `validate_identifier` - Format validation
-
-### Citation Networks  
-- `get_paper_references` - Papers cited by a given paper
-- `get_paper_citations` - Papers citing a given paper
-- `get_citation_network` - Comprehensive citation data
-- `find_related_papers` - Citation-based recommendations
+The following tools are implemented but currently disabled:
+- ❌ **Citation analysis tools** (4 tools) - Issue #210
+- ❌ **BioC full text tool** - Issue #212
+- ❌ **DOI metadata tools** (multiple) - Issue #212
+- ❌ **Identifier conversion tools** - Issue #212
+- ❌ **PubMed abstract retrieval** - Issue #212
+- ❌ **PDF extraction tools** - Issue #212
 
 ## CLI Commands
 
