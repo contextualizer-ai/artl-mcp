@@ -140,9 +140,12 @@ uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
 ## Configuration
 
 ### Email Requirements
-Several APIs require institutional email addresses:
+Several APIs require institutional email addresses.
+
+> **⚠️ Important:** Replace example emails with your actual institutional email address.
+
 ```bash
-export ARTL_EMAIL_ADDR="researcher@university.edu"
+export ARTL_EMAIL_ADDR="researcher@university.edu"  # Replace with your real email
 # or create local/.env file with: ARTL_EMAIL_ADDR=researcher@university.edu
 ```
 

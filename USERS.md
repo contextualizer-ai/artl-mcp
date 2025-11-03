@@ -247,9 +247,13 @@ ARTL-MCP's new ConfigManager system supports direct configuration injection from
 2. **Environment Variables** - Medium priority (ARTL_EMAIL_ADDR)
 3. **Local .env File** - Lowest priority (local/.env)
 
-**Method 4: CLI Parameter (Command Line Only)**
+**Method 4: CLI Parameter (Command Line)**
 ```bash
-artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "researcher@university.edu"
+# End users (uvx)
+uvx --from artl-mcp artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "researcher@university.edu"
+
+# Developers (local installation)
+uv run artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "researcher@university.edu"
 ```
 
 **Method 5: GitHub Actions/CI (Automated)**
@@ -269,7 +273,10 @@ Academic APIs require email addresses to:
 - **Provide institutional access** - Some content requires academic affiliation
 - **Support research integrity** - Maintain audit trails for academic use
 
-**Important:** Use your institutional email address (university, research institute, or company) rather than personal email for best access to paywalled content.
+**Important:**
+- Use your **actual institutional email address** (university, research institute, or company) rather than personal email for best access to paywalled content
+- **Do not use the examples literally** - Replace `researcher@university.edu` with your real email address
+- The system validates emails and rejects common fake patterns (test@example.com, dummy@test.com, etc.)
 
 ### Best Practices for MCP Client Usage
 
@@ -483,12 +490,14 @@ uvx --from artl-mcp artl-cli get-full-text-from-doi \
 
 ### Email Setup (Required for Some APIs)
 
-Several APIs require institutional email addresses for rate limiting and access:
+Several APIs require institutional email addresses for rate limiting and access.
+
+> **⚠️ Important:** Replace `researcher@university.edu` in all examples below with your actual institutional email address. Do not use the example emails literally - they will not work.
 
 **Option 1: Environment Variable (Recommended)**
 
 ```bash
-export ARTL_EMAIL_ADDR="researcher@university.edu"
+export ARTL_EMAIL_ADDR="researcher@university.edu"  # Replace with your real email
 ```
 
 **Option 2: Local Configuration File**
