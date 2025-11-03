@@ -66,7 +66,7 @@ uvx --from artl-mcp artl-cli search-papers-by-keyword --query "CRISPR gene editi
 
 ## Available MCP Tools
 
-When running as an MCP server, you get access to 7 core tools. **Note:** Many tools are currently disabled pending testing and stabilization (see Issues #210, #212).
+When running as an MCP server, you get access to 6 core tools. **Note:** 33 additional tools are currently disabled pending testing and stabilization (see Issues #210, #212).
 
 ### 🔄 **MCP vs CLI Mode Differences**
 
@@ -87,7 +87,7 @@ When running as an MCP server, you get access to 7 core tools. **Note:** Many to
 }
 ```
 
-### Currently Active MCP Tools (7):
+### Currently Active MCP Tools (6):
 
 1. **`search_europepmc_papers`** - Search Europe PMC database for papers
 2. **`get_europepmc_paper_by_id`** - Get full metadata from Europe PMC by ID
@@ -95,17 +95,20 @@ When running as an MCP server, you get access to 7 core tools. **Note:** Many to
 4. **`get_europepmc_full_text`** - Retrieve full text from Europe PMC
 5. **`get_europepmc_pdf_as_markdown`** - Convert Europe PMC PDFs to Markdown
 6. **`get_pmc_supplemental_material`** - Get supplementary materials from PMC
-7. **`search_pubmed_for_pmids`** - Search PubMed and return PMIDs
 
-### Disabled/Unavailable MCP Tools (see issues):
+### Disabled/Unavailable MCP Tools (33 tools - see issues):
 
-The following tools are implemented but currently disabled:
+The following tools are implemented but currently disabled (commented out in main.py):
 - ❌ **Citation analysis tools** (4 tools) - Issue #210
-- ❌ **BioC full text tool** - Issue #212
-- ❌ **DOI metadata tools** (multiple) - Issue #212
-- ❌ **Identifier conversion tools** - Issue #212
-- ❌ **PubMed abstract retrieval** - Issue #212
-- ❌ **PDF extraction tools** - Issue #212
+- ❌ **BioC full text tool** (1 tool) - Issue #213
+- ❌ **DOI metadata tools** (3 tools) - Issue #212
+- ❌ **Identifier conversion tools** (4 tools) - Issue #212
+- ❌ **PubMed abstract/text retrieval** (5 tools) - Issue #212
+- ❌ **PDF extraction tools** (3 tools) - Issue #212
+- ❌ **Search tools** (2 tools) - Issue #212
+- ❌ **Other tools** (11 tools) - Issue #212
+
+**Note:** CLI has 23 active commands, many corresponding to these disabled MCP tools.
 
 ## CLI Commands
 
