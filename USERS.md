@@ -399,7 +399,7 @@ For local development (after `uv sync`):
 uv run artl-cli <command> [options]
 ```
 
-**Note:** The package name is `artl-mcp`, but it provides the `artl-cli` command. When using `uvx`, you must specify `--from artl-mcp` to tell uvx which package to install.
+**Note:** The package name is `artl-mcp`, but it provides the `artl-cli` command. When using `uvx`, you must specify `--from artl-mcp` to tell `uvx` which package to install.
 
 ### Basic Examples
 
