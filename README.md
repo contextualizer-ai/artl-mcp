@@ -129,11 +129,10 @@ uvx --from artl-mcp artl-cli get-full-text-from-doi --doi "10.1038/nature12373" 
 
 # Identifier conversion
 uvx --from artl-mcp artl-cli doi-to-pmid --doi "10.1038/nature12373"
-uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMC3737249"
-
-# Citation analysis
-uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "PMC3737249"
 ```
+
+**Note:** Citation analysis tools are MCP-only (not available as CLI commands). Use the MCP server for citation network analysis.
 
 **Note for local development**: If you have the package installed locally with `uv sync`, you can use `uv run artl-cli` directly without the `--from` flag.
 
