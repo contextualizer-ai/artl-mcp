@@ -175,6 +175,10 @@ local/claude-demo-windowing.txt:
 	@echo "🤖 Claude CLI: Get partial text using windowing"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get characters 1000-3000 from the full text of DOI 10.1371/journal.pone.0000217" 2>&1 | tee $@
 
+local/claude-demo-pdf-to-markdown.txt:
+	@echo "🤖 Claude CLI: Convert Europe PMC PDF to Markdown"
+	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Convert the PDF for PMC3737249 to Markdown format" 2>&1 | tee $@
+
 local/claude-demo-supplementary-material.txt:
 	@echo "🤖 Claude CLI: Get supplementary material from PMC"
 	claude --debug --verbose --mcp-config claude-mcp-config.json --dangerously-skip-permissions --print "Get supplementary material for PMC7294781 file index 1" 2>&1 | tee $@
