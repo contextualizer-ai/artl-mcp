@@ -12,13 +12,34 @@ async def run_client(query: str, mcp):
             "search_europepmc_papers", {"keywords": query, "max_results": 5}
         )
 
-        for item in result:
-            # If item has text field containing JSON, pretty print that directly
-            if hasattr(item, "text") and item.text:
-                try:
-                    data = json.loads(item.text)
-                    print(json.dumps(data, indent=2))
-                except json.JSONDecodeError:
-                    print(item.text)
+        # CallToolResult returns a single object, not a list
+        # Extract text from the result
+        text = None
+
+        # Try real API structure first: content[0].text
+        if hasattr(result, "content") and result.content:
+            try:
+                # Real API returns content as list of TextContent objects
+                if isinstance(result.content, list) and len(result.content) > 0:
+                    if hasattr(result.content[0], "text"):
+                        text = result.content[0].text
+            except (TypeError, IndexError):
+                pass
+
+        # Try mock/test structure: text directly on result
+        if text is None and hasattr(result, "text"):
+            text = result.text
+
+        # Print the extracted text
+        if text:
+            try:
+                data = json.loads(text)
+                print(json.dumps(data, indent=2))
+            except json.JSONDecodeError:
+                print(text)
+        else:
+            # Fallback to model_dump_json if available, otherwise str()
+            if hasattr(result, "model_dump_json"):
+                print(result.model_dump_json(indent=2))
             else:
-                print(item.model_dump_json(indent=2))
+                print(str(result))
