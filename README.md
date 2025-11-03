@@ -2,11 +2,44 @@
 
 An MCP (Model Context Protocol) server and CLI toolkit for comprehensive scientific literature retrieval and analysis using PMIDs, DOIs, PMCIDs, and keyword searches.
 
+## Requirements
+
+- **Python**: 3.11 or later
+- **uv**: Python package installer ([install guide](https://github.com/astral-sh/uv))
+
+> **📖 New to artl-mcp?** See [PREREQUISITES.md](PREREQUISITES.md) for detailed setup instructions including Python/uv installation, MCP client setup, and more.
+
+## Three Ways to Use ARTL-MCP
+
+### 1. CLI Only (FREE - No AI Required)
+Use directly from command line with just Python + uv:
+```bash
+uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373"
+```
+- ✅ No installation, no API keys, no costs
+- ✅ Direct access to literature databases
+- ✅ Perfect for scripting and automation
+
+### 2. MCP with AI Assistant (Recommended)
+Use with any MCP-compatible AI assistant for natural language queries:
+- **Claude Desktop** (most popular)
+- **Goose Desktop**
+- **Zed Editor**
+- **Continue** (VS Code)
+- Any MCP-compatible tool
+
+> **Note**: You can use ANY MCP client - not just Claude! See [PREREQUISITES.md](PREREQUISITES.md) for setup guides.
+
+### 3. Development (Optional)
+For contributors working on artl-mcp itself. See [DEVELOPERS.md](DEVELOPERS.md).
+
 ## Quick Start
 
-### MCP Server (Recommended)
+### MCP Server with AI Assistant
 
-Add this to your Claude Desktop MCP configuration:
+**Example: Claude Desktop** (works with any MCP client)
+
+Add this to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -18,6 +51,10 @@ Add this to your Claude Desktop MCP configuration:
   }
 }
 ```
+
+Then ask Claude: `"Search Europe PMC for papers about CRISPR"`
+
+> **Other MCP clients**: Goose, Zed, Continue, etc. also work! See [PREREQUISITES.md](PREREQUISITES.md) for setup guides for each client.
 
 ### Standalone CLI
 
@@ -205,7 +242,25 @@ make mypy                   # Type checking
 - **Developers** (local repo): Use `uv run artl-cli` after `uv sync`
 - **End users** (no local install): Use `uvx --from artl-mcp artl-cli`
 
+### Optional: Claude Code CLI for Makefile Demos
+
+> **⚠️ Not Required**: Claude Code CLI is ONLY needed for running `make claude-demos-all` tests. Normal users and MCP users don't need this.
+
+The repository includes optional MCP integration tests via Makefile targets:
+
+```bash
+make claude-demos-all  # Run all MCP demos (requires Claude Code CLI)
+```
+
+**Requirements for demos:**
+- Claude Code CLI: `npm install -g @anthropic-ai/claude-code`
+- Anthropic API key (pay-per-use, ~$1-2 for all demos based on current pricing – see [Anthropic pricing](https://www.anthropic.com/pricing))
+
+See [PREREQUISITES.md](PREREQUISITES.md#claude-code-cli-optional---development-only) for setup instructions.
+
 ## Documentation
 
+- **[PREREQUISITES.md](PREREQUISITES.md)** - Setup guide (Python, uv, MCP clients, email config)
 - **[USERS.md](USERS.md)** - Comprehensive user guide with examples
 - **[DEVELOPERS.md](DEVELOPERS.md)** - Development setup and architecture
+- **[CBORG.md](CBORG.md)** - CBORG usage for LBL users (spending tracking)
