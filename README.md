@@ -254,7 +254,7 @@ make claude-demos-all  # Run all MCP demos (requires Claude Code CLI)
 
 **Requirements for demos:**
 - Claude Code CLI: `npm install -g @anthropic-ai/claude-code`
-- Anthropic API key (pay-per-use, ~$1-2 for all demos)
+- Anthropic API key (pay-per-use, ~$1-2 for all demos based on current pricing – see [Anthropic pricing](https://www.anthropic.com/pricing))
 
 See [PREREQUISITES.md](PREREQUISITES.md#claude-code-cli-optional---development-only) for setup instructions.
 

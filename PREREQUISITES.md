@@ -302,8 +302,8 @@ uvx --from artl-mcp artl-cli get-doi-metadata --doi "..."
 
 **Only needed for `make claude-demos-all` testing:**
 - Pay-per-use API pricing
-- Typical costs: $0.05-0.20 per demo query
-- ~$1-2 to run all demos
+- Typical costs: ~$1-2 for all demos (based on current pricing)
+- See https://www.anthropic.com/pricing for up-to-date rates
 - Not needed for normal CLI or MCP usage
 
 ### Important Notes
