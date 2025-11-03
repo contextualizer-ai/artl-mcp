@@ -24,6 +24,7 @@ async def run_client(query: str, mcp):
                     if hasattr(result.content[0], "text"):
                         text = result.content[0].text
             except (TypeError, IndexError):
+                # Content structure not as expected, will try fallback extraction below
                 pass
 
         # Try mock/test structure: text directly on result
@@ -40,6 +41,10 @@ async def run_client(query: str, mcp):
         else:
             # Fallback to model_dump_json if available, otherwise str()
             if hasattr(result, "model_dump_json"):
-                print(result.model_dump_json(indent=2))
+                try:
+                    print(result.model_dump_json(indent=2))
+                except TypeError:
+                    # Some Pydantic versions may not support indent parameter
+                    print(result.model_dump_json())
             else:
                 print(str(result))
