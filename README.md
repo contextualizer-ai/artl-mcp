@@ -48,7 +48,7 @@ uvx --from artl-mcp artl-cli search-papers-by-keyword --query "CRISPR gene editi
 ### 📊 **Citation Networks**
 - Reference analysis (papers cited BY a given paper)
 - Citation analysis (papers that CITE a given paper)
-- Multi-source citation data (CrossRef, OpenAlex, Semantic Scholar)
+- Citation data from CrossRef (when citation tools are enabled)
 - Related paper discovery through citation networks
 
 ### 💾 **File Management**

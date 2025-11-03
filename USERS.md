@@ -691,10 +691,10 @@ The following tools exist in the codebase but are not yet activated:
 - **`get_citation_network`** - Get comprehensive citation data from multiple sources
 - **`find_related_papers`** - Discover related papers through citation networks
 
-These tools will use data from:
+These tools are designed to use data from:
 - **CrossRef**: Reference and citation data
-- **OpenAlex**: Enhanced metadata and metrics
-- **Semantic Scholar**: Additional citation context
+- **OpenAlex**: Enhanced metadata and metrics (implemented but untested)
+- **Semantic Scholar**: Additional citation context (implemented but untested)
 
 ## API Requirements
 
