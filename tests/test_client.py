@@ -22,8 +22,8 @@ class TestRunClient:
         mock_item = Mock()
         mock_item.text = '{"DOI": "10.1038/nature12373", "title": "Test Article"}'
 
-        # Mock client behavior
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        # Mock client behavior - call_tool returns single CallToolResult, not a list
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         # Mock the Client context manager
         mock_client_class = AsyncMock()
@@ -64,7 +64,7 @@ class TestRunClient:
         mock_item = Mock()
         mock_item.text = "This is plain text, not JSON"
 
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)
@@ -87,7 +87,7 @@ class TestRunClient:
         mock_item = Mock()
         mock_item.text = '{"invalid": json, "missing": quote}'
 
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)
@@ -115,7 +115,7 @@ class TestRunClient:
             return_value='{"type": "response", "data": "test"}'
         )
 
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)
@@ -142,7 +142,7 @@ class TestRunClient:
         mock_item.text = ""
         mock_item.model_dump_json = Mock(return_value='{"type": "empty", "data": null}')
 
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)
@@ -157,25 +157,16 @@ class TestRunClient:
                 mock_print.assert_called_once_with('{"type": "empty", "data": null}')
 
     @pytest.mark.asyncio
-    async def test_run_client_success_with_multiple_items(self):
-        """Test client run with multiple response items."""
+    async def test_run_client_success_with_single_json_item(self):
+        """Test client run with single JSON response (actual API behavior)."""
         mock_mcp = Mock()
         mock_client = AsyncMock()
 
-        # Mock multiple response items
-        mock_item1 = Mock()
-        mock_item1.text = '{"DOI": "10.1038/article1"}'
+        # Mock single response item with JSON text
+        mock_item = Mock()
+        mock_item.text = '{"DOI": "10.1038/article1", "title": "Test"}'
 
-        mock_item2 = Mock()
-        mock_item2.text = "Plain text response"
-
-        mock_item3 = Mock()
-        mock_item3.text = None
-        mock_item3.model_dump_json = Mock(return_value='{"status": "complete"}')
-
-        mock_client.call_tool = AsyncMock(
-            return_value=[mock_item1, mock_item2, mock_item3]
-        )
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)
@@ -185,21 +176,13 @@ class TestRunClient:
             with patch("builtins.print") as mock_print:
                 await run_client("10.1038/test", mock_mcp)
 
-                # Should print all three items
-                assert mock_print.call_count == 3
+                # Should print once
+                assert mock_print.call_count == 1
 
-                # Check each call
-                calls = mock_print.call_args_list
-
-                # First item: JSON pretty-printed
-                first_call = calls[0][0][0]
-                assert json.loads(first_call) == {"DOI": "10.1038/article1"}
-
-                # Second item: plain text
-                assert calls[1][0][0] == "Plain text response"
-
-                # Third item: model dump
-                assert calls[2][0][0] == '{"status": "complete"}'
+                # Check the output is JSON pretty-printed
+                printed_output = mock_print.call_args[0][0]
+                assert json.loads(printed_output) == {"DOI": "10.1038/article1", "title": "Test"}
+                assert "\n" in printed_output  # Should be indented
 
     @pytest.mark.asyncio
     async def test_run_client_with_no_hasattr_text(self):
@@ -211,7 +194,7 @@ class TestRunClient:
         mock_item = Mock(spec=[])  # Only allow explicitly specified attributes
         mock_item.model_dump_json = Mock(return_value='{"no_text_attr": true}')
 
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)
@@ -248,7 +231,7 @@ class TestRunClient:
         mock_item = Mock()
         mock_item.text = json.dumps(complex_json)
 
-        mock_client.call_tool = AsyncMock(return_value=[mock_item])
+        mock_client.call_tool = AsyncMock(return_value=mock_item)
 
         mock_client_class = AsyncMock()
         mock_client_class.__aenter__ = AsyncMock(return_value=mock_client)

@@ -439,21 +439,10 @@ uvx --from artl-mcp artl-cli doi-to-pmid --doi "10.1038/nature12373"
 uvx --from artl-mcp artl-cli pmid-to-doi --pmid "23851394"
 
 # Get all available identifiers at once
-uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMC3737249"
+uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "PMC3737249"
 ```
 
-**Citation analysis:**
-
-```bash
-# Papers cited by this paper
-uvx --from artl-mcp artl-cli get-paper-references --doi "10.1038/nature12373"
-
-# Papers that cite this paper
-uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
-
-# Comprehensive citation network
-uvx --from artl-mcp artl-cli get-citation-network --doi "10.1038/nature12373"
-```
+**Note:** Citation analysis commands (`get-paper-citations`, `get-paper-references`, `get-citation-network`, `find-related-papers`) are currently unavailable in both MCP and CLI. See the [Citation Networks](#citation-networks) section below for more information.
 
 **Full text access (requires email):**
 
@@ -595,9 +584,9 @@ Use `get_all_identifiers` to get all available IDs for any identifier:
 
 ```bash
 # Works with any format
-uvx --from artl-mcp artl-cli get-all-identifiers --identifier "https://doi.org/10.1038/nature12373"
-uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMID:23851394"
-uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMC3737249"
+uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "https://doi.org/10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "PMID:23851394"
+uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "PMC3737249"
 ```
 
 ## File Management
@@ -691,58 +680,21 @@ ARTL-MCP handles temporary files automatically:
 
 ## Citation Networks
 
-ARTL-MCP provides comprehensive citation analysis through multiple data sources:
+⚠️ **CURRENTLY UNAVAILABLE**: Citation analysis tools are implemented but currently disabled in both the MCP server and CLI. See GitHub issues for progress on enabling these features.
 
-### Getting References (Papers Cited)
+### Planned Features:
 
-Find papers referenced by a given paper:
+The following tools exist in the codebase but are not yet activated:
 
-```bash
-uvx --from artl-mcp artl-cli get-paper-references --doi "10.1038/nature12373"
-```
+- **`get_paper_references`** - Find papers cited BY a given paper
+- **`get_paper_citations`** - Find papers that CITE a given paper
+- **`get_citation_network`** - Get comprehensive citation data from multiple sources
+- **`find_related_papers`** - Discover related papers through citation networks
 
-Returns structured data including:
-
-- Referenced paper DOIs and titles
-- Authors and publication years
-- Journal information
-- Full citation text
-
-### Getting Citations (Papers That Cite)
-
-Find papers that cite a given paper:
-
-```bash
-uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
-```
-
-Returns information about citing papers:
-
-- DOIs and titles of citing papers
-- Author lists and publication dates
-- Citation counts and impact metrics
-
-### Comprehensive Citation Analysis
-
-Get data from multiple sources at once:
-
-```bash
-uvx --from artl-mcp artl-cli get-comprehensive-citation-info --doi "10.1038/nature12373"
-```
-
-Combines data from:
-
+These tools are designed to use data from:
 - **CrossRef**: Reference and citation data
-- **OpenAlex**: Enhanced metadata and metrics
-- **Semantic Scholar**: Additional citation context
-
-### Finding Related Papers
-
-Discover papers related through citation networks:
-
-```bash
-uvx --from artl-mcp artl-cli find-related-papers --doi "10.1038/nature12373" --max-results 10
-```
+- **OpenAlex**: Enhanced metadata and metrics (implemented but untested)
+- **Semantic Scholar**: Additional citation context (implemented but untested)
 
 ## API Requirements
 
