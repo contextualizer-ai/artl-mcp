@@ -3,6 +3,45 @@
 This guide provides comprehensive information for end users of ARTL-MCP (All Roads to Literature - Model Context
 Protocol), a powerful toolkit for scientific literature retrieval and analysis.
 
+## What You Need
+
+### Minimum Requirements (CLI usage)
+
+- **Python**: 3.11 or later
+- **uv**: Python package installer
+
+That's it! See [PREREQUISITES.md](PREREQUISITES.md) for installation instructions.
+
+### For MCP Integration (AI Assistant)
+
+Everything above, PLUS any MCP-compatible client:
+- **Claude Desktop** (recommended, most popular)
+- **Goose Desktop**
+- **Zed Editor**
+- **Continue** (VS Code extension)
+- **Any MCP-compatible tool**
+
+> **Important**: You do NOT need Claude Code CLI for normal usage! Claude Desktop (the GUI application) or any other MCP client works perfectly. Claude Code CLI is only for optional development testing (`make claude-demos-all`).
+
+### NOT Required
+
+- ❌ Claude Code CLI (only for optional Makefile demos)
+- ❌ Anthropic API key (only needed for Claude Code CLI developer tool)
+
+### Cost Information
+
+**CLI usage (100% FREE):**
+- No LLM or AI service required
+- Direct access to literature APIs (Europe PMC, CrossRef, PubMed)
+- No usage fees
+
+**MCP usage (requires LLM service):**
+- Requires an MCP-compatible AI assistant (Claude Desktop, Goose, etc.)
+- LLM services typically have usage costs or subscription fees
+- Check pricing with your chosen AI service provider
+
+See [PREREQUISITES.md](PREREQUISITES.md) for detailed setup guides for each option.
+
 ## Table of Contents
 
 - [Getting Started](#getting-started)
