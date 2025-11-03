@@ -442,7 +442,7 @@ uvx --from artl-mcp artl-cli pmid-to-doi --pmid "23851394"
 uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "PMC3737249"
 ```
 
-**Note:** Citation analysis commands (`get-paper-citations`, `get-paper-references`, `get-citation-network`, `find-related-papers`) are currently only available as MCP tools, not CLI commands. See the [Citation Networks](#citation-networks) section below for MCP usage.
+**Note:** Citation analysis commands (`get-paper-citations`, `get-paper-references`, `get-citation-network`, `find-related-papers`) are currently unavailable in both MCP and CLI. See the [Citation Networks](#citation-networks) section below for more information.
 
 **Full text access (requires email):**
 

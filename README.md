@@ -131,7 +131,7 @@ uvx --from artl-mcp artl-cli doi-to-pmid --doi "10.1038/nature12373"
 uvx --from artl-mcp artl-cli get-all-identifiers-from-europepmc --identifier "PMC3737249"
 ```
 
-**Note:** Citation analysis tools are MCP-only (not available as CLI commands). Use the MCP server for citation network analysis.
+**Note:** Citation analysis tools are currently unavailable in both MCP and CLI. See Issue #210 for updates.
 
 **Note for local development**: If you have the package installed locally with `uv sync`, you can use `uv run artl-cli` directly without the `--from` flag.
 
