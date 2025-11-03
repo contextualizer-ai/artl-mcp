@@ -23,8 +23,8 @@ Add this to your Claude Desktop MCP configuration:
 
 ```bash
 # Install and use CLI commands
-uvx artl-cli get-doi-metadata --doi "10.1038/nature12373"
-uvx artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-results 5
+uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-results 5
 ```
 
 ## Core Features
@@ -113,27 +113,29 @@ When running as an MCP server, you get access to 32 tools organized into categor
 
 ## CLI Commands
 
-The `artl-cli` command provides access to all functionality:
+The `artl-cli` command provides access to all functionality. When using `uvx`, specify the package name:
 
 ```bash
 # Metadata retrieval
-artl-cli get-doi-metadata --doi "10.1038/nature12373"
-artl-cli get-abstract-from-pubmed-id --pmid "23851394"
+uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-abstract-from-pubmed-id --pmid "23851394"
 
 # Literature search
-artl-cli search-papers-by-keyword --query "machine learning" --max-results 10
-artl-cli search-recent-papers --query "COVID-19" --years-back 2
+uvx --from artl-mcp artl-cli search-papers-by-keyword --query "machine learning" --max-results 10
+uvx --from artl-mcp artl-cli search-recent-papers --query "COVID-19" --years-back 2
 
 # Full text (requires email for some sources)
-artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "user@institution.edu"
+uvx --from artl-mcp artl-cli get-full-text-from-doi --doi "10.1038/nature12373" --email "user@institution.edu"
 
 # Identifier conversion
-artl-cli doi-to-pmid --doi "10.1038/nature12373"
-artl-cli get-all-identifiers --identifier "PMC3737249"
+uvx --from artl-mcp artl-cli doi-to-pmid --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMC3737249"
 
-# Citation analysis  
-artl-cli get-paper-citations --doi "10.1038/nature12373"
+# Citation analysis
+uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
 ```
+
+**Note for local development**: If you have the package installed locally with `uv sync`, you can use `uv run artl-cli` directly without the `--from` flag.
 
 ## Configuration
 

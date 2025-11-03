@@ -26,7 +26,7 @@ Protocol), a powerful toolkit for scientific literature retrieval and analysis.
 uvx artl-mcp
 
 # CLI Commands
-uvx artl-cli get-doi-metadata --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373"
 ```
 
 **Option 2: Claude Desktop Integration**
@@ -258,7 +258,7 @@ env:
   ARTL_EMAIL_ADDR: ${{ secrets.ARTL_EMAIL_ADDR }}
 steps:
   - name: Test with email
-    run: uvx artl-cli get-doi-metadata --doi "10.1038/nature12373"
+    run: uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373"
 ```
 
 #### Why Email Addresses are Required
@@ -367,7 +367,7 @@ Verify that your MCP client configuration is working:
 
 ```bash
 # Test email configuration
-uvx artl-cli get-doi-fetcher-metadata --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-doi-fetcher-metadata --doi "10.1038/nature12373"
 
 # Expected behavior:
 # ✅ Uses email from MCP client config (highest priority)
@@ -378,25 +378,42 @@ uvx artl-cli get-doi-fetcher-metadata --doi "10.1038/nature12373"
 
 ## CLI Usage
 
-The `artl-cli` command provides access to all functionality from the command line:
+The `artl-cli` command provides access to all functionality from the command line.
+
+**Running CLI Commands:**
+
+For direct usage without installation:
+```bash
+uvx --from artl-mcp artl-cli <command> [options]
+```
+
+For local development (after `uv sync`):
+```bash
+uv run artl-cli <command> [options]
+```
+
+**Note:** The package name is `artl-mcp`, but it provides the `artl-cli` command. When using `uvx`, you must specify `--from artl-mcp` to tell uvx which package to install.
 
 ### Basic Examples
 
 **Get paper metadata:**
 
 ```bash
-artl-cli get-doi-metadata --doi "10.1038/nature12373"
-artl-cli get-abstract-from-pubmed-id --pmid "23851394"
+uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-abstract-from-pubmed-id --pmid "23851394"
+
+# Or with local installation:
+# uv run artl-cli get-doi-metadata --doi "10.1038/nature12373"
 ```
 
 **Search for papers:**
 
 ```bash
 # Basic keyword search
-artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-results 5
+uvx --from artl-mcp artl-cli search-papers-by-keyword --query "CRISPR gene editing" --max-results 5
 
 # Advanced search with filters
-artl-cli search-papers-by-keyword \
+uvx --from artl-mcp artl-cli search-papers-by-keyword \
   --query "machine learning" \
   --max-results 20 \
   --sort "relevance" \
@@ -404,41 +421,41 @@ artl-cli search-papers-by-keyword \
   --from-pub-date "2020-01-01"
 
 # Recent papers (convenience function)
-artl-cli search-recent-papers --query "COVID-19" --years-back 2
+uvx --from artl-mcp artl-cli search-recent-papers --query "COVID-19" --years-back 2
 ```
 
 **Identifier conversion:**
 
 ```bash
 # Individual conversions
-artl-cli doi-to-pmid --doi "10.1038/nature12373"
-artl-cli pmid-to-doi --pmid "23851394"
+uvx --from artl-mcp artl-cli doi-to-pmid --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli pmid-to-doi --pmid "23851394"
 
 # Get all available identifiers at once
-artl-cli get-all-identifiers --identifier "PMC3737249"
+uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMC3737249"
 ```
 
 **Citation analysis:**
 
 ```bash
 # Papers cited by this paper
-artl-cli get-paper-references --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-paper-references --doi "10.1038/nature12373"
 
-# Papers that cite this paper  
-artl-cli get-paper-citations --doi "10.1038/nature12373"
+# Papers that cite this paper
+uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
 
 # Comprehensive citation network
-artl-cli get-citation-network --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-citation-network --doi "10.1038/nature12373"
 ```
 
 **Full text access (requires email):**
 
 ```bash
-artl-cli get-full-text-from-doi \
+uvx --from artl-mcp artl-cli get-full-text-from-doi \
   --doi "10.1038/nature12373" \
   --email "researcher@university.edu"
 
-artl-cli extract-pdf-text \
+uvx --from artl-mcp artl-cli extract-pdf-text \
   --pdf-url "https://example.com/paper.pdf"
 ```
 
@@ -448,15 +465,15 @@ Most CLI commands support automatic file saving:
 
 ```bash
 # Save with auto-generated filename
-artl-cli get-doi-metadata --doi "10.1038/nature12373" --save-file
+uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373" --save-file
 
 # Save to specific path
-artl-cli search-papers-by-keyword \
+uvx --from artl-mcp artl-cli search-papers-by-keyword \
   --query "CRISPR" \
   --save-to "crispr_papers.json"
 
 # Save full text
-artl-cli get-full-text-from-doi \
+uvx --from artl-mcp artl-cli get-full-text-from-doi \
   --doi "10.1038/nature12373" \
   --email "user@institution.edu" \
   --save-to "paper_fulltext.txt"
@@ -481,13 +498,32 @@ Create `local/.env` file:
 ARTL_EMAIL_ADDR=researcher@university.edu
 ```
 
-**Option 3: CLI Parameter**
+**Option 3: CLI Parameter (Works with uvx)**
 
 ```bash
-artl-cli get-unpaywall-info \
+uvx --from artl-mcp artl-cli get-unpaywall-info \
   --doi "10.1038/nature12373" \
   --email "researcher@university.edu"
 ```
+
+**Email Configuration with uvx:**
+
+When using `uvx`, you have two main options for email configuration:
+
+1. **CLI Parameter (Recommended for uvx):**
+```bash
+uvx --from artl-mcp artl-cli get-full-text-from-doi \
+  --doi "10.1038/nature12373" \
+  --email "researcher@university.edu"
+```
+
+2. **Environment Variable:**
+```bash
+export ARTL_EMAIL_ADDR="researcher@university.edu"
+uvx --from artl-mcp artl-cli get-full-text-from-doi --doi "10.1038/nature12373"
+```
+
+**Note:** The local `.env` file (Option 2 above) only works when you have the package installed locally with `uv sync`. When using `uvx`, the tool runs in an isolated environment that doesn't have access to local configuration files.
 
 ### File Output Configuration
 
@@ -550,9 +586,9 @@ Use `get_all_identifiers` to get all available IDs for any identifier:
 
 ```bash
 # Works with any format
-artl-cli get-all-identifiers --identifier "https://doi.org/10.1038/nature12373"
-artl-cli get-all-identifiers --identifier "PMID:23851394"
-artl-cli get-all-identifiers --identifier "PMC3737249"
+uvx --from artl-mcp artl-cli get-all-identifiers --identifier "https://doi.org/10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMID:23851394"
+uvx --from artl-mcp artl-cli get-all-identifiers --identifier "PMC3737249"
 ```
 
 ## File Management
@@ -578,7 +614,7 @@ When files are saved, tools now report exactly where the files were saved:
 
 **CLI Output:**
 ```bash
-$ artl-cli get-doi-metadata --doi "10.1038/nature12373" --save-file
+$ uvx --from artl-mcp artl-cli get-doi-metadata --doi "10.1038/nature12373" --save-file
 File saved to: /Users/researcher/Documents/artl-mcp/metadata_10.1038_nature12373.json
 ```
 
@@ -653,7 +689,7 @@ ARTL-MCP provides comprehensive citation analysis through multiple data sources:
 Find papers referenced by a given paper:
 
 ```bash
-artl-cli get-paper-references --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-paper-references --doi "10.1038/nature12373"
 ```
 
 Returns structured data including:
@@ -667,8 +703,8 @@ Returns structured data including:
 
 Find papers that cite a given paper:
 
-```bash  
-artl-cli get-paper-citations --doi "10.1038/nature12373"
+```bash
+uvx --from artl-mcp artl-cli get-paper-citations --doi "10.1038/nature12373"
 ```
 
 Returns information about citing papers:
@@ -682,7 +718,7 @@ Returns information about citing papers:
 Get data from multiple sources at once:
 
 ```bash
-artl-cli get-comprehensive-citation-info --doi "10.1038/nature12373"
+uvx --from artl-mcp artl-cli get-comprehensive-citation-info --doi "10.1038/nature12373"
 ```
 
 Combines data from:
@@ -696,7 +732,7 @@ Combines data from:
 Discover papers related through citation networks:
 
 ```bash
-artl-cli find-related-papers --doi "10.1038/nature12373" --max-results 10
+uvx --from artl-mcp artl-cli find-related-papers --doi "10.1038/nature12373" --max-results 10
 ```
 
 ## API Requirements
