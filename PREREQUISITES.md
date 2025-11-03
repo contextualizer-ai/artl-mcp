@@ -220,6 +220,13 @@ Zed has built-in MCP support. Configuration varies by version - see Zed's MCP do
 
 Continue extension supports MCP servers. See Continue's documentation for configuration.
 
+### CBORG (LBL Users)
+
+If you have access to LBL's CBORG service, you can use it to fund Claude Desktop API usage. See [CBORG.md](CBORG.md) for:
+- Official CBORG documentation links
+- Spending monitoring using CBORG APIs
+- Quick budget checks
+
 ---
 
 ## Claude Code CLI (Optional - Development Only)

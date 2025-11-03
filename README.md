@@ -263,3 +263,4 @@ See [PREREQUISITES.md](PREREQUISITES.md#claude-code-cli-optional---development-o
 - **[PREREQUISITES.md](PREREQUISITES.md)** - Setup guide (Python, uv, MCP clients, email config)
 - **[USERS.md](USERS.md)** - Comprehensive user guide with examples
 - **[DEVELOPERS.md](DEVELOPERS.md)** - Development setup and architecture
+- **[CBORG.md](CBORG.md)** - CBORG usage for LBL users (spending tracking)
